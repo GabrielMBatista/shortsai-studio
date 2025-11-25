@@ -1,0 +1,5 @@
+{
+  "name": "ShortsAI Studio",
+  "description": "An automated short video creator that generates scripts and storyboards (images) for 60-second vertical videos using Gemini AI.",
+  "requestFramePermissions": []
+}
