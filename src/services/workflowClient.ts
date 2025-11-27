@@ -1,9 +1,9 @@
-import { Scene } from '../types';
+import { Scene, BackendProjectStatus } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export interface WorkflowState {
-    projectStatus: string;
+    projectStatus: BackendProjectStatus;
     scenes: Scene[];
     generationMessage?: string;
     fatalError?: string;
@@ -117,7 +117,7 @@ class WorkflowClient {
             }));
 
             this.onStateChange?.({
-                projectStatus: data.projectStatus,
+                projectStatus: data.projectStatus as BackendProjectStatus,
                 scenes: mappedScenes,
                 generationMessage: data.generationMessage,
                 fatalError: data.fatalError,

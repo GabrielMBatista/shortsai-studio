@@ -27,7 +27,7 @@ interface ScriptViewProps {
     canPreview: boolean;
     onPreview: () => void;
     includeMusic?: boolean;
-    musicStatus?: 'pending' | 'loading' | 'completed' | 'error';
+    musicStatus?: 'pending' | 'queued' | 'loading' | 'completed' | 'failed' | 'error';
     musicUrl?: string;
     musicPrompt?: string;
     onRegenerateMusic?: () => void;
@@ -302,7 +302,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                             <div className="p-2 bg-pink-500/20 text-pink-400 rounded-lg"><Music className="w-5 h-5" /></div>
                             <div>
                                 <h3 className="text-sm font-semibold text-white">Background Music</h3>
-                                {musicStatus === 'loading' ? <span className="text-xs text-slate-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Generating...</span> : musicStatus === 'error' ? <span className="text-xs text-red-400">Failed</span> : musicStatus === 'completed' ? <span className="text-xs text-emerald-400">Ready</span> : <span className="text-xs text-slate-500">Pending...</span>}
+                                {(musicStatus === 'loading' || musicStatus === 'queued') ? <span className="text-xs text-slate-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> {musicStatus === 'queued' ? 'Queued...' : 'Generating...'}</span> : (musicStatus === 'error' || musicStatus === 'failed') ? <span className="text-xs text-red-400">Failed</span> : musicStatus === 'completed' ? <span className="text-xs text-emerald-400">Ready</span> : <span className="text-xs text-slate-500">Pending...</span>}
                             </div>
                         </div>
                         <div className="flex-1 w-full md:w-auto">

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Scene } from '../../types';
-import { Loader2, AlertCircle, ImageIcon, RefreshCw, Clock, ChevronDown, ChevronUp, Mic, Pencil, Check } from 'lucide-react';
+import { Loader2, AlertCircle, ImageIcon, RefreshCw, Clock, ChevronDown, ChevronUp, Mic, Pencil, Check, Trash2 } from 'lucide-react';
 import AudioPlayerButton from '../common/AudioPlayerButton';
 import ConfirmModal from '../ConfirmModal';
 
@@ -11,9 +11,10 @@ interface SceneCardProps {
     onRegenerateImage: (index: number, force: boolean) => void;
     onRegenerateAudio?: (index: number, force: boolean) => void;
     onUpdateScene: (index: number, updates: Partial<Scene>) => void;
+    onRemoveScene: (index: number) => void;
 }
 
-const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateImage, onRegenerateAudio, onUpdateScene }) => {
+const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateImage, onRegenerateAudio, onUpdateScene, onRemoveScene }) => {
     const [isPromptOpen, setIsPromptOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [narrationText, setNarrationText] = useState(scene.narration);
@@ -105,6 +106,13 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                             title="Regenerate Image"
                         >
                             <RefreshCw className={`w-3.5 h-3.5 ${isImageLoading ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onRemoveScene(sceneIndex); }}
+                            className="bg-black/60 hover:bg-red-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm cursor-pointer hover:scale-105"
+                            title="Remove Scene"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
                         </button>
                         <div className="bg-black/60 backdrop-blur px-2 py-1 rounded-md text-xs font-mono text-white flex items-center pointer-events-none border border-white/10 shadow-sm">
                             <Clock className="w-3 h-3 mr-1.5 text-slate-300" /> {scene.durationSeconds}s
