@@ -207,7 +207,7 @@ const fromApiProject = (apiP: any): VideoProject => {
                     errorMessage: s.error_message
                 });
             }
-            
+
         });
     }
 
@@ -368,6 +368,15 @@ export const patchScene = async (projectId: string, scene: Partial<Scene> & { sc
                 body: JSON.stringify(payload)
             });
         } catch (e) { console.warn("Patch scene failed", e); }
+    }
+};
+
+export const deleteScene = async (sceneId: string) => {
+    try {
+        await apiFetch(`/scenes/${sceneId}`, { method: 'DELETE' });
+    } catch (e) {
+        console.warn("Delete scene failed", e);
+        throw e;
     }
 };
 

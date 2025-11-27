@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppStep, User, VideoProject, ReferenceCharacter, TTSProvider } from '../types';
 import { workflowClient, WorkflowState } from '../services/workflowClient';
 import { generateScript, generateMusicPrompt } from '../services/geminiService';
-import { saveProject } from '../services/storageService';
+import { saveProject, deleteScene } from '../services/storageService';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface UseVideoGenerationProps {
@@ -203,6 +203,30 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
 
     // Helpers
     updateScene: () => { },
+    removeScene: async (index: number) => {
+      if (!project) return;
+
+      const sceneToRemove = project.scenes[index];
+      const newScenes = project.scenes
+        .filter((_, i) => i !== index)
+        .map((s, i) => ({ ...s, sceneNumber: i + 1 })); // Reorder
+
+      const updatedProject = { ...project, scenes: newScenes };
+
+      // Optimistic update
+      setProject(updatedProject);
+
+      try {
+        if (sceneToRemove.id) {
+          await deleteScene(sceneToRemove.id);
+        }
+        // Save project to update scene numbers of remaining scenes
+        await saveProject(updatedProject);
+      } catch (e) {
+        console.error("Failed to remove scene", e);
+        onError("Failed to remove scene");
+      }
+    },
     skipCurrentScene: () => project && user && workflowClient.sendCommand('skip_scene', project.id, user.id)
   };
 };

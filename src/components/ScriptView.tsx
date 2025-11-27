@@ -37,6 +37,7 @@ interface ScriptViewProps {
     onResume?: () => void;
     onSkip?: () => void;
     generationMessage?: string;
+    onRemoveScene: (index: number) => void;
 }
 
 const MetadataCard: React.FC<{ title?: string; description?: string }> = ({ title, description }) => {
@@ -114,7 +115,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     generatedTitle, generatedDescription,
     onStartImageGeneration, onGenerateImagesOnly, onGenerateAudioOnly, onRegenerateAudio, onRegenerateSceneImage, onRegenerateSceneAudio, onUpdateScene, isGeneratingImages, onCancelGeneration,
     canPreview, onPreview, includeMusic, musicStatus, musicUrl, musicPrompt, onRegenerateMusic,
-    isPaused, fatalError, onResume, onSkip, generationMessage
+    isPaused, fatalError, onResume, onSkip, generationMessage, onRemoveScene
 }) => {
     const [selectedProvider, setSelectedProvider] = useState<TTSProvider>(projectProvider);
     const [selectedVoice, setSelectedVoice] = useState(projectVoice);
@@ -393,6 +394,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                         onRegenerateImage={onRegenerateSceneImage}
                         onRegenerateAudio={onRegenerateSceneAudio}
                         onUpdateScene={onUpdateScene}
+                        onRemoveScene={onRemoveScene}
                     />
                 ))}
             </div>
