@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { AppStep, VideoProject, User, GOOGLE_CLIENT_ID } from './types';
 import InputSection from './components/InputSection';
@@ -10,18 +9,21 @@ import SettingsScreen from './components/SettingsScreen';
 import QuotaHud from './components/QuotaHud';
 import Toast, { ToastType } from './components/Toast';
 import ConfirmModal from './components/ConfirmModal';
-import { loginUser, logoutUser, restoreSession, saveProject, getUserProjects, deleteProject } from './services/storageService';
-import { Film, LogOut, ChevronLeft, Settings } from 'lucide-react';
+import { loginUser, logoutUser, restoreSession, saveProject } from './services/storageService';
+import { Film, LogOut, ChevronLeft } from 'lucide-react';
 import { useVideoGeneration } from './hooks/useVideoGeneration';
+import { useProjects } from './hooks/useProjects';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const App: React.FC = () => {
   // Global State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userProjects, setUserProjects] = useState<VideoProject[]>([]);
   const [step, setStep] = useState<AppStep>(AppStep.AUTH);
   const [isInitializing, setIsInitializing] = useState(true);
   
+  // Data Fetching (TanStack Query)
+  const { projects: userProjects, isLoading: isLoadingProjects, deleteProject, refreshProjects } = useProjects(currentUser?.id);
+
   // UI State for Toasts & Modals
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; projectId: string | null }>({ isOpen: false, projectId: null });
@@ -30,12 +32,20 @@ const App: React.FC = () => {
   const { 
       project, 
       setProject, 
+      updateScene,
       isGenerating, 
-      generationMessage, 
+      generationMessage,
+      isPaused,
+      fatalError,
       generateNewProject, 
       generateAssets, 
-      cancelGeneration, 
-      regenerateSceneImage, 
+      generateImagesOnly,
+      generateAudioOnly,
+      cancelGeneration,
+      resumeGeneration,
+      skipCurrentScene,
+      regenerateSceneImage,
+      regenerateSceneAudio,
       regenerateAllAudio,
       regenerateMusic
   } = useVideoGeneration({
@@ -52,6 +62,19 @@ const App: React.FC = () => {
       setToast({ message, type });
   };
 
+  const getDisplayTitle = (p: VideoProject) => {
+      let title = p.generatedTitle || p.topic;
+      if (typeof title === 'string' && (title.trim().startsWith('{') || title.trim().startsWith('['))) {
+         try {
+             const json = JSON.parse(title);
+             title = json.projectTitle || json.videoTitle || json.title || json.scriptTitle || "Untitled Project";
+         } catch (e) {
+             title = "Untitled Project";
+         }
+      }
+      return title;
+  };
+
   // --- Auth & Data Loading ---
   useEffect(() => {
     const initApp = async () => {
@@ -59,13 +82,7 @@ const App: React.FC = () => {
         const user = await restoreSession();
         if (user) {
             setCurrentUser(user);
-            try {
-                const projects = await getUserProjects(user.id);
-                setUserProjects(projects);
-                setStep(AppStep.DASHBOARD);
-            } catch (e) {
-                console.error("Failed to load projects", e);
-            }
+            setStep(AppStep.DASHBOARD);
         } else {
             setStep(AppStep.AUTH);
         }
@@ -74,22 +91,10 @@ const App: React.FC = () => {
     initApp();
   }, []);
 
-  const refreshProjects = async () => {
-      if (currentUser) {
-          try {
-            const p = await getUserProjects(currentUser.id);
-            setUserProjects(p);
-          } catch (e) {
-            console.error("Failed to refresh projects");
-          }
-      }
-  };
-
   const handleLogin = async (user: User) => {
       try {
           const loggedUser = await loginUser(user.email, user.name, user.avatar, user.id);
           setCurrentUser(loggedUser);
-          getUserProjects(loggedUser.id).then(setUserProjects);
           setStep(AppStep.DASHBOARD);
           showToast(`Welcome back, ${loggedUser.name.split(' ')[0]}!`, 'success');
       } catch (err) {
@@ -112,12 +117,10 @@ const App: React.FC = () => {
   };
 
   const handleOpenProject = (p: VideoProject) => {
-      // Ensure we pass a clean object to state
       const sanitizedProject = {
           ...p,
           scenes: Array.isArray(p.scenes) ? p.scenes : []
       };
-      // Set the ref to the current state so autosave doesn't trigger immediately
       lastSavedProjectJson.current = JSON.stringify(sanitizedProject);
       setProject(sanitizedProject);
       setStep(AppStep.SCRIPTING);
@@ -132,26 +135,19 @@ const App: React.FC = () => {
   const handleConfirmDelete = async () => {
       const id = deleteModal.projectId;
       if (!id) return;
-
-      // Optimistic Update: Remove from UI immediately
-      setUserProjects(prev => prev.filter(p => p.id !== id));
       setDeleteModal({ isOpen: false, projectId: null });
 
       try {
           await deleteProject(id);
           showToast("Project deleted successfully.", 'success');
-          // Refresh in background to ensure sync
-          refreshProjects();
       } catch (e) {
-          showToast("Failed to delete project from server.", 'error');
-          refreshProjects(); // Revert if failed
+          showToast("Failed to delete project.", 'error');
       }
   };
 
   // Autosave
   useEffect(() => {
       if (project && currentUser && step !== AppStep.DASHBOARD) {
-          // Check if data actually changed to avoid unnecessary API calls and duplication
           const currentJson = JSON.stringify(project);
           if (currentJson === lastSavedProjectJson.current) {
               return;
@@ -160,11 +156,8 @@ const App: React.FC = () => {
           const timeout = setTimeout(async () => {
              try {
                  const savedProject = await saveProject(project);
-                 
-                 // Update the ref to the latest saved state
                  lastSavedProjectJson.current = JSON.stringify(savedProject);
-
-                 // Check if we need to sync IDs (Defensive check for array)
+                 
                  const needsUpdate = savedProject.id !== project.id || 
                                      (Array.isArray(savedProject.scenes) && 
                                       Array.isArray(project.scenes) && 
@@ -255,6 +248,7 @@ const App: React.FC = () => {
                 onNewProject={handleNewProject}
                 onOpenProject={handleOpenProject}
                 onDeleteProject={handleRequestDelete}
+                isLoading={isLoadingProjects}
             />
         )}
 
@@ -283,9 +277,13 @@ const App: React.FC = () => {
             generatedTitle={project.generatedTitle}
             generatedDescription={project.generatedDescription}
             onStartImageGeneration={generateAssets}
+            onGenerateImagesOnly={generateImagesOnly}
+            onGenerateAudioOnly={generateAudioOnly}
             onRegenerateAudio={(v, p, l) => { regenerateAllAudio(v, p, l); showToast("Regenerating audio...", 'info'); }}
             onRegenerateSceneImage={regenerateSceneImage}
-            isGeneratingImages={step === AppStep.GENERATING_IMAGES}
+            onRegenerateSceneAudio={regenerateSceneAudio}
+            onUpdateScene={updateScene}
+            isGeneratingImages={isGenerating || step === AppStep.GENERATING_IMAGES}
             onCancelGeneration={() => { cancelGeneration(); showToast("Generation cancelled.", 'info'); }}
             canPreview={Array.isArray(project.scenes) && project.scenes.some(s => s.imageStatus === 'completed')}
             onPreview={() => setStep(AppStep.PREVIEW)}
@@ -294,6 +292,12 @@ const App: React.FC = () => {
             musicUrl={project.bgMusicUrl}
             musicPrompt={project.bgMusicPrompt}
             onRegenerateMusic={regenerateMusic}
+            // Orchestration Props
+            isPaused={isPaused}
+            fatalError={fatalError}
+            onResume={resumeGeneration}
+            onSkip={skipCurrentScene}
+            generationMessage={generationMessage}
           />
         )}
 
@@ -302,7 +306,7 @@ const App: React.FC = () => {
             scenes={Array.isArray(project.scenes) ? project.scenes : []} 
             onClose={() => setStep(AppStep.SCRIPTING)}
             bgMusicUrl={project.bgMusicUrl}
-            projectTopic={project.topic}
+            title={getDisplayTitle(project)}
           />
         )}
       </main>

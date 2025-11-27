@@ -60,22 +60,22 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdateUser }) =
             <div className="space-y-6">
                 
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Google Gemini API Key (Required)</label>
-                    <input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-4 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                    <label htmlFor="geminiKey" className="block text-sm font-medium text-slate-300 mb-2">Google Gemini API Key (Required)</label>
+                    <input id="geminiKey" name="geminiKey" type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-4 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                     <p className="text-xs text-slate-500 mt-2">Get your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-indigo-400 hover:underline">Google AI Studio</a>.</p>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">ElevenLabs API Key (Optional)</label>
-                    <input type="password" value={elevenLabsKey} onChange={(e) => setElevenLabsKey(e.target.value)} placeholder="sk_..." className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-4 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                    <label htmlFor="elevenLabsKey" className="block text-sm font-medium text-slate-300 mb-2">ElevenLabs API Key (Optional)</label>
+                    <input id="elevenLabsKey" name="elevenLabsKey" type="password" value={elevenLabsKey} onChange={(e) => setElevenLabsKey(e.target.value)} placeholder="sk_..." className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-4 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                     <p className="text-xs text-slate-500 mt-2">Used for ultra-realistic voice cloning.</p>
                 </div>
                 {IS_SUNO_ENABLED && (
                     <>
                     <div className="w-full h-px bg-slate-700/50"></div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2"><Music className="w-4 h-4 text-pink-400" />Suno API Key (Optional)</label>
-                        <input type="password" value={sunoKey} onChange={(e) => setSunoKey(e.target.value)} placeholder="Key from Suno API (sunoapi.org)..." className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-4 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                        <label htmlFor="sunoKey" className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2"><Music className="w-4 h-4 text-pink-400" />Suno API Key (Optional)</label>
+                        <input id="sunoKey" name="sunoKey" type="password" value={sunoKey} onChange={(e) => setSunoKey(e.target.value)} placeholder="Key from Suno API (sunoapi.org)..." className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-4 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                         <p className="text-xs text-slate-500 mt-2">Uses <a href="https://sunoapi.org" target="_blank" className="text-indigo-400 hover:underline">SunoAPI.org</a> structure.</p>
                     </div>
                     </>

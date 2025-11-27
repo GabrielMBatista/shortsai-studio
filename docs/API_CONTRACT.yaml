@@ -4,7 +4,7 @@ info:
   description: API contract for the ShortsAI automated video generator backend.
   version: 1.0.0
 servers:
-  - url: https://shortsai-api.vercel.app/api
+  - url: http://localhost:3000/api
     description: Production Server
   - url: http://localhost:3000/api
     description: Local Development
@@ -45,6 +45,15 @@ components:
           type: string
         generated_description:
           type: string
+        duration_config:
+          type: object
+          properties:
+            min:
+              type: integer
+            max:
+              type: integer
+            targetScenes:
+              type: integer
         characterIds:
           type: array
           items:
@@ -299,6 +308,15 @@ paths:
                   type: boolean
                 bg_music_prompt:
                   type: string
+                duration_config:
+                  type: object
+                  properties:
+                    min:
+                      type: integer
+                    max:
+                      type: integer
+                    targetScenes:
+                      type: integer
                 characterIds:
                   type: array
                   items:
@@ -367,7 +385,7 @@ paths:
 
   /scenes/{id}:
     patch:
-      summary: Update scene assets
+      summary: Update scene assets and content
       parameters:
         - in: path
           name: id
@@ -380,6 +398,14 @@ paths:
             schema:
               type: object
               properties:
+                visual_description:
+                  type: string
+                  description: Updated visual prompt
+                narration:
+                  type: string
+                  description: Updated narration text
+                duration_seconds:
+                  type: number
                 image_url:
                   type: string
                 image_status:

@@ -1,6 +1,9 @@
 import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './src/lib/queryClient';
 import App from './src/App';
+import Loader from './src/components/Loader';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -10,8 +13,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <Suspense fallback={<div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-slate-400">Loading Studio...</div>}>
-      <App />
-    </Suspense>
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={<Loader fullScreen text="Initializing Studio..." />}>
+        <App />
+      </Suspense>
+    </QueryClientProvider>
   </React.StrictMode>
 );

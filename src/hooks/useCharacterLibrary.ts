@@ -1,40 +1,30 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SavedCharacter, User } from '../types';
 import { getUserCharacters, saveCharacter, deleteCharacter } from '../services/storageService';
 import { optimizeReferenceImage } from '../services/geminiService';
 
 export const useCharacterLibrary = (user: User | null) => {
-  const [characters, setCharacters] = useState<SavedCharacter[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const loadCharacters = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      const chars = await getUserCharacters(user.id);
-      setCharacters(chars);
-    } catch (e) {
-      console.error("Failed to load characters", e);
-      setError("Failed to load character library.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]); // Changed from [user] to [user?.id] to prevent infinite loops
+  // Query: Fetch Characters
+  const { 
+    data: characters = [], 
+    isLoading, 
+    error,
+    refetch 
+  } = useQuery({
+    queryKey: ['characters', user?.id],
+    queryFn: () => getUserCharacters(user!.id),
+    enabled: !!user?.id,
+  });
 
-  useEffect(() => {
-    loadCharacters();
-  }, [loadCharacters]);
-
-  const addCharacter = async (name: string, description: string, images: string[], shouldOptimize = false) => {
-    if (!user) return;
-    setIsLoading(true);
-    setError(null);
-
-    try {
+  // Mutation: Add Character
+  const addMutation = useMutation({
+    mutationFn: async ({ name, description, images, shouldOptimize }: { name: string, description: string, images: string[], shouldOptimize: boolean }) => {
+      if (!user) throw new Error("No user");
+      
       let finalImages = images;
 
-      // Optimization Logic
       if (shouldOptimize && images.length === 1) {
           try {
              const optimized = await optimizeReferenceImage(images[0]);
@@ -54,32 +44,33 @@ export const useCharacterLibrary = (user: User | null) => {
       };
 
       await saveCharacter(newChar);
-      await loadCharacters();
       return newChar;
-    } catch (e) {
-      console.error("Failed to save character", e);
-      setError("Failed to save character.");
-      throw e;
-    } finally {
-      setIsLoading(false);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['characters', user?.id] });
     }
-  };
+  });
 
-  const removeCharacter = async (id: string) => {
-    try {
+  // Mutation: Delete Character
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
       await deleteCharacter(id);
-      setCharacters(prev => prev.filter(c => c.id !== id));
-    } catch (e) {
-      setError("Failed to delete character.");
+      return id;
+    },
+    onSuccess: (deletedId) => {
+      queryClient.setQueryData(['characters', user?.id], (old: SavedCharacter[] | undefined) => 
+        old ? old.filter(c => c.id !== deletedId) : []
+      );
     }
-  };
+  });
 
   return {
     characters,
-    isLoading,
-    error,
-    addCharacter,
-    removeCharacter,
-    refreshLibrary: loadCharacters
+    isLoading: isLoading || addMutation.isPending || deleteMutation.isPending,
+    error: error ? (error as Error).message : (addMutation.error || deleteMutation.error ? "Operation failed" : null),
+    addCharacter: (name: string, desc: string, imgs: string[], optimize = false) => 
+      addMutation.mutateAsync({ name, description: desc, images: imgs, shouldOptimize: optimize }),
+    removeCharacter: deleteMutation.mutateAsync,
+    refreshLibrary: refetch
   };
 };

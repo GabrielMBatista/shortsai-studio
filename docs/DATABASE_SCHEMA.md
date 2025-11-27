@@ -43,6 +43,19 @@ CREATE TABLE user_limits (
 );
 ```
 
+### 2.3. `api_keys`
+Chaves de API criptografadas do usuário.
+
+```sql
+CREATE TABLE api_keys (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    gemini_key TEXT,
+    elevenlabs_key TEXT,
+    suno_key TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
 ---
 
 ## 3. Biblioteca de Assets
@@ -91,6 +104,9 @@ CREATE TABLE projects (
     -- Metadados SEO
     generated_title VARCHAR(255),
     generated_description TEXT,
+
+    -- Configuração de Duração
+    duration_config JSONB, -- { "min": 55, "max": 65, "targetScenes": 10 }
 
     -- Referência Legacy (opcional, mantido se necessário para projetos antigos)
     reference_image_url TEXT,

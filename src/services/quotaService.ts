@@ -23,13 +23,30 @@ export const trackUsage = (model: string, cost: number) => {
     const now = Date.now();
     const user = getCurrentUser();
     
+    // Determine Action Type based on model name
+    let actionType: 'GENERATE_SCRIPT' | 'GENERATE_IMAGE' | 'GENERATE_TTS' | 'GENERATE_MUSIC' = 'GENERATE_SCRIPT';
+    const lowerModel = model.toLowerCase();
+    
+    if (lowerModel.includes('image')) {
+        actionType = 'GENERATE_IMAGE';
+    } else if (lowerModel.includes('tts') || lowerModel.includes('audio') || lowerModel.includes('eleven')) {
+        actionType = 'GENERATE_TTS';
+    } else if (lowerModel.includes('suno') || lowerModel.includes('music')) {
+        actionType = 'GENERATE_MUSIC';
+    }
+
+    // Determine Provider
+    let provider = 'gemini';
+    if (lowerModel.includes('eleven')) provider = 'elevenlabs';
+    else if (lowerModel.includes('suno')) provider = 'suno';
+
     // 1. Log to DB for audit
     if (user) {
         saveUsageLog({
             id: crypto.randomUUID(),
             userId: user.id,
-            actionType: 'API_CALL',
-            provider: 'gemini',
+            actionType,
+            provider,
             modelName: model,
             timestamp: now,
             status: 'success'
@@ -38,8 +55,8 @@ export const trackUsage = (model: string, cost: number) => {
 
     // 2. Track for HUD (In-memory)
     let type = 'text';
-    if (model.includes('image')) type = 'image';
-    if (model.includes('audio') || model.includes('tts')) type = 'audio';
+    if (lowerModel.includes('image')) type = 'image';
+    if (lowerModel.includes('audio') || lowerModel.includes('tts') || lowerModel.includes('eleven')) type = 'audio';
 
     usageHistory.push({ timestamp: now, type });
 

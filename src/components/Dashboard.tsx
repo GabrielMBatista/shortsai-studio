@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { User, VideoProject } from '../types';
 import { Plus, Clock, Film, Play, Trash2, Zap, Sparkles, ArrowRight } from 'lucide-react';
+import Loader from './Loader';
 
 interface DashboardProps {
   user: User;
@@ -8,9 +10,10 @@ interface DashboardProps {
   onNewProject: () => void;
   onOpenProject: (project: VideoProject) => void;
   onDeleteProject: (projectId: string) => void;
+  isLoading?: boolean;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onOpenProject, onDeleteProject }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onOpenProject, onDeleteProject, isLoading = false }) => {
   const formatDate = (ts: number) => new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
@@ -40,11 +43,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                 <Clock className="w-5 h-5 text-indigo-400" /> Recent Projects
             </h2>
             <div className="text-sm text-slate-500">
-                {projects.length} project{projects.length !== 1 ? 's' : ''}
+                {isLoading ? 'Syncing...' : `${projects.length} project${projects.length !== 1 ? 's' : ''}`}
             </div>
         </div>
 
-        {projects.length === 0 ? (
+        {isLoading ? (
+            <div className="w-full h-64 flex items-center justify-center bg-slate-800/30 rounded-3xl border border-slate-700/50">
+                <Loader text="Loading your projects..." />
+            </div>
+        ) : projects.length === 0 ? (
             <div className="relative overflow-hidden bg-slate-800/30 rounded-3xl border-2 border-dashed border-slate-700/50 p-12 text-center group hover:border-indigo-500/30 transition-colors">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative z-10">
@@ -67,6 +74,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                     const totalScenes = project.scenes.length || 6;
                     const progress = Math.round((completedScenes / totalScenes) * 100);
                     
+                    // Prefer the generated title (clean) over the raw topic (which might be a JSON blob)
+                    let displayTitle = project.generatedTitle || project.topic;
+                    
+                    // Fallback: If title still looks like JSON (recovery failed or not happened yet), try to clean it for UI
+                    if (typeof displayTitle === 'string' && (displayTitle.trim().startsWith('{') || displayTitle.trim().startsWith('['))) {
+                         try {
+                             const p = JSON.parse(displayTitle);
+                             displayTitle = p.projectTitle || p.videoTitle || p.title || p.scriptTitle || "Untitled Project";
+                         } catch(e) {}
+                    }
+
                     return (
                         <div 
                             key={project.id} 
@@ -113,8 +131,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                             {/* Content */}
                             <div className="p-5 flex-1 flex flex-col">
                                 <div className="mb-3">
-                                    <h3 className="font-bold text-white text-lg line-clamp-1 group-hover:text-indigo-300 transition-colors" title={project.topic}>
-                                        {project.topic}
+                                    <h3 className="font-bold text-white text-lg line-clamp-1 group-hover:text-indigo-300 transition-colors" title={displayTitle}>
+                                        {displayTitle}
                                     </h3>
                                     <div className="flex items-center gap-2 mt-1 text-xs font-medium text-slate-500 uppercase tracking-wider">
                                         <span className="bg-slate-700/50 px-2 py-0.5 rounded border border-slate-700">{project.style}</span>

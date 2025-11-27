@@ -1,3 +1,4 @@
+
 # 🎬 ShortsAI Studio
 
 > **Plataforma de Criação de Vídeos Curtos com Google Gemini 2.5 & Arquitetura Híbrida**
@@ -18,7 +19,8 @@ O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em v�
   - **Offline First**: Todos os dados são salvos instantaneamente no IndexedDB (suporta blobs grandes).
   - **Cloud Sync**: Sincronização automática com API (`shortsai-api`) quando a conexão é restabelecida.
   - **Fallback Robusto**: Se a API cair, o app continua funcionando localmente sem interrupção.
-- **Renderização Client-Side**: Compilação de vídeo `.mp4`/`.webm` direto no navegador (Canvas API + MediaRecorder) com legendas sincronizadas e efeito Ken Burns.
+- **Renderização Client-Side (High Fidelity)**: Compilação de vídeo `.mp4`/`.webm` direto no navegador (Canvas API + MediaRecorder) com legendas sincronizadas e efeito Ken Burns.
+    - **Consistent Rendering**: O sistema utiliza um motor de renderização compartilhado para garantir que as legendas e efeitos visuais no "Preview" sejam visualmente idênticos ao arquivo de vídeo exportado, mantendo fontes, cores e animações de "Karaoke" consistentes.
 - **Segurança**: Criptografia/Ofuscação de API Keys no LocalStorage (`utils/security.ts`).
 
 ---
@@ -61,13 +63,13 @@ O projeto vem configurado para conectar-se à API de produção (`shortsai-api.v
 ### Estrutura de Pastas
 ```
 /src
-  /components     # UI Components (Dashboard, ScriptView, Player)
-  /hooks          # Lógica de Estado (useVideoGeneration, useCharacterLibrary)
+  /components     # UI Components (Dashboard, ScriptView, Player, SubtitleOverlay)
+  /hooks          # Lógica de Estado (useVideoGeneration, useCharacterLibrary, useVideoExport)
   /services       # Camada de Integração
     - gemini.ts   # Lógica de Prompting e Vision
     - storage.ts  # Hybrid Sync (API + IndexedDB)
     - quota.ts    # Rate Limiting & HUD
-  /utils          # Helpers de Segurança e Formatação
+  /utils          # Helpers (Security, SubtitleStyles, VideoUtils)
 /docs
   - API_CONTRACT.yaml   # Especificação OpenAPI do Backend
   - DATABASE_SCHEMA.md  # Estrutura do Banco SQL
