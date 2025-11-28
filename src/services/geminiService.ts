@@ -119,7 +119,7 @@ export const optimizeReferenceImage = async (base64ImageUrl: string): Promise<st
   return data.result;
 };
 
-export const generatePreviewAudio = async (text: string, voice: string, provider: 'gemini' | 'elevenlabs' = 'gemini'): Promise<string> => {
+export const generatePreviewAudio = async (text: string, voice: string, provider: 'gemini' | 'elevenlabs' | 'groq' = 'gemini'): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error("User not authenticated");
 

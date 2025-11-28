@@ -108,8 +108,11 @@ class WorkflowClient {
         };
     }
 
+    private lastUpdateTimestamp = 0;
+
     private updateLocalState(newState: WorkflowState) {
         this.lastState = newState;
+        this.lastUpdateTimestamp = Date.now();
         this.onStateChange?.(newState);
     }
 
@@ -119,7 +122,7 @@ class WorkflowClient {
             return;
         }
 
-        const { sceneId, field, status, url, error } = data;
+        const { sceneId, field, status, url, error, timings, duration } = data;
 
         const updatedScenes = this.lastState.scenes.map(scene => {
             if (scene.id === sceneId) {
@@ -131,6 +134,8 @@ class WorkflowClient {
                 } else if (field === 'audio') {
                     updatedScene.audioStatus = status;
                     if (url) updatedScene.audioUrl = url;
+                    if (timings) updatedScene.wordTimings = timings;
+                    if (duration) updatedScene.durationSeconds = duration;
                 }
 
                 if (error) updatedScene.errorMessage = error;
@@ -190,11 +195,20 @@ class WorkflowClient {
     private async fetchState() {
         if (!this.currentProjectId) return;
 
+        const fetchStart = Date.now();
+
         try {
             const res = await fetch(`${API_URL}/api/workflow/state/${this.currentProjectId}`);
             if (!res.ok) return;
 
             const data = await res.json();
+
+            // Guard: If an SSE update happened while we were fetching, ignore this stale fetch
+            // unless it's the very first fetch (lastUpdateTimestamp is 0)
+            if (this.lastUpdateTimestamp > fetchStart && this.lastUpdateTimestamp !== 0) {
+                console.log('[WorkflowClient] Ignoring stale fetchState result');
+                return;
+            }
 
             const mappedScenes = (data.scenes || []).map((s: any) => ({
                 id: s.id || s._id,
@@ -210,7 +224,8 @@ class WorkflowClient {
                 sfxStatus: s.sfx_status || s.sfxStatus || (s.sfx_url ? 'completed' : 'pending'),
                 imageAttempts: s.image_attempts || 0,
                 audioAttempts: s.audio_attempts || 0,
-                errorMessage: s.error_message
+                errorMessage: s.error_message,
+                wordTimings: s.wordTimings || s.word_timings
             }));
 
             const newState: WorkflowState = {

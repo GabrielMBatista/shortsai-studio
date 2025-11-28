@@ -53,7 +53,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile }: UseVide
 
         return scenes.map(scene => {
             const duration = scene.durationSeconds || 5;
-            const timings = getWordTimings(scene.narration, duration);
+            const timings = getWordTimings(scene.narration, duration, scene.wordTimings);
             const words = timings.map(t => t.word);
             const lines: string[][] = [];
             let currentLine: string[] = [];

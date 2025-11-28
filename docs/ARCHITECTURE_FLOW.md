@@ -1,7 +1,7 @@
-# Architecture Update
+# Atualização de Arquitetura
 
-The architecture has migrated to a **Frontend Executor Agent** pattern.
+A arquitetura migrou para um padrão de **Agente Executor Frontend**.
 
-See:
-- `src/services/virtualBackend.ts`: State Machine & Orchestrator.
-- `src/services/workflowClient.ts`: Executor Agent (Task Runner).
+Veja:
+- `src/services/virtualBackend.ts`: Máquina de Estado e Orquestrador.
+- `src/services/workflowClient.ts`: Agente Executor (Executor de Tarefas).

@@ -59,6 +59,7 @@ export const restoreSession = async (): Promise<User | null> => {
             if (remoteKeys.gemini_key) keys.gemini = decryptData(remoteKeys.gemini_key);
             if (remoteKeys.elevenlabs_key) keys.elevenlabs = decryptData(remoteKeys.elevenlabs_key);
             if (remoteKeys.suno_key) keys.suno = decryptData(remoteKeys.suno_key);
+            if (remoteKeys.groq_key) keys.groq = decryptData(remoteKeys.groq_key);
         }
 
         let userData: any = { name: 'User', email: '', avatar_url: '' };
@@ -117,6 +118,7 @@ export const loginUser = async (email: string, name: string, avatar: string, id?
                     if (remoteKeys.gemini_key) apiKeys.gemini = decryptData(remoteKeys.gemini_key);
                     if (remoteKeys.elevenlabs_key) apiKeys.elevenlabs = decryptData(remoteKeys.elevenlabs_key);
                     if (remoteKeys.suno_key) apiKeys.suno = decryptData(remoteKeys.suno_key);
+                    if (remoteKeys.groq_key) apiKeys.groq = decryptData(remoteKeys.groq_key);
                 }
             } catch (e) { }
 
@@ -152,7 +154,8 @@ export const updateUserApiKeys = async (userId: string, keys: ApiKeys): Promise<
             user_id: userId,
             gemini_key: keys.gemini ? encryptData(keys.gemini) : "",
             elevenlabs_key: keys.elevenlabs ? encryptData(keys.elevenlabs) : "",
-            suno_key: keys.suno ? encryptData(keys.suno) : ""
+            suno_key: keys.suno ? encryptData(keys.suno) : "",
+            groq_key: keys.groq ? encryptData(keys.groq) : ""
         };
         await apiFetch('/user/apikeys', { method: 'POST', body: JSON.stringify(payload) });
         const session = await restoreSession();

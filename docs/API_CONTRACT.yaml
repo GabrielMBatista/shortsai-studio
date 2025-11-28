@@ -1,13 +1,13 @@
 openapi: 3.0.3
 info:
-  title: ShortsAI Studio API
-  description: API contract for the ShortsAI automated video generator backend.
+  title: API do ShortsAI Studio
+  description: Contrato de API para o backend do gerador de vídeo automatizado ShortsAI.
   version: 1.0.0
 servers:
   - url: http://localhost:3000/api
-    description: Production Server
+    description: Servidor de Produção
   - url: http://localhost:3000/api
-    description: Local Development
+    description: Desenvolvimento Local
 
 components:
   schemas:
@@ -58,11 +58,11 @@ components:
           type: array
           items:
             type: string
-          description: List of Character UUIDs used for visual consistency.
+          description: Lista de UUIDs de Personagens usados para consistência visual.
         reference_image_url:
           type: string
           deprecated: true
-          description: Use characterIds instead.
+          description: Use characterIds em vez disso.
         scenes:
           type: array
           items:
@@ -139,7 +139,7 @@ components:
 paths:
   /users:
     post:
-      summary: Create or Get User
+      summary: Criar ou Obter Usuário
       requestBody:
         required: true
         content:
@@ -158,9 +158,9 @@ paths:
                   type: string
       responses:
         '200':
-          description: User created or retrieved
+          description: Usuário criado ou recuperado
     get:
-      summary: Get user by email
+      summary: Obter usuário por email
       parameters:
         - name: email
           in: query
@@ -168,11 +168,11 @@ paths:
             type: string
       responses:
         '200':
-          description: User details
+          description: Detalhes do usuário
 
   /user/apikeys:
     get:
-      summary: Get User API Keys (Masked/Encrypted)
+      summary: Obter Chaves de API do Usuário (Mascaradas/Criptografadas)
       parameters:
         - name: user_id
           in: query
@@ -181,7 +181,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Masked API keys
+          description: Chaves de API mascaradas
           content:
             application/json:
               schema:
@@ -194,7 +194,7 @@ paths:
                   suno_key:
                     type: string
     post:
-      summary: Save User API Keys
+      summary: Salvar Chaves de API do Usuário
       requestBody:
         required: true
         content:
@@ -213,11 +213,11 @@ paths:
                   type: string
       responses:
         '200':
-          description: API keys saved
+          description: Chaves de API salvas
 
   /users/quota:
     get:
-      summary: Get User Usage Quota
+      summary: Obter Cota de Uso do Usuário
       parameters:
         - name: user_id
           in: query
@@ -226,7 +226,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Current usage stats
+          description: Estatísticas de uso atuais
           content:
             application/json:
               schema:
@@ -234,7 +234,7 @@ paths:
 
   /usage:
     post:
-      summary: Log API Usage (Client-reported)
+      summary: Registrar Uso da API (Reportado pelo Cliente)
       requestBody:
         required: true
         content:
@@ -261,11 +261,11 @@ paths:
                   type: string
       responses:
         '201':
-          description: Log saved
+          description: Log salvo
 
   /projects:
     get:
-      summary: List user projects
+      summary: Listar projetos do usuário
       parameters:
         - name: user_id
           in: query
@@ -274,7 +274,7 @@ paths:
             type: string
       responses:
         '200':
-          description: List of projects
+          description: Lista de projetos
           content:
             application/json:
               schema:
@@ -282,7 +282,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Project'
     post:
-      summary: Create a new project
+      summary: Criar um novo projeto
       requestBody:
         required: true
         content:
@@ -321,14 +321,14 @@ paths:
                   type: array
                   items:
                     type: string
-                  description: Array of Character UUIDs to link
+                  description: Array de UUIDs de Personagens para vincular
       responses:
         '200':
-          description: Project created (returns full project with ID)
+          description: Projeto criado (retorna projeto completo com ID)
 
   /projects/{id}:
     patch:
-      summary: Update project details
+      summary: Atualizar detalhes do projeto
       parameters:
         - in: path
           name: id
@@ -342,9 +342,9 @@ paths:
               $ref: '#/components/schemas/Project'
       responses:
         '200':
-          description: Project updated
+          description: Projeto atualizado
     delete:
-      summary: Delete a project
+      summary: Excluir um projeto
       parameters:
         - in: path
           name: id
@@ -353,11 +353,11 @@ paths:
             type: string
       responses:
         '200':
-          description: Project deleted
+          description: Projeto excluído
 
   /scenes:
     post:
-      summary: Create a scene
+      summary: Criar uma cena
       requestBody:
         content:
           application/json:
@@ -381,11 +381,11 @@ paths:
                   type: string
       responses:
         '200':
-          description: Scene created
+          description: Cena criada
 
   /scenes/{id}:
     patch:
-      summary: Update scene assets and content
+      summary: Atualizar assets e conteúdo da cena
       parameters:
         - in: path
           name: id
@@ -400,10 +400,10 @@ paths:
               properties:
                 visual_description:
                   type: string
-                  description: Updated visual prompt
+                  description: Prompt visual atualizado
                 narration:
                   type: string
-                  description: Updated narration text
+                  description: Texto de narração atualizado
                 duration_seconds:
                   type: number
                 image_url:
@@ -416,11 +416,11 @@ paths:
                   type: string
       responses:
         '200':
-          description: Scene updated
+          description: Cena atualizada
 
   /characters:
     get:
-      summary: Get user character library
+      summary: Obter biblioteca de personagens do usuário
       parameters:
         - name: user_id
           in: query
@@ -429,7 +429,7 @@ paths:
             type: string
       responses:
         '200':
-          description: List of characters
+          description: Lista de personagens
           content:
             application/json:
               schema:
@@ -437,7 +437,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Character'
     post:
-      summary: Save a new character
+      summary: Salvar um novo personagem
       requestBody:
         content:
           application/json:
@@ -457,7 +457,7 @@ paths:
                     type: string
       responses:
         '201':
-          description: Character saved
+          description: Personagem salvo
 
   /characters/{id}:
     delete:
@@ -469,4 +469,4 @@ paths:
             type: string
       responses:
         '200':
-          description: Character deleted
+          description: Personagem excluído

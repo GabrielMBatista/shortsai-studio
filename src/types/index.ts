@@ -13,8 +13,10 @@ export enum AppStep {
 export type WorkflowAction =
   | 'generate_all'
   | 'generate_image'
+  | 'generate_all_images'
   | 'regenerate_image'
   | 'generate_audio'
+  | 'generate_all_audio'
   | 'regenerate_audio'
   | 'generate_music'
   | 'cancel'
@@ -33,6 +35,7 @@ export interface ApiKeys {
   gemini?: string; // User specific key
   elevenlabs?: string;
   suno?: string;
+  groq?: string;
 }
 
 export interface User {
@@ -79,9 +82,10 @@ export interface Scene {
   imageAttempts?: number;
   audioAttempts?: number;
   errorMessage?: string;
+  wordTimings?: { word: string; start: number; end: number }[];
 }
 
-export type TTSProvider = 'gemini' | 'elevenlabs';
+export type TTSProvider = 'gemini' | 'elevenlabs' | 'groq';
 
 export interface ReferenceCharacter {
   id?: string; // Added ID for backend reference
@@ -226,6 +230,28 @@ export const ELEVEN_LABS_VOICES: Voice[] = [
     labels: { accent: 'american', gender: 'male' },
     previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ODq5zmih8GrVes37Dizj/07545b77-3e1b-4020-ac3b-00772714a84d.mp3'
   },
+];
+
+export const GROQ_VOICES: Voice[] = [
+  { name: 'Arista-PlayAI', label: 'Arista', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Atlas-PlayAI', label: 'Atlas', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Basil-PlayAI', label: 'Basil', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Briggs-PlayAI', label: 'Briggs', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Calum-PlayAI', label: 'Calum', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Celeste-PlayAI', label: 'Celeste', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Cheyenne-PlayAI', label: 'Cheyenne', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Chip-PlayAI', label: 'Chip', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Cillian-PlayAI', label: 'Cillian', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Deedee-PlayAI', label: 'Deedee', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Fritz-PlayAI', label: 'Fritz', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Gail-PlayAI', label: 'Gail', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Indigo-PlayAI', label: 'Indigo', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Mamaw-PlayAI', label: 'Mamaw', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Mason-PlayAI', label: 'Mason', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Mikail-PlayAI', label: 'Mikail', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Mitch-PlayAI', label: 'Mitch', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Quinn-PlayAI', label: 'Quinn', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Thunder-PlayAI', label: 'Thunder', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
 ];
 
 export const AVAILABLE_LANGUAGES = [

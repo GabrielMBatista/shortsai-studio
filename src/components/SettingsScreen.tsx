@@ -13,6 +13,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdateUser }) =
   const [geminiKey, setGeminiKey] = useState('');
   const [elevenLabsKey, setElevenLabsKey] = useState('');
   const [sunoKey, setSunoKey] = useState('');
+  const [groqKey, setGroqKey] = useState('');
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -20,6 +21,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdateUser }) =
     if (user.apiKeys?.gemini) setGeminiKey(user.apiKeys.gemini);
     if (user.apiKeys?.elevenlabs) setElevenLabsKey(user.apiKeys.elevenlabs);
     if (user.apiKeys?.suno) setSunoKey(user.apiKeys.suno);
+    if (user.apiKeys?.groq) setGroqKey(user.apiKeys.groq);
   }, [user]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -29,7 +31,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdateUser }) =
       const newKeys: ApiKeys = {
         gemini: geminiKey.trim(),
         elevenlabs: elevenLabsKey.trim(),
-        suno: sunoKey.trim()
+        suno: sunoKey.trim(),
+        groq: groqKey.trim()
       };
       const updatedUser = await updateUserApiKeys(user.id, newKeys);
       if (updatedUser) {
@@ -80,6 +83,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdateUser }) =
                 </div>
               </>
             )}
+
+            <div className="w-full h-px bg-slate-700/50"></div>
+            <div>
+              <label htmlFor="groqKey" className="block text-sm font-medium text-slate-300 mb-2">Groq API Key (Optional)</label>
+              <input id="groqKey" name="groqKey" type="password" value={groqKey} onChange={(e) => setGroqKey(e.target.value)} placeholder="gsk_..." className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-4 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+              <p className="text-xs text-slate-500 mt-2">Used for fast TTS via PlayAI models.</p>
+            </div>
             <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mt-8"><ShieldAlert className="w-5 h-5 text-yellow-500 flex-shrink-0" /><p className="text-sm text-yellow-200/80">Keys are encrypted client-side and stored securely. They are only decrypted for API calls.</p></div>
             <div className="flex justify-end pt-4">
               <button type="submit" disabled={isSaving} className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-wait text-white font-bold py-3 px-8 rounded-lg shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition-all">
