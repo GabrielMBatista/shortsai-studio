@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AppStep, VideoProject, User, GOOGLE_CLIENT_ID } from './types';
+import { AppStep, VideoProject, User } from './types';
 import InputSection from './components/InputSection';
 import ScriptView from './components/ScriptView';
 import VideoPlayer from './components/VideoPlayer';
@@ -13,7 +13,7 @@ import { loginUser, logoutUser, restoreSession, saveProject, getProject } from '
 import { Film, LogOut, ChevronLeft } from 'lucide-react';
 import { useVideoGeneration } from './hooks/useVideoGeneration';
 import { useProjects } from './hooks/useProjects';
-import { GoogleOAuthProvider } from '@react-oauth/google';
+
 
 const App: React.FC = () => {
     // Global State
@@ -197,14 +197,6 @@ const App: React.FC = () => {
 
     // --- Render ---
     if (step === AppStep.AUTH) {
-        if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.trim() !== "") {
-            return (
-                <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-                    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-                    <AuthScreen onLogin={handleLogin} />
-                </GoogleOAuthProvider>
-            );
-        }
         return (
             <>
                 {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

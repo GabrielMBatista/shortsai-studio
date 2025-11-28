@@ -2,7 +2,7 @@
 import { User, VideoProject, ApiKeys, SavedCharacter, Scene, UsageLog, BackendProjectStatus } from '../types';
 import { encryptData, decryptData } from '../utils/security';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
 const SESSION_ID_KEY = 'shortsai_user_id';
 
 // --- Global User Cache ---
@@ -23,6 +23,7 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
         const res = await fetch(`${API_BASE_URL}${endpoint}`, {
             ...options,
             headers,
+            credentials: 'include', // Ensure cookies are sent
         });
 
         if (!res.ok) {
@@ -45,6 +46,41 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
 
 // --- Auth & Session Management ---
 export const restoreSession = async (): Promise<User | null> => {
+    // Try server session first
+    try {
+        const session = await apiFetch('/auth/session');
+        if (session?.user?.email) {
+            const users = await apiFetch(`/users?email=${encodeURIComponent(session.user.email)}`);
+            const userFromApi = Array.isArray(users) ? users[0] : users;
+
+            if (userFromApi) {
+                const userId = userFromApi.id;
+                const keys: ApiKeys = {};
+                try {
+                    const remoteKeys = await apiFetch(`/user/apikeys?user_id=${userId}`);
+                    if (remoteKeys) {
+                        if (remoteKeys.gemini_key) keys.gemini = decryptData(remoteKeys.gemini_key);
+                        if (remoteKeys.elevenlabs_key) keys.elevenlabs = decryptData(remoteKeys.elevenlabs_key);
+                        if (remoteKeys.suno_key) keys.suno = decryptData(remoteKeys.suno_key);
+                        if (remoteKeys.groq_key) keys.groq = decryptData(remoteKeys.groq_key);
+                    }
+                } catch (e) { }
+
+                const user = {
+                    id: userId,
+                    name: userFromApi.name || session.user.name,
+                    email: userFromApi.email,
+                    avatar: userFromApi.avatar_url || session.user.image,
+                    apiKeys: keys
+                };
+                currentUserCache = user;
+                return user;
+            }
+        }
+    } catch (e) {
+        // Session check failed, fall through to local storage
+    }
+
     const storedId = localStorage.getItem(SESSION_ID_KEY);
     if (!storedId) {
         currentUserCache = null;
@@ -143,9 +179,21 @@ export const loginUser = async (email: string, name: string, avatar: string, id?
     return user!;
 };
 
-export const logoutUser = () => {
-    localStorage.removeItem(SESSION_ID_KEY);
-    currentUserCache = null;
+export const logoutUser = async () => {
+    try {
+        // Call NextAuth signout endpoint
+        // We use window.location.href to ensure a full redirect and cookie clearing
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+
+        // Clear local state first
+        localStorage.removeItem(SESSION_ID_KEY);
+        currentUserCache = null;
+
+        // Redirect to signout
+        window.location.href = `${apiUrl}/auth/signout?callbackUrl=http://localhost:3000`;
+    } catch (e) {
+        console.error("Logout failed", e);
+    }
 };
 
 export const updateUserApiKeys = async (userId: string, keys: ApiKeys): Promise<User | null> => {

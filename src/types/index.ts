@@ -26,10 +26,10 @@ export type WorkflowAction =
 
 // Feature Flags
 export const IS_SUNO_ENABLED = Boolean(process.env.ENABLE_SUNO);
-export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 
-// Force Demo Login if explicitly set OR if Google Client ID is missing/empty
-export const IS_DEMO_LOGIN = (process.env.USE_DEMO_LOGIN as unknown) === true || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.trim() === "";
+
+// Force Demo Login if explicitly set
+export const IS_DEMO_LOGIN = (process.env.USE_DEMO_LOGIN as unknown) === true;
 
 export interface ApiKeys {
   gemini?: string; // User specific key
