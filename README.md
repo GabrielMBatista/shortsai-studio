@@ -11,7 +11,7 @@ O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em v�
 - **Director's Eye (Vision Analysis)**: Analisa fotos de personagens carregadas pelo usuário para extrair características físicas (cor dos olhos, cabelo, formato do rosto) e garantir consistência visual.
 - **AI Character Optimization**: Gera automaticamente uma "Character Sheet" (Headshot neutro) antes de criar as cenas, evitando alucinações visuais.
 - **Geração de Imagens**: Criação de storyboards 9:16 (`gemini-2.5-flash-image`).
-- **Narração Neural (TTS)**: Vozes ultra-realistas via Gemini ou ElevenLabs.
+- **Narração Neural (TTS)**: Vozes ultra-realistas via Gemini, ElevenLabs ou Groq (Llama 3).
 
 ### 🏗️ Arquitetura & Engenharia
 - **Hybrid Sync Engine**: 
@@ -58,7 +58,7 @@ O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em v�
 4.  Acesse `http://localhost:3000`.
 
 ### Autenticação & Backend
-O projeto vem configurado para conectar-se à API de produção (`shortsai-api.vercel.app`) ou funcionar offline.
+O projeto vem configurado por padrão para rodar localmente (`localhost:3000`). Para produção, basta apontar a variável de ambiente para a URL correta.
 *   **Modo Demo/Admin**: O sistema detecta automaticamente se não há `GOOGLE_CLIENT_ID` configurado e oferece um login de Administrador (conectado ao banco de dados de teste).
 *   **Google Auth**: Para habilitar login social real, configure `VITE_GOOGLE_CLIENT_ID` no seu `.env`.
 
