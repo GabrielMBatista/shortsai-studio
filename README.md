@@ -14,10 +14,9 @@ O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em v�
 - **Narração Neural (TTS)**: Vozes ultra-realistas via Gemini ou ElevenLabs.
 
 ### 🏗️ Arquitetura & Engenharia
-- **Hybrid Sync Engine**: 
-  - **Offline First**: Todos os dados são salvos instantaneamente no IndexedDB (suporta blobs grandes).
-  - **Cloud Sync**: Sincronização automática com API (`shortsai-api`) quando a conexão é restabelecida.
-  - **Real-time Updates (SSE)**: Conexão persistente (`EventSource`) para receber progresso granular do backend (ex: "Gerando áudio da cena 2...").
+- **Client-Server Sync**: 
+  - **API-First**: Comunicação direta com o backend REST (`shortsai-api`) para persistência de dados.
+  - **Real-time Updates (SSE)**: Conexão persistente (`EventSource`) via `workflowClient` para receber progresso granular do backend (ex: "Gerando áudio da cena 2...").
 - **Renderização Client-Side Profissional**: 
   - **MP4 (WebCodecs + mp4-muxer)**: Exportação de alta fidelidade usando encoders nativos do navegador (`VideoEncoder`/`AudioEncoder`). Garante áudio cristalino (AAC 48kHz) e vídeo H.264 sem artefatos, superando as limitações do `MediaRecorder` padrão.
   - **WebM (MediaRecorder)**: Suporte legado robusto para exportações rápidas em VP9/Opus.
@@ -72,9 +71,10 @@ O projeto vem configurado para conectar-se à API de produção (`shortsai-api.v
   /components     # UI Components (Dashboard, ScriptView, Player)
   /hooks          # Lógica de Estado (useVideoGeneration, useCharacterLibrary)
   /services       # Camada de Integração
-    - gemini.ts   # Lógica de Prompting e Vision
-    - storage.ts  # Hybrid Sync (API + IndexedDB)
-    - quota.ts    # Rate Limiting & HUD
+    - geminiService.ts   # Lógica de Prompting e Vision
+    - storageService.ts  # API Client & Session Management
+    - quotaService.ts    # Rate Limiting & HUD
+    - workflowClient.ts  # Real-time Updates (SSE)
   /utils          # Helpers de Segurança e Formatação
 /docs
   - API_CONTRACT.yaml   # Especificação OpenAPI do Backend

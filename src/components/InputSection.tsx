@@ -143,6 +143,12 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
                         setVoice(v[0].name);
                     }
                 }
+            } else if (ttsProvider === 'groq') {
+                const { GROQ_VOICES } = await import('../types');
+                setDynamicVoices(GROQ_VOICES);
+                if (!GROQ_VOICES.find(existing => existing.name === voice)) {
+                    setVoice(GROQ_VOICES[0].name);
+                }
             } else {
                 setDynamicVoices(AVAILABLE_VOICES);
                 if (!AVAILABLE_VOICES.find(existing => existing.name === voice)) {
@@ -374,8 +380,8 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
                                         onClick={() => setStyle(s)}
                                         disabled={isBusy}
                                         className={`relative group p-3 rounded-xl border text-left transition-all duration-200 h-20 flex flex-col justify-between ${isSelected
-                                                ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-900/50'
-                                                : 'bg-slate-900/50 border-slate-700 hover:border-indigo-500/50 hover:bg-slate-800'
+                                            ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-900/50'
+                                            : 'bg-slate-900/50 border-slate-700 hover:border-indigo-500/50 hover:bg-slate-800'
                                             }`}
                                     >
                                         <Icon className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-slate-500 group-hover:text-indigo-400'}`} />
@@ -500,9 +506,10 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
                         <SectionTitle icon={Mic} title="Audio Studio" subtitle="Select the narrator and soundtrack." />
 
                         {/* Provider Selector */}
-                        <div className="grid grid-cols-2 gap-1 bg-slate-900 p-1.5 rounded-xl mb-6">
+                        <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1.5 rounded-xl mb-6">
                             <button type="button" onClick={() => setTtsProvider('gemini')} disabled={isBusy} className={`py-2.5 rounded-lg text-xs font-bold transition-all ${ttsProvider === 'gemini' ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Google Gemini</button>
                             <button type="button" onClick={() => setTtsProvider('elevenlabs')} disabled={isBusy} className={`py-2.5 rounded-lg text-xs font-bold transition-all ${ttsProvider === 'elevenlabs' ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>ElevenLabs</button>
+                            <button type="button" onClick={() => setTtsProvider('groq')} disabled={isBusy} className={`py-2.5 rounded-lg text-xs font-bold transition-all ${ttsProvider === 'groq' ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Groq (PlayAI)</button>
                         </div>
 
                         <label htmlFor="voice" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Voice Model</label>

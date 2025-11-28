@@ -190,6 +190,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             duration={activeScene.durationSeconds || 5}
             currentTime={currentTime}
             show={true}
+            wordTimings={activeScene.wordTimings}
           />
         )}
 
