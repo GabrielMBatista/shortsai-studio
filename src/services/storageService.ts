@@ -2,7 +2,7 @@
 import { User, VideoProject, ApiKeys, SavedCharacter, Scene, UsageLog, BackendProjectStatus } from '../types';
 import { encryptData, decryptData } from '../utils/security';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 const SESSION_ID_KEY = 'shortsai_user_id';
 
 // --- Global User Cache ---
@@ -209,17 +209,17 @@ export const logoutUser = async () => {
             },
             body: new URLSearchParams({
                 csrfToken: csrfToken,
-                callbackUrl: 'http://localhost:3000'
+                callbackUrl: window.location.origin
             }),
             credentials: 'include' // IMPORTANT: Send session cookie so backend knows who to sign out
         });
 
         // 4. Force reload/redirect to ensure UI is clean
-        window.location.href = 'http://localhost:3000';
+        window.location.href = window.location.origin;
     } catch (e) {
         console.error("Logout failed", e);
         // Fallback
-        window.location.href = 'http://localhost:3000';
+        window.location.href = window.location.origin;
     }
 };
 

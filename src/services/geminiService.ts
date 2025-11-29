@@ -2,7 +2,7 @@
 import { Scene, ReferenceCharacter } from "../types";
 import { getCurrentUser } from "./storageService";
 
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3333';
+const API_URL = (import.meta.env.VITE_API_URL as string) || '';
 
 const getHeaders = () => {
   return {

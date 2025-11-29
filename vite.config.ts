@@ -12,6 +12,13 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3333',
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
     plugins: [react()],
     define: {
