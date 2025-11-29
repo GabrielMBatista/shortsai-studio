@@ -11,7 +11,7 @@ interface AuthScreenProps {
 // Sub-component to isolate the hook execution
 const GoogleLoginButton: React.FC<{ disabled: boolean }> = ({ disabled }) => {
   const apiUrl = import.meta.env.VITE_API_URL || '/api';
-  const callbackUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+  const callbackUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const [csrfToken, setCsrfToken] = useState<string>('');
 
   React.useEffect(() => {
