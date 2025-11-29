@@ -564,7 +564,10 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
                             </>
                         )}
                     </button>
-                    <p className="text-center text-slate-500 text-xs mt-4">Generates a detailed storyboard, script, and audio assets.</p>
+                    <p className="text-center text-slate-500 text-xs mt-4">
+                        Generates a detailed storyboard, script, and audio assets. <br />
+                        <span className="text-indigo-400 font-semibold">Daily Limit: 1 Video for Free Plan</span>
+                    </p>
                 </div>
             </form>
         </div>

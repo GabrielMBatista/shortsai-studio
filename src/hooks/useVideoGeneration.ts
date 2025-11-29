@@ -131,7 +131,11 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
       onStepChange(AppStep.SCRIPTING);
     } catch (e: any) {
       console.error(e);
-      onError(e.message || "Failed to generate script.");
+      if (e.message && e.message.includes('403')) {
+        onError("Daily limit reached! Upgrade to Pro for more.");
+      } else {
+        onError(e.message || "Failed to generate script.");
+      }
       throw e;
     }
   };
