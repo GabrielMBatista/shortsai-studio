@@ -41,11 +41,17 @@ O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em v�
     *   `GET/POST /projects`: Gerenciamento de projetos (Metadata + Cenas).
     *   `POST /characters`: Biblioteca de personagens consistentes.
 
-### Fluxo de Otimização de Personagem
-1.  Usuário faz upload de fotos de referência.
-2.  **Vision Analysis**: O Gemini analisa a imagem e extrai um texto descritivo denso ("homem, 30 anos, cicatriz no olho esquerdo...").
-3.  **Optimization**: O sistema gera uma nova imagem de referência "limpa" (fundo branco, iluminação neutra).
-4.  **Geração de Cenas**: Todas as cenas usam essa imagem otimizada + a descrição textual como condicionamento para o `gemini-2.5-flash-image`.
+### 🌍 Deploy em Produção (Docker/VPS)
+
+O frontend é servido via **Nginx**, que atua como um proxy reverso para o backend.
+
+*   **Configuração de Proxy**: O Nginx redireciona automaticamente requisições de `/api` para o container do backend (`http://api:3333`).
+*   **Variáveis de Ambiente**: O frontend usa caminhos relativos (`/api`), então não é necessário recompilar para mudar o domínio, mas é necessário configurar o CORS e Auth no backend corretamente.
+*   **Rebuild**: Sempre que alterar o código do frontend, reconstrua a imagem no VPS:
+    ```bash
+    docker-compose build studio
+    docker-compose up -d studio
+    ```
 
 ---
 
