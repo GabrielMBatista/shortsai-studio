@@ -33,6 +33,8 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
         role: 'USER', plan: 'FREE', isBlocked: false
     });
 
+    const [activeTab, setActiveTab] = useState<'overview' | 'users'>('overview');
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -98,13 +100,31 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-white mb-8 flex items-center gap-3">
-                <Shield className="w-8 h-8 text-indigo-500" /> Admin Dashboard
-            </h1>
+            <div className="flex items-center justify-between mb-8">
+                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                    <Shield className="w-8 h-8 text-indigo-500" /> Admin Dashboard
+                </h1>
 
-            {/* Stats Grid */}
-            {stats && (
-                <>
+                {/* Tabs */}
+                <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+                    <button
+                        onClick={() => setActiveTab('overview')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'overview' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        Overview
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('users')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        User Management
+                    </button>
+                </div>
+            </div>
+
+            {activeTab === 'overview' && stats && (
+                <div className="animate-fade-in">
+                    {/* Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
                             <div className="flex items-center gap-4">
@@ -183,110 +203,112 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
                             </div>
                         </div>
                     </div>
-                </>
+                </div>
             )}
 
-            {/* Users Table */}
-            <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-                <div className="p-6 border-b border-slate-700">
-                    <h2 className="text-xl font-bold text-white">User Management</h2>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-400">
-                        <thead className="bg-slate-900/50 text-xs uppercase font-semibold text-slate-500">
-                            <tr>
-                                <th className="px-6 py-4">User</th>
-                                <th className="px-6 py-4">Role</th>
-                                <th className="px-6 py-4">Plan</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4">Projects</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-700">
-                            {users.map(user => (
-                                <tr key={user.id} className="hover:bg-slate-700/30 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} className="w-8 h-8 rounded-full" />
-                                            <div>
-                                                <p className="font-medium text-white">{user.name}</p>
-                                                <p className="text-xs">{user.email}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {editingUser === user.id ? (
-                                            <select
-                                                value={editForm.role}
-                                                onChange={e => setEditForm({ ...editForm, role: e.target.value as Role })}
-                                                className="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white"
-                                            >
-                                                <option value="USER">USER</option>
-                                                <option value="ADMIN">ADMIN</option>
-                                            </select>
-                                        ) : (
-                                            <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === 'ADMIN' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-700 text-slate-300'}`}>
-                                                {user.role || 'USER'}
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {editingUser === user.id ? (
-                                            <select
-                                                value={editForm.plan}
-                                                onChange={e => setEditForm({ ...editForm, plan: e.target.value as SubscriptionPlan })}
-                                                className="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white"
-                                            >
-                                                <option value="FREE">FREE</option>
-                                                <option value="PRO">PRO</option>
-                                            </select>
-                                        ) : (
-                                            <span className={`px-2 py-1 rounded text-xs font-bold ${user.subscriptionPlan === 'PRO' ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' : 'bg-slate-700 text-slate-300'}`}>
-                                                {user.subscriptionPlan || 'FREE'}
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {editingUser === user.id ? (
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={editForm.isBlocked}
-                                                    onChange={e => setEditForm({ ...editForm, isBlocked: e.target.checked })}
-                                                    className="rounded bg-slate-900 border-slate-600 text-red-500 focus:ring-red-500"
-                                                />
-                                                <span className="text-xs">Blocked</span>
-                                            </label>
-                                        ) : (
-                                            user.isBlocked ? (
-                                                <span className="flex items-center gap-1 text-red-400 text-xs font-bold"><Ban className="w-3 h-3" /> Blocked</span>
-                                            ) : (
-                                                <span className="flex items-center gap-1 text-emerald-400 text-xs font-bold"><CheckCircle2 className="w-3 h-3" /> Active</span>
-                                            )
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {user._count?.projects || 0}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        {editingUser === user.id ? (
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button onClick={() => handleSave(user.id)} className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/30"><Save className="w-4 h-4" /></button>
-                                                <button onClick={() => setEditingUser(null)} className="p-1.5 bg-slate-700 text-slate-400 rounded hover:bg-slate-600"><X className="w-4 h-4" /></button>
-                                            </div>
-                                        ) : (
-                                            <button onClick={() => handleEditClick(user)} className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors">
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                    </td>
+            {activeTab === 'users' && (
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden animate-fade-in">
+                    <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-white">User Management</h2>
+                        <span className="text-sm text-slate-400">{users.length} registered users</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-slate-400">
+                            <thead className="bg-slate-900/50 text-xs uppercase font-semibold text-slate-500">
+                                <tr>
+                                    <th className="px-6 py-4">User</th>
+                                    <th className="px-6 py-4">Role</th>
+                                    <th className="px-6 py-4">Plan</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4">Projects</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-700">
+                                {users.map(user => (
+                                    <tr key={user.id} className="hover:bg-slate-700/30 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} className="w-8 h-8 rounded-full" />
+                                                <div>
+                                                    <p className="font-medium text-white">{user.name}</p>
+                                                    <p className="text-xs">{user.email}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {editingUser === user.id ? (
+                                                <select
+                                                    value={editForm.role}
+                                                    onChange={e => setEditForm({ ...editForm, role: e.target.value as Role })}
+                                                    className="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white"
+                                                >
+                                                    <option value="USER">USER</option>
+                                                    <option value="ADMIN">ADMIN</option>
+                                                </select>
+                                            ) : (
+                                                <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === 'ADMIN' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-700 text-slate-300'}`}>
+                                                    {user.role || 'USER'}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {editingUser === user.id ? (
+                                                <select
+                                                    value={editForm.plan}
+                                                    onChange={e => setEditForm({ ...editForm, plan: e.target.value as SubscriptionPlan })}
+                                                    className="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white"
+                                                >
+                                                    <option value="FREE">FREE</option>
+                                                    <option value="PRO">PRO</option>
+                                                </select>
+                                            ) : (
+                                                <span className={`px-2 py-1 rounded text-xs font-bold ${user.subscriptionPlan === 'PRO' ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                                                    {user.subscriptionPlan || 'FREE'}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {editingUser === user.id ? (
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={editForm.isBlocked}
+                                                        onChange={e => setEditForm({ ...editForm, isBlocked: e.target.checked })}
+                                                        className="rounded bg-slate-900 border-slate-600 text-red-500 focus:ring-red-500"
+                                                    />
+                                                    <span className="text-xs">Blocked</span>
+                                                </label>
+                                            ) : (
+                                                user.isBlocked ? (
+                                                    <span className="flex items-center gap-1 text-red-400 text-xs font-bold"><Ban className="w-3 h-3" /> Blocked</span>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 text-emerald-400 text-xs font-bold"><CheckCircle2 className="w-3 h-3" /> Active</span>
+                                                )
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {user._count?.projects || 0}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {editingUser === user.id ? (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button onClick={() => handleSave(user.id)} className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/30"><Save className="w-4 h-4" /></button>
+                                                    <button onClick={() => setEditingUser(null)} className="p-1.5 bg-slate-700 text-slate-400 rounded hover:bg-slate-600"><X className="w-4 h-4" /></button>
+                                                </div>
+                                            ) : (
+                                                <button onClick={() => handleEditClick(user)} className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors">
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

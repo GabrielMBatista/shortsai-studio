@@ -40,6 +40,7 @@ export interface ApiKeys {
 }
 
 export type Role = 'USER' | 'ADMIN';
+export type SubscriptionPlan = 'FREE' | 'PRO';
 
 export interface User {
   id: string;
