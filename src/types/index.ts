@@ -180,14 +180,16 @@ export interface Voice {
   provider: TTSProvider;
   previewUrl?: string;
   labels?: any;
+  language?: string; // Primary language
+  supportedLanguages?: string[]; // List of supported language codes
 }
 
 export const AVAILABLE_VOICES: Voice[] = [
-  { name: 'Kore', label: 'Kore', gender: 'Female', description: 'Calm, soothing, nature documentary style.', provider: 'gemini' },
-  { name: 'Zephyr', label: 'Zephyr', gender: 'Female', description: 'Energetic, polished, news anchor style.', provider: 'gemini' },
-  { name: 'Puck', label: 'Puck', gender: 'Male', description: 'Soft, slightly British, storytelling style.', provider: 'gemini' },
-  { name: 'Charon', label: 'Charon', gender: 'Male', description: 'Deep, authoritative, movie trailer style.', provider: 'gemini' },
-  { name: 'Fenrir', label: 'Fenrir', gender: 'Male', description: 'Intense, fast-paced, gaming/tech style.', provider: 'gemini' },
+  { name: 'Kore', label: 'Kore', gender: 'Female', description: 'Calm, soothing, nature documentary style.', provider: 'gemini', supportedLanguages: ['en', 'pt-BR', 'es', 'fr', 'de', 'it', 'ja', 'ko'] },
+  { name: 'Zephyr', label: 'Zephyr', gender: 'Female', description: 'Energetic, polished, news anchor style.', provider: 'gemini', supportedLanguages: ['en', 'pt-BR', 'es', 'fr', 'de', 'it', 'ja', 'ko'] },
+  { name: 'Puck', label: 'Puck', gender: 'Male', description: 'Soft, slightly British, storytelling style.', provider: 'gemini', supportedLanguages: ['en', 'pt-BR', 'es', 'fr', 'de', 'it', 'ja', 'ko'] },
+  { name: 'Charon', label: 'Charon', gender: 'Male', description: 'Deep, authoritative, movie trailer style.', provider: 'gemini', supportedLanguages: ['en', 'pt-BR', 'es', 'fr', 'de', 'it', 'ja', 'ko'] },
+  { name: 'Fenrir', label: 'Fenrir', gender: 'Male', description: 'Intense, fast-paced, gaming/tech style.', provider: 'gemini', supportedLanguages: ['en', 'pt-BR', 'es', 'fr', 'de', 'it', 'ja', 'ko'] },
 ];
 
 // ID mapping for ElevenLabs
@@ -199,7 +201,8 @@ export const ELEVEN_LABS_VOICES: Voice[] = [
     description: 'American, calm, narration.',
     provider: 'elevenlabs',
     labels: { accent: 'american', gender: 'female' },
-    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/21m00Tcm4TlvDq8ikWAM/6945037e-6169-4505-b3eb-5110df5c6351.mp3'
+    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/21m00Tcm4TlvDq8ikWAM/6945037e-6169-4505-b3eb-5110df5c6351.mp3',
+    supportedLanguages: ['en']
   },
   {
     name: 'AZnzlk1XvdvUeBnXmlld',
@@ -208,7 +211,8 @@ export const ELEVEN_LABS_VOICES: Voice[] = [
     description: 'Strong, emphatic, storytelling.',
     provider: 'elevenlabs',
     labels: { accent: 'american', gender: 'female' },
-    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/AZnzlk1XvdvUeBnXmlld/50381567-ff7b-4d48-9617-147b38c20352.mp3'
+    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/AZnzlk1XvdvUeBnXmlld/50381567-ff7b-4d48-9617-147b38c20352.mp3',
+    supportedLanguages: ['en']
   },
   {
     name: 'ErXwobaYiN019PkySvjV',
@@ -217,7 +221,8 @@ export const ELEVEN_LABS_VOICES: Voice[] = [
     description: 'American, well-rounded, narration.',
     provider: 'elevenlabs',
     labels: { accent: 'american', gender: 'male' },
-    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ErXwobaYiN019PkySvjV/38d60155-3883-49d7-9e7b-ebf4236b281b.mp3'
+    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ErXwobaYiN019PkySvjV/38d60155-3883-49d7-9e7b-ebf4236b281b.mp3',
+    supportedLanguages: ['en']
   },
   {
     name: 'TxGEqnHWrfWFTfGW9XjX',
@@ -226,7 +231,8 @@ export const ELEVEN_LABS_VOICES: Voice[] = [
     description: 'Deep, resonant, warm.',
     provider: 'elevenlabs',
     labels: { accent: 'american', gender: 'male' },
-    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/TxGEqnHWrfWFTfGW9XjX/44f506e7-0335-46f9-9524-814d9b62788d.mp3'
+    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/TxGEqnHWrfWFTfGW9XjX/44f506e7-0335-46f9-9524-814d9b62788d.mp3',
+    supportedLanguages: ['en']
   },
   {
     name: 'ODq5zmih8GrVes37Dizj',
@@ -235,30 +241,31 @@ export const ELEVEN_LABS_VOICES: Voice[] = [
     description: 'Punchy, energetic, movie trailer.',
     provider: 'elevenlabs',
     labels: { accent: 'american', gender: 'male' },
-    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ODq5zmih8GrVes37Dizj/07545b77-3e1b-4020-ac3b-00772714a84d.mp3'
+    previewUrl: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ODq5zmih8GrVes37Dizj/07545b77-3e1b-4020-ac3b-00772714a84d.mp3',
+    supportedLanguages: ['en']
   },
 ];
 
 export const GROQ_VOICES: Voice[] = [
-  { name: 'Arista-PlayAI', label: 'Arista', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Atlas-PlayAI', label: 'Atlas', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Basil-PlayAI', label: 'Basil', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Briggs-PlayAI', label: 'Briggs', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Calum-PlayAI', label: 'Calum', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Celeste-PlayAI', label: 'Celeste', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Cheyenne-PlayAI', label: 'Cheyenne', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Chip-PlayAI', label: 'Chip', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Cillian-PlayAI', label: 'Cillian', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Deedee-PlayAI', label: 'Deedee', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Fritz-PlayAI', label: 'Fritz', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Gail-PlayAI', label: 'Gail', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Indigo-PlayAI', label: 'Indigo', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Mamaw-PlayAI', label: 'Mamaw', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Mason-PlayAI', label: 'Mason', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Mikail-PlayAI', label: 'Mikail', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Mitch-PlayAI', label: 'Mitch', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Quinn-PlayAI', label: 'Quinn', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq' },
-  { name: 'Thunder-PlayAI', label: 'Thunder', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq' },
+  { name: 'Arista-PlayAI', label: 'Arista', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Atlas-PlayAI', label: 'Atlas', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Basil-PlayAI', label: 'Basil', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Briggs-PlayAI', label: 'Briggs', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Calum-PlayAI', label: 'Calum', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Celeste-PlayAI', label: 'Celeste', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Cheyenne-PlayAI', label: 'Cheyenne', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Chip-PlayAI', label: 'Chip', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Cillian-PlayAI', label: 'Cillian', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Deedee-PlayAI', label: 'Deedee', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Fritz-PlayAI', label: 'Fritz', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Gail-PlayAI', label: 'Gail', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Indigo-PlayAI', label: 'Indigo', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Mamaw-PlayAI', label: 'Mamaw', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Mason-PlayAI', label: 'Mason', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Mikail-PlayAI', label: 'Mikail', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Mitch-PlayAI', label: 'Mitch', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Quinn-PlayAI', label: 'Quinn', gender: 'Female', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
+  { name: 'Thunder-PlayAI', label: 'Thunder', gender: 'Male', description: 'Groq PlayAI Voice', provider: 'groq', supportedLanguages: ['en'] },
 ];
 
 export const AVAILABLE_LANGUAGES = [
