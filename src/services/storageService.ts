@@ -166,7 +166,9 @@ export const loginUser = async (email: string, name: string, avatar: string, id?
                 email: userFromApi.email,
                 avatar: userFromApi.avatar_url || avatar,
                 apiKeys: apiKeys,
-                subscriptionPlan: userFromApi.subscription_plan || 'FREE'
+                subscriptionPlan: userFromApi.subscription_plan || 'FREE',
+                role: userFromApi.role || 'USER',
+                isBlocked: userFromApi.is_blocked || false
             };
         }
     } catch (error) {

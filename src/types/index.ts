@@ -7,7 +7,8 @@ export enum AppStep {
   INPUT = 'INPUT',
   SCRIPTING = 'SCRIPTING',
   GENERATING_IMAGES = 'GENERATING_IMAGES',
-  PREVIEW = 'PREVIEW'
+  PREVIEW = 'PREVIEW',
+  ADMIN = 'ADMIN'
 }
 
 export type WorkflowAction =
@@ -38,6 +39,8 @@ export interface ApiKeys {
   groq?: string;
 }
 
+export type Role = 'USER' | 'ADMIN';
+
 export interface User {
   id: string;
   name: string;
@@ -45,6 +48,8 @@ export interface User {
   avatar: string;
   apiKeys: ApiKeys;
   subscriptionPlan?: 'FREE' | 'PRO';
+  role?: Role;
+  isBlocked?: boolean;
 }
 
 export interface SavedCharacter {

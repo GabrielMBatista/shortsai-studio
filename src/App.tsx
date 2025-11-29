@@ -11,7 +11,8 @@ import QuotaHud from './components/QuotaHud';
 import Toast, { ToastType } from './components/Toast';
 import ConfirmModal from './components/ConfirmModal';
 import { loginUser, logoutUser, restoreSession, saveProject, getProject } from './services/storageService';
-import { Film, LogOut, ChevronLeft } from 'lucide-react';
+import AdminDashboard from './components/AdminDashboard';
+import { Film, LogOut, ChevronLeft, Shield } from 'lucide-react';
 import { useVideoGeneration } from './hooks/useVideoGeneration';
 import { useProjects } from './hooks/useProjects';
 
@@ -236,6 +237,8 @@ const App: React.FC = () => {
                 confirmText="Delete Project"
             />
 
+
+
             {/* Navbar */}
             <nav className="border-b border-slate-800 bg-[#0f172a]/80 backdrop-blur sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -250,6 +253,15 @@ const App: React.FC = () => {
 
                     {currentUser && (
                         <div className="flex items-center gap-3 border-l border-slate-800 pl-4">
+                            {currentUser.role === 'ADMIN' && (
+                                <button
+                                    onClick={() => setStep(AppStep.ADMIN)}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${step === AppStep.ADMIN ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                >
+                                    <Shield className="w-4 h-4" />
+                                    <span className="text-sm font-bold">Admin</span>
+                                </button>
+                            )}
                             <button onClick={() => setStep(AppStep.SETTINGS)} className="flex items-center gap-2 group">
                                 <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-slate-600 transition-transform group-hover:scale-105 group-hover:border-indigo-500" />
                             </button>
@@ -260,6 +272,10 @@ const App: React.FC = () => {
             </nav>
 
             <main className="flex-grow flex flex-col relative">
+                {step === AppStep.ADMIN && currentUser && currentUser.role === 'ADMIN' && (
+                    <AdminDashboard currentUser={currentUser} />
+                )}
+
                 {step === AppStep.DASHBOARD && currentUser && (
                     <Dashboard
                         user={currentUser}
