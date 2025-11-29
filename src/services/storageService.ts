@@ -183,44 +183,43 @@ export const loginUser = async (email: string, name: string, avatar: string, id?
 };
 
 export const logoutUser = async () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+
+    // 1. Clear local state immediately
+    localStorage.removeItem(SESSION_ID_KEY);
+    currentUserCache = null;
+
+    // 2. Get CSRF Token
+    let csrfToken = '';
     try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
-
-        // 1. Clear local state immediately
-        localStorage.removeItem(SESSION_ID_KEY);
-        currentUserCache = null;
-
-        // 2. Get CSRF Token
-        let csrfToken = '';
-        try {
-            const csrfRes = await fetch(`${apiUrl}/auth/csrf`, { credentials: 'include' });
-            const csrfData = await csrfRes.json();
-            csrfToken = csrfData.csrfToken;
-        } catch (e) {
-            console.warn("Failed to fetch CSRF for logout", e);
-        }
-
-        // 3. Perform Logout via POST to avoid confirmation page
-        // We use fetch with URLSearchParams to simulate a form submission which NextAuth expects
-        await fetch(`${apiUrl}/auth/signout`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                csrfToken: csrfToken,
-                callbackUrl: window.location.origin
-            }),
-            credentials: 'include' // IMPORTANT: Send session cookie so backend knows who to sign out
-        });
-
-        // 4. Force reload/redirect to ensure UI is clean
-        window.location.href = window.location.origin;
+        const csrfRes = await fetch(`${apiUrl}/auth/csrf`, { credentials: 'include' });
+        const csrfData = await csrfRes.json();
+        csrfToken = csrfData.csrfToken;
     } catch (e) {
-        console.error("Logout failed", e);
-        // Fallback
-        window.location.href = window.location.origin;
+        console.warn("Failed to fetch CSRF for logout", e);
     }
+
+    // 3. Create and submit a form programmatically
+    // This forces a browser navigation POST, which handles cookies reliably across domains/ports
+    // and avoids issues where fetch might not update the cookie jar correctly in some CORS scenarios.
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `${apiUrl}/auth/signout`;
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfToken';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
+
+    const callbackInput = document.createElement('input');
+    callbackInput.type = 'hidden';
+    callbackInput.name = 'callbackUrl';
+    callbackInput.value = window.location.origin;
+    form.appendChild(callbackInput);
+
+    document.body.appendChild(form);
+    form.submit();
 };
 
 export const updateUserApiKeys = async (userId: string, keys: ApiKeys): Promise<User | null> => {
