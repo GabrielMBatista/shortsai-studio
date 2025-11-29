@@ -15,6 +15,7 @@ interface AdminStats {
     totalProjects: number;
     totalScenes: number;
     analytics: AnalyticsData[];
+    usageStats?: Record<string, { success: number, failed: number, total: number }>;
 }
 
 interface AdminUser extends User {
@@ -38,7 +39,38 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
 
     useEffect(() => {
         fetchData();
-    }, [dateRange]); // Refetch when dateRange changes
+    }, [dateRange]);
+
+    // Real-time updates via SSE
+    useEffect(() => {
+        const eventSource = new EventSource('/api/events/admin');
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'connected') {
+                    console.log('[AdminSSE] Connected');
+                } else if (data.type === 'USER_REGISTERED') {
+                    console.log('[AdminSSE] New User Registered');
+                    fetchData(); // Refresh all data to keep sync
+                } else if (data.type === 'PROJECT_CREATED') {
+                    console.log('[AdminSSE] New Project Created');
+                    fetchData(); // Refresh all data
+                }
+            } catch (e) {
+                console.error("[AdminSSE] Parse Error", e);
+            }
+        };
+
+        eventSource.onerror = (err) => {
+            console.error('[AdminSSE] Connection Error', err);
+            eventSource.close();
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [dateRange]); // Re-connect if dateRange changes (optional, but keeps fetch logic consistent)
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -217,6 +249,37 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
                             </div>
                         </div>
                     </div>
+
+                    {/* System Health / Failure Rates */}
+                    {stats.usageStats && Object.keys(stats.usageStats).length > 0 && (
+                        <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 mb-12">
+                            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                <Ban className="w-5 h-5 text-red-400" /> System Health (Failures vs Success)
+                            </h3>
+                            <div className="h-64 lg:h-96 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={Object.entries(stats.usageStats).map(([action, data]) => ({
+                                            name: action.replace('GENERATE_', ''),
+                                            success: data.success,
+                                            failed: data.failed
+                                        }))}
+                                        layout="vertical"
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                                        <XAxis type="number" stroke="#94a3b8" fontSize={12} />
+                                        <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={12} width={100} />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
+                                            cursor={{ fill: '#334155', opacity: 0.2 }}
+                                        />
+                                        <Bar dataKey="success" name="Success" fill="#10b981" stackId="a" radius={[0, 4, 4, 0]} />
+                                        <Bar dataKey="failed" name="Failed" fill="#ef4444" stackId="a" radius={[0, 4, 4, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
