@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Role, SubscriptionPlan } from '../types';
 import Loader from './Loader';
-import { Shield, Users, Film, Layers, Ban, CheckCircle2, Edit2, Save, X, TrendingUp, Loader2, Search, Filter, ArrowUp, ArrowDown } from 'lucide-react';
+import { Shield, Users, Film, Layers, Ban, CheckCircle2, Edit2, Save, X, TrendingUp, Loader2, Search, Filter, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 interface AnalyticsData {
@@ -15,7 +15,7 @@ interface AdminStats {
     totalProjects: number;
     totalScenes: number;
     analytics: AnalyticsData[];
-    usageStats?: Record<string, { success: number, failed: number, total: number }>;
+    usageStats?: Record<string, { success: number, failed: number, total: number, errors: { message: string, count: number }[] }>;
 }
 
 interface AdminUser extends User {
@@ -295,31 +295,69 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
 
                     {/* System Health / Failure Rates */}
                     {stats.usageStats && Object.keys(stats.usageStats).length > 0 && (
-                        <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 mb-12">
-                            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                                <Ban className="w-5 h-5 text-red-400" /> System Health (Failures vs Success)
-                            </h3>
-                            <div className="h-64 lg:h-96 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={Object.entries(stats.usageStats).map(([action, data]) => ({
-                                            name: action.replace('GENERATE_', ''),
-                                            success: data.success,
-                                            failed: data.failed
-                                        }))}
-                                        layout="vertical"
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
-                                        <XAxis type="number" stroke="#94a3b8" fontSize={12} />
-                                        <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={12} width={100} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
-                                            cursor={{ fill: '#334155', opacity: 0.2 }}
-                                        />
-                                        <Bar dataKey="success" name="Success" fill="#10b981" stackId="a" radius={[0, 4, 4, 0]} />
-                                        <Bar dataKey="failed" name="Failed" fill="#ef4444" stackId="a" radius={[0, 4, 4, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+                            <div className="lg:col-span-1 bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                    <Ban className="w-5 h-5 text-red-400" /> System Health
+                                </h3>
+                                <div className="h-64 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart
+                                            data={Object.entries(stats.usageStats).map(([action, data]) => ({
+                                                name: action.replace('GENERATE_', ''),
+                                                success: data.success,
+                                                failed: data.failed
+                                            }))}
+                                            layout="vertical"
+                                            margin={{ left: 0, right: 10, top: 0, bottom: 0 }}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                                            <XAxis type="number" stroke="#94a3b8" fontSize={12} />
+                                            <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={11} width={70} tick={{ fill: '#94a3b8' }} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
+                                                cursor={{ fill: '#334155', opacity: 0.2 }}
+                                            />
+                                            <Bar dataKey="success" name="Success" fill="#10b981" stackId="a" radius={[0, 4, 4, 0]} />
+                                            <Bar dataKey="failed" name="Failed" fill="#ef4444" stackId="a" radius={[0, 4, 4, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 overflow-hidden flex flex-col max-h-[500px]">
+                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <AlertTriangle className="w-5 h-5 text-amber-400" /> Top Failure Reasons
+                                </h3>
+                                <div className="overflow-y-auto flex-1 pr-2 space-y-4 custom-scrollbar">
+                                    {Object.entries(stats.usageStats).map(([action, data]) => (
+                                        data.errors && data.errors.length > 0 && (
+                                            <div key={action} className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
+                                                <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider border-b border-slate-700 pb-2">
+                                                    {action.replace('GENERATE_', '')}
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    {data.errors.map((err, idx) => (
+                                                        <div key={idx} className="flex justify-between items-start gap-4 text-sm group">
+                                                            <span className="text-red-400 font-mono bg-red-500/10 px-2 py-1 rounded text-xs break-all group-hover:bg-red-500/20 transition-colors flex-1">
+                                                                {err.message}
+                                                            </span>
+                                                            <span className="text-slate-500 whitespace-nowrap font-medium text-xs">
+                                                                {err.count}x
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )
+                                    ))}
+                                    {Object.values(stats.usageStats).every(d => !d.errors || d.errors.length === 0) && (
+                                        <div className="text-center py-12 text-slate-500">
+                                            <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-500/20" />
+                                            <p>No detailed error logs available for this period.</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
