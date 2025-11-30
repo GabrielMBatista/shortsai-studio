@@ -23,13 +23,28 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
     workflowClient.connect(project.id, (state) => {
       setWorkflowState(state);
 
-      // Sync project state
+      // Sync project state with smart merge
       setProject(prev => {
         if (!prev) return null;
+
+        // Merge backend scene updates with local edits
+        const mergedScenes = state.scenes.map((backendScene, idx) => {
+          const localScene = prev.scenes[idx];
+          if (!localScene) return backendScene;
+
+          // Preserve local edits for narration and visualDescription
+          // Only update status fields and URLs from backend
+          return {
+            ...backendScene,
+            narration: localScene.narration, // Keep local edit
+            visualDescription: localScene.visualDescription, // Keep local edit
+          };
+        });
+
         return {
           ...prev,
           status: state.projectStatus,
-          scenes: state.scenes,
+          scenes: mergedScenes,
           bgMusicStatus: state.music_status as any,
           bgMusicUrl: state.music_url
         };
