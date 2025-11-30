@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Role, SubscriptionPlan } from '../types';
 import Loader from './Loader';
-import { Shield, Users, Film, Layers, Ban, CheckCircle2, Edit2, Save, X, TrendingUp, Loader2 } from 'lucide-react';
+import { Shield, Users, Film, Layers, Ban, CheckCircle2, Edit2, Save, X, TrendingUp, Loader2, Search, Filter, ArrowUp, ArrowDown } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 interface AnalyticsData {
@@ -37,9 +37,29 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'users'>('overview');
     const [dateRange, setDateRange] = useState<number>(30);
 
+    // Filter & Sort State
+    const [filters, setFilters] = useState({
+        search: '',
+        role: 'ALL',
+        plan: 'ALL',
+        status: 'ALL'
+    });
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({
+        key: 'created_at',
+        direction: 'desc'
+    });
+
     useEffect(() => {
-        fetchData();
-    }, [dateRange]);
+        if (activeTab === 'users') {
+            fetchData();
+        }
+    }, [filters, sortConfig, activeTab]);
+
+    useEffect(() => {
+        if (activeTab === 'overview') {
+            fetchData();
+        }
+    }, [dateRange, activeTab]);
 
     // Real-time updates via SSE
     useEffect(() => {
@@ -75,9 +95,18 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
     const fetchData = async () => {
         setIsLoading(true);
         try {
+            const query = new URLSearchParams({
+                search: filters.search,
+                role: filters.role,
+                plan: filters.plan,
+                status: filters.status,
+                sort: sortConfig.key,
+                order: sortConfig.direction
+            }).toString();
+
             const [statsRes, usersRes] = await Promise.all([
-                fetch(`/api/admin/stats?days=${dateRange}`),
-                fetch('/api/admin/users')
+                activeTab === 'overview' ? fetch(`/api/admin/stats?days=${dateRange}`) : Promise.resolve({ ok: true, json: async () => stats }),
+                activeTab === 'users' ? fetch(`/api/admin/users?${query}`) : Promise.resolve({ ok: true, json: async () => users })
             ]);
 
             if (statsRes.ok) setStats(await statsRes.json());
@@ -129,7 +158,14 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
         }
     };
 
-    if (isLoading && !stats) return <Loader text="Loading Admin Dashboard..." />;
+    const handleSort = (key: string) => {
+        setSortConfig(current => ({
+            key,
+            direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc'
+        }));
+    };
+
+    if (isLoading && !stats && !users.length) return <Loader text="Loading Admin Dashboard..." />;
 
     return (
         <div className="w-full max-w-[1800px] mx-auto px-6 py-8">
@@ -294,17 +330,68 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
                 <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden animate-fade-in">
                     <div className="p-6 border-b border-slate-700 flex justify-between items-center">
                         <h2 className="text-xl font-bold text-white">User Management</h2>
-                        <span className="text-sm text-slate-400">{users.length} registered users</span>
+                        <span className="text-sm text-slate-400">{users.length} users found</span>
+                    </div>
+
+                    {/* Filters Toolbar */}
+                    <div className="p-4 bg-slate-900/30 border-b border-slate-700 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                            <input
+                                type="text"
+                                placeholder="Search users..."
+                                value={filters.search}
+                                onChange={e => setFilters({ ...filters, search: e.target.value })}
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+                        <select
+                            value={filters.role}
+                            onChange={e => setFilters({ ...filters, role: e.target.value })}
+                            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="ALL">All Roles</option>
+                            <option value="USER">User</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                        <select
+                            value={filters.plan}
+                            onChange={e => setFilters({ ...filters, plan: e.target.value })}
+                            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="ALL">All Plans</option>
+                            <option value="FREE">Free</option>
+                            <option value="PRO">Pro</option>
+                        </select>
+                        <select
+                            value={filters.status}
+                            onChange={e => setFilters({ ...filters, status: e.target.value })}
+                            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="ALL">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="blocked">Blocked</option>
+                        </select>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-slate-400">
                             <thead className="bg-slate-900/50 text-xs uppercase font-semibold text-slate-500">
                                 <tr>
-                                    <th className="px-6 py-4">User</th>
-                                    <th className="px-6 py-4">Role</th>
-                                    <th className="px-6 py-4">Plan</th>
-                                    <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4">Projects</th>
+                                    <th onClick={() => handleSort('name')} className="px-6 py-4 cursor-pointer hover:text-indigo-400 transition-colors">
+                                        <div className="flex items-center gap-1">User {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
+                                    </th>
+                                    <th onClick={() => handleSort('role')} className="px-6 py-4 cursor-pointer hover:text-indigo-400 transition-colors">
+                                        <div className="flex items-center gap-1">Role {sortConfig.key === 'role' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
+                                    </th>
+                                    <th onClick={() => handleSort('subscription_plan')} className="px-6 py-4 cursor-pointer hover:text-indigo-400 transition-colors">
+                                        <div className="flex items-center gap-1">Plan {sortConfig.key === 'subscription_plan' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
+                                    </th>
+                                    <th onClick={() => handleSort('is_blocked')} className="px-6 py-4 cursor-pointer hover:text-indigo-400 transition-colors">
+                                        <div className="flex items-center gap-1">Status {sortConfig.key === 'is_blocked' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
+                                    </th>
+                                    <th onClick={() => handleSort('projects')} className="px-6 py-4 cursor-pointer hover:text-indigo-400 transition-colors">
+                                        <div className="flex items-center gap-1">Projects {sortConfig.key === 'projects' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
+                                    </th>
                                     <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
