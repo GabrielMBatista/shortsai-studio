@@ -252,7 +252,14 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                         </div>
 
                         <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight break-words" title={generatedTitle || projectTopic}>
-                            {generatedTitle || projectTopic}
+                            {(() => {
+                                const text = generatedTitle || projectTopic || "Untitled Project";
+                                // Fallback if text looks like raw JSON or is too long (likely a raw prompt)
+                                if (text.trim().startsWith('{') || text.length > 200) {
+                                    return "Untitled Project";
+                                }
+                                return text;
+                            })()}
                         </h2>
                     </div>
 
