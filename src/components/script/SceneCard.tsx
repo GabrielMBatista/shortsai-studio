@@ -19,17 +19,32 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     const [isEditing, setIsEditing] = useState(false);
     const [narrationText, setNarrationText] = useState(scene.narration);
 
+    const [isEditingPrompt, setIsEditingPrompt] = useState(false);
+    const [promptText, setPromptText] = useState(scene.visualDescription);
+
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         setNarrationText(scene.narration);
     }, [scene.narration]);
+
+    useEffect(() => {
+        setPromptText(scene.visualDescription);
+    }, [scene.visualDescription]);
 
     const handleSaveNarration = () => {
         if (narrationText !== scene.narration) {
             onUpdateScene(sceneIndex, { narration: narrationText });
         }
         setIsEditing(false);
+    };
+
+    const handleSavePrompt = () => {
+        if (promptText !== scene.visualDescription) {
+            onUpdateScene(sceneIndex, { visualDescription: promptText });
+        }
+        setIsEditingPrompt(false);
     };
 
     const toggleEdit = () => {
@@ -43,9 +58,28 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
         }
     };
 
+    const toggleEditPrompt = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isEditingPrompt) {
+            handleSavePrompt();
+        } else {
+            setIsPromptOpen(true);
+            setIsEditingPrompt(true);
+            setTimeout(() => {
+                promptTextareaRef.current?.focus();
+            }, 50);
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             handleSaveNarration();
+        }
+    };
+
+    const handlePromptKeyDown = (e: React.KeyboardEvent) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            handleSavePrompt();
         }
     };
 
@@ -168,15 +202,31 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     </div>
 
                     <div className="mt-auto border-t border-slate-700/50 pt-3">
-                        <button onClick={() => setIsPromptOpen(!isPromptOpen)} className="flex items-center w-full text-left text-[10px] uppercase tracking-wider text-slate-500 font-bold hover:text-indigo-400 transition-colors mb-2">
-                            <span>Visual Prompt</span>{isPromptOpen ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-                        </button>
+                        <div className="flex items-center justify-between mb-2">
+                            <button onClick={() => setIsPromptOpen(!isPromptOpen)} className="flex items-center text-left text-[10px] uppercase tracking-wider text-slate-500 font-bold hover:text-indigo-400 transition-colors">
+                                <span>Visual Prompt</span>{isPromptOpen ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                            </button>
+                            <button
+                                onClick={toggleEditPrompt}
+                                disabled={isImageLoading}
+                                className={`p-1 rounded-md transition-all ${isEditingPrompt ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 hover:text-indigo-400 hover:bg-slate-700'} ${isImageLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {isEditingPrompt ? <Check className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
+                            </button>
+                        </div>
                         {isPromptOpen && (
                             <div className="animate-fade-in-up">
                                 <textarea
-                                    className="w-full text-xs text-slate-300 bg-slate-900/50 p-2.5 rounded border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-y min-h-[80px]"
-                                    value={scene.visualDescription}
-                                    onChange={(e) => onUpdateScene(sceneIndex, { visualDescription: e.target.value })}
+                                    ref={promptTextareaRef}
+                                    readOnly={!isEditingPrompt}
+                                    className={`w-full text-xs text-slate-300 p-2.5 rounded border resize-y min-h-[80px] transition-all ${isEditingPrompt
+                                        ? 'bg-slate-900/50 border border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-inner'
+                                        : 'bg-transparent border border-transparent cursor-default focus:ring-0 opacity-90'
+                                        }`}
+                                    value={promptText}
+                                    onChange={(e) => setPromptText(e.target.value)}
+                                    onBlur={handleSavePrompt}
+                                    onKeyDown={handlePromptKeyDown}
                                 />
                             </div>
                         )}
