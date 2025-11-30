@@ -85,7 +85,15 @@ const LogConsole: React.FC = () => {
                             type="text"
                             placeholder="Search logs (User, ID, Error)..."
                             value={filters.search}
-                            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFilters(prev => ({
+                                    ...prev,
+                                    search: val,
+                                    page: 1,
+                                    status: (val && prev.status === 'failed') ? 'ALL' : prev.status
+                                }));
+                            }}
                             className="bg-slate-950 border border-slate-800 rounded px-2.5 pl-8 py-1 text-xs text-slate-300 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 outline-none w-48 transition-all"
                         />
                     </div>
