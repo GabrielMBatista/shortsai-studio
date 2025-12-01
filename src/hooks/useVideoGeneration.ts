@@ -346,6 +346,17 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
         onError("Failed to remove scene");
       }
     },
+    updateProjectSettings: async (settings: { voiceName?: string; ttsProvider?: TTSProvider; language?: string }) => {
+      if (!project) return;
+      const updated = { ...project, ...settings };
+      setProject(updated); // Optimistic
+      try {
+        await saveProject(updated);
+      } catch (e) {
+        console.error("Failed to save project settings", e);
+        onError("Failed to save settings.");
+      }
+    },
     skipCurrentScene: () => project && user && workflowClient.sendCommand('skip_scene', project.id, user.id)
   };
 };
