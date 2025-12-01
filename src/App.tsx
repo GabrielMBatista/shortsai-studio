@@ -163,6 +163,12 @@ const App: React.FC = () => {
         }
     };
 
+    const handleExport = () => {
+        if (!project) return;
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+        window.open(`${apiUrl}/projects/${project.id}/export`, '_blank');
+    };
+
     // Autosave
     useEffect(() => {
         if (project && currentUser && step !== AppStep.DASHBOARD) {
@@ -334,6 +340,7 @@ const App: React.FC = () => {
                         onSkip={skipCurrentScene}
                         generationMessage={generationMessage}
                         onRemoveScene={removeScene}
+                        onExport={handleExport}
                     />
                 )}
 

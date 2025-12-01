@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED } from '../types';
-import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon } from 'lucide-react';
+import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download } from 'lucide-react';
 import { generatePreviewAudio, getVoices } from '../services/geminiService';
 import SceneCard from './script/SceneCard';
 import AudioPlayerButton from './common/AudioPlayerButton';
@@ -38,6 +38,7 @@ interface ScriptViewProps {
     onSkip?: () => void;
     generationMessage?: string;
     onRemoveScene: (index: number) => void;
+    onExport?: () => void;
 }
 
 const MetadataCard: React.FC<{ title?: string; description?: string }> = ({ title, description }) => {
@@ -115,7 +116,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     generatedTitle, generatedDescription,
     onStartImageGeneration, onGenerateImagesOnly, onGenerateAudioOnly, onRegenerateAudio, onRegenerateSceneImage, onRegenerateSceneAudio, onUpdateScene, isGeneratingImages, onCancelGeneration,
     canPreview, onPreview, includeMusic, musicStatus, musicUrl, musicPrompt, onRegenerateMusic,
-    isPaused, fatalError, onResume, onSkip, generationMessage, onRemoveScene
+    isPaused, fatalError, onResume, onSkip, generationMessage, onRemoveScene, onExport
 }) => {
     const [selectedProvider, setSelectedProvider] = useState<TTSProvider>(projectProvider);
     const [selectedVoice, setSelectedVoice] = useState(projectVoice);
@@ -381,6 +382,16 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                             <button type="button" onClick={onPreview} disabled={!canPreview} className={`flex items-center px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${canPreview ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40' : 'bg-slate-800 border border-slate-700 text-slate-600 cursor-not-allowed'}`}>
                                 <PlayCircle className="w-4 h-4 mr-2" /> Preview
                             </button>
+                            {onExport && (
+                                <button
+                                    type="button"
+                                    onClick={onExport}
+                                    className="flex items-center px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all shadow-sm active:scale-95"
+                                    title="Export Assets (ZIP)"
+                                >
+                                    <Download className="w-4 h-4 mr-2" /> Export
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
