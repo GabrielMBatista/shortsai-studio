@@ -20,6 +20,8 @@ export type WorkflowAction =
   | 'generate_all_audio'
   | 'regenerate_audio'
   | 'generate_music'
+  | 'generate_video'
+  | 'regenerate_video'
   | 'cancel'
   | 'pause'
   | 'resume'
@@ -84,6 +86,10 @@ export interface Scene {
   // SFX State
   sfxUrl?: string;
   sfxStatus: BackendSceneStatus;
+
+  // Video State (Veo 2)
+  videoUrl?: string;
+  videoStatus: BackendSceneStatus;
 
   // Orchestration Metadata
   imageAttempts?: number;
