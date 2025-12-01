@@ -389,7 +389,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                     className="flex items-center px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all shadow-sm active:scale-95"
                                     title="Export Assets (ZIP)"
                                 >
-                                    <Download className="w-4 h-4 mr-2" /> Export
+                                    <Download className="w-4 h-4 mr-2" /> Export Assets
                                 </button>
                             )}
                         </div>
