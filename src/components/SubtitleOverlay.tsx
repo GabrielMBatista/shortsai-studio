@@ -34,7 +34,7 @@ const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ text, duration, curre
   // Window configuration (Paged View)
   // Instead of sliding every word (which causes jumps), we show a static "page" of words
   // and only switch when the active word moves to the next page.
-  const WORDS_PER_PAGE = 10;
+  const WORDS_PER_PAGE = 6;
   const pageIndex = Math.floor(activeWordIndex / WORDS_PER_PAGE);
 
   let start = pageIndex * WORDS_PER_PAGE;
@@ -66,7 +66,7 @@ const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ text, duration, curre
               className="transition-colors duration-200"
               style={{
                 color: isActive ? SUBTITLE_STYLES.activeColor : 'rgba(255, 255, 255, 0.8)',
-                opacity: isActive ? 1 : 0.6,
+                opacity: isActive ? 1 : 0.1,
                 transform: 'scale(1)', // Explicitly no scale to prevent layout shifts
                 textShadow: isActive ? `0 0 10px ${SUBTITLE_STYLES.activeColor}` : 'none' // Glow instead of scale
               }}

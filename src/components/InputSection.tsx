@@ -130,6 +130,32 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
     }, [voice]);
     const [dynamicVoices, setDynamicVoices] = useState<Voice[]>(AVAILABLE_VOICES);
 
+    const [isLoadingVoices, setIsLoadingVoices] = useState(false);
+
+    useEffect(() => {
+        // Load Voices logic
+        const fetchVoices = async () => {
+            setIsLoadingVoices(true);
+            if (ttsProvider === 'elevenlabs') {
+                try {
+                    const v = await getVoices();
+                    setDynamicVoices(v);
+                } catch (e) {
+                    console.error("Failed to load voices", e);
+                }
+            } else if (ttsProvider === 'groq') {
+                const { GROQ_VOICES } = await import('../types');
+                setDynamicVoices(GROQ_VOICES);
+            } else {
+                setDynamicVoices(AVAILABLE_VOICES);
+            }
+            setIsLoadingVoices(false);
+        };
+        fetchVoices();
+    }, [ttsProvider]);
+
+
+
     // Filter voices based on language
     const filteredVoices = dynamicVoices.filter(v => {
         if (!language) return true;
@@ -144,14 +170,19 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
 
     // Ensure selected voice is valid when language/provider changes
     useEffect(() => {
+        if (isLoadingVoices) return; // Don't validate while loading
+
         if (filteredVoices.length > 0) {
             if (!filteredVoices.find(v => v.name === voice)) {
                 setVoice(filteredVoices[0].name);
             }
         } else {
-            setVoice('');
+            // Only reset if we are not loading and truly have no voices
+            if (!isLoadingVoices && dynamicVoices.length > 0) {
+                setVoice('');
+            }
         }
-    }, [language, ttsProvider, filteredVoices]);
+    }, [language, ttsProvider, filteredVoices, isLoadingVoices, dynamicVoices.length]);
 
     // Selection State
     const [selectedCharIds, setSelectedCharIds] = useState<string[]>([]);
@@ -168,23 +199,6 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
 
     // Confirm Delete Modal
     const [deleteCharModal, setDeleteCharModal] = useState<{ isOpen: boolean; charId: string | null }>({ isOpen: false, charId: null });
-
-    useEffect(() => {
-        // Load Voices logic
-        const fetchVoices = async () => {
-            if (ttsProvider === 'elevenlabs') {
-                const v = await getVoices();
-                setDynamicVoices(v);
-                // Selection logic moved to separate effect
-            } else if (ttsProvider === 'groq') {
-                const { GROQ_VOICES } = await import('../types');
-                setDynamicVoices(GROQ_VOICES);
-            } else {
-                setDynamicVoices(AVAILABLE_VOICES);
-            }
-        };
-        fetchVoices();
-    }, [ttsProvider]);
 
     const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {

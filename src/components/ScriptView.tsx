@@ -166,15 +166,28 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     });
 
     // Ensure selected voice is valid when language/provider changes
+    // Ensure selected voice is valid when language/provider changes
     useEffect(() => {
+        if (isLoadingVoices) return;
+
         if (filteredVoices.length > 0) {
+            // If current voice is not in the list, select the first one
             if (!filteredVoices.find(v => v.name === selectedVoice)) {
+                // Double check if we really want to reset. 
+                // Sometimes selectedVoice might be valid but not in the filtered list if language doesn't match?
+                // But here we are filtering by language.
+                // If the user changed language, we SHOULD reset.
+                // If the user changed provider, we SHOULD reset.
+                // But if we are just loading, we return early.
                 setSelectedVoice(filteredVoices[0].name);
             }
         } else {
-            setSelectedVoice('');
+            // Only reset if we are not loading and truly have no voices
+            if (!isLoadingVoices && availableVoices.length > 0) {
+                setSelectedVoice('');
+            }
         }
-    }, [selectedLanguage, selectedProvider, filteredVoices]);
+    }, [selectedLanguage, selectedProvider, filteredVoices, isLoadingVoices, availableVoices.length]);
 
     const completedImages = scenes.filter(s => s.imageStatus === 'completed').length;
     const completedAudio = scenes.filter(s => s.audioStatus === 'completed').length;
