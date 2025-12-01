@@ -19,7 +19,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     const [isPromptOpen, setIsPromptOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [narrationText, setNarrationText] = useState(scene.narration);
-    const [showVideo, setShowVideo] = useState(true); // Prefer video when available
+    const [showVideo, setShowVideo] = useState(!!scene.videoUrl); // Prefer video if available
 
     const [isEditingPrompt, setIsEditingPrompt] = useState(false);
     const [promptText, setPromptText] = useState(scene.visualDescription);
@@ -93,7 +93,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     // Check if both video and image are available for toggle
     const hasVideo = scene.videoStatus === 'completed' && scene.videoUrl;
     const hasImage = scene.imageStatus === 'completed' && scene.imageUrl;
-    const canToggle = hasVideo && hasImage;
+    const canToggle = (hasVideo || isVideoLoading) && hasImage;
 
     const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; type: 'image' | 'audio' | 'video' | null }>({ isOpen: false, type: null });
 
@@ -111,7 +111,9 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
         const force = true; // If we are here, we either confirmed or it wasn't completed yet (so force doesn't matter much, but let's be consistent)
         if (type === 'image') onRegenerateImage(sceneIndex, force);
         else if (type === 'audio' && onRegenerateAudio) onRegenerateAudio(sceneIndex, force);
-        else if (type === 'video' && onRegenerateVideo) onRegenerateVideo(sceneIndex, force);
+        else if (type === 'video' && onRegenerateVideo) {
+            onRegenerateVideo(sceneIndex, force);
+        }
         setModalConfig({ isOpen: false, type: null });
     };
 
@@ -138,10 +140,12 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                             muted
                             playsInline
                         />
+                    ) : showVideo && isVideoLoading ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-400 bg-slate-900/80 backdrop-blur-sm"><Loader2 className="w-8 h-8 animate-spin mb-2" /><span className="text-xs font-medium animate-pulse">Generating Video...</span></div>
                     ) : hasImage ? (
                         <img src={scene.imageUrl} alt={`Scene ${scene.sceneNumber}`} className="w-full h-full object-cover transition-opacity duration-500" />
-                    ) : isImageLoading || isVideoLoading ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-400 bg-slate-900/80 backdrop-blur-sm"><Loader2 className="w-8 h-8 animate-spin mb-2" /><span className="text-xs font-medium animate-pulse">{isVideoLoading ? 'Generating Video...' : 'Generating Image...'}</span></div>
+                    ) : isImageLoading ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-400 bg-slate-900/80 backdrop-blur-sm"><Loader2 className="w-8 h-8 animate-spin mb-2" /><span className="text-xs font-medium animate-pulse">Generating Image...</span></div>
                     ) : scene.imageStatus === 'error' || scene.videoStatus === 'error' ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-red-400 p-4 text-center text-sm bg-slate-900/80"><AlertCircle className="w-8 h-8 mb-2 mx-auto opacity-80" /><span>{scene.errorMessage || "Failed to load media."}</span></div>
                     ) : (
@@ -185,7 +189,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                 disabled={isVideoLoading}
                                 title="Animate with Veo 2"
                             >
-                                <Video className={`w-3.5 h-3.5 ${isVideoLoading ? 'animate-pulse' : ''}`} />
+                                {isVideoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
                             </button>
                         )}
                         <button
