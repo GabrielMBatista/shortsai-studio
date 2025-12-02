@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Scene } from '../types';
-import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer } from 'lucide-react';
+import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer, Clock } from 'lucide-react';
 import { useVideoExport } from '../hooks/useVideoExport';
 import SubtitleOverlay from './SubtitleOverlay';
 
@@ -39,6 +39,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     }
   }, []);
 
+  const [isMuted, setIsMuted] = useState(false);
+
   // Hook for Download Logic
   const {
     startExport,
@@ -47,7 +49,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     downloadProgress,
     downloadError,
     eta
-  } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, outroFile });
+  } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, outroFile, showSubtitles });
 
   // Reset state when scenes change
   useEffect(() => {
@@ -149,6 +151,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
   return (
     <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 md:p-8 animate-fade-in">
+      {/* Total Duration Badge */}
+      <div className="absolute top-6 left-6 z-50 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 text-xs font-medium text-white/90">
+        <Clock className="w-3.5 h-3.5 text-white/70" />
+        <span>{Math.round(validScenes.reduce((acc, s) => acc + (s.durationSeconds || 0), 0))}s</span>
+      </div>
+
       {/* Close Button */}
       <button
         onClick={onClose}
@@ -185,12 +193,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           onEnded={handleAudioEnded}
           onTimeUpdate={handleTimeUpdate}
           autoPlay={isPlaying}
+          muted={isMuted}
         />
         {bgMusicUrl && (
           <audio
             ref={musicRef}
             src={bgMusicUrl}
             loop
+            muted={isMuted}
           />
         )}
 
@@ -362,7 +372,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         <button onClick={handleDownloadClick} disabled={isDownloading} className={`p-3 rounded-full transition-colors flex items-center justify-center ${isDownloading ? 'text-slate-500 cursor-wait' : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'}`}><Download className="w-5 h-5" /></button>
         <div className="w-px h-6 bg-white/10 mx-1"></div>
         <button onClick={() => setShowSubtitles(!showSubtitles)} className={`p-3 rounded-full transition-colors ${showSubtitles ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>{showSubtitles ? <Captions className="w-5 h-5" /> : <CaptionsOff className="w-5 h-5" />}</button>
-        <div className={`p-3 transition-colors ${activeScene.audioUrl ? 'text-white' : 'text-slate-600'}`}>{activeScene.audioUrl ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}</div>
+        <button onClick={() => setIsMuted(!isMuted)} className={`p-3 transition-colors rounded-full hover:bg-white/10 ${!isMuted ? 'text-white' : 'text-slate-600'}`}>{!isMuted ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}</button>
       </div>
     </div >
   );

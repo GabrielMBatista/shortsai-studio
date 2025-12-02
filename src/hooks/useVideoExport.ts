@@ -9,9 +9,10 @@ interface UseVideoExportProps {
     bgMusicUrl?: string;
     title?: string;
     outroFile?: File | null;
+    showSubtitles?: boolean;
 }
 
-export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile }: UseVideoExportProps) => {
+export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubtitles = true }: UseVideoExportProps) => {
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState("");
     const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -595,7 +596,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile }: UseVide
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, w, h);
 
-        if (layout) {
+        if (showSubtitles && layout) {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.shadowColor = SUBTITLE_STYLES.shadowColor;

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED } from '../types';
-import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download, Plus } from 'lucide-react';
+import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download, Plus, Clock } from 'lucide-react';
 import { generatePreviewAudio, getVoices } from '../services/geminiService';
 import SceneCard from './script/SceneCard';
 import AudioPlayerButton from './common/AudioPlayerButton';
@@ -130,6 +130,20 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     const [previewState, setPreviewState] = useState<{ status: 'idle' | 'loading' | 'playing' }>({ status: 'idle' });
     const [showMusicPrompt, setShowMusicPrompt] = useState(false);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [isAddingScene, setIsAddingScene] = useState(false);
+    const prevSceneCount = useRef(scenes.length);
+
+    useEffect(() => {
+        if (scenes.length > prevSceneCount.current) {
+            setIsAddingScene(false);
+        }
+        prevSceneCount.current = scenes.length;
+    }, [scenes.length]);
+
+    const handleAddScene = () => {
+        setIsAddingScene(true);
+        if (onAddScene) onAddScene();
+    };
 
     const previewAudioRef = useRef<HTMLAudioElement | null>(null);
     const [availableVoices, setAvailableVoices] = useState<Voice[]>([]);
@@ -273,6 +287,10 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">{projectStyle}</span>
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-300 border border-blue-500/20">{projectLanguage}</span>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {Math.round(scenes.reduce((acc, s) => acc + (s.durationSeconds || 0), 0))}s Est.
+                            </span>
                         </div>
 
                         <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight break-words" title={generatedTitle || projectTopic}>
@@ -542,15 +560,18 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                             />
                         ))}
 
+
+
                         {onAddScene && (
                             <button
-                                onClick={onAddScene}
-                                className="flex flex-col items-center justify-center h-full min-h-[400px] bg-slate-800/30 border-2 border-dashed border-slate-700 rounded-2xl hover:bg-slate-800/50 hover:border-indigo-500/50 transition-all group"
+                                onClick={handleAddScene}
+                                disabled={isAddingScene}
+                                className={`flex flex-col items-center justify-center h-full min-h-[400px] bg-slate-800/30 border-2 border-dashed border-slate-700 rounded-2xl transition-all group ${isAddingScene ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-800/50 hover:border-indigo-500/50'}`}
                             >
                                 <div className="p-4 bg-slate-800 rounded-full mb-4 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">
-                                    <Plus className="w-8 h-8 text-slate-400 group-hover:text-indigo-400" />
+                                    {isAddingScene ? <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" /> : <Plus className="w-8 h-8 text-slate-400 group-hover:text-indigo-400" />}
                                 </div>
-                                <span className="text-slate-400 font-semibold group-hover:text-indigo-300">Add New Scene</span>
+                                <span className="text-slate-400 font-semibold group-hover:text-indigo-300">{isAddingScene ? 'Adding Scene...' : 'Add New Scene'}</span>
                             </button>
                         )}
                     </div>

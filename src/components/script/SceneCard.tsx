@@ -103,6 +103,19 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     const canToggle = (hasVideo || isVideoLoading) && hasImage;
 
     const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; type: 'image' | 'audio' | 'video' | null }>({ isOpen: false, type: null });
+    const [localLoading, setLocalLoading] = useState<{ image: boolean; audio: boolean; video: boolean }>({ image: false, audio: false, video: false });
+
+    useEffect(() => {
+        if (localLoading.image) setLocalLoading(prev => ({ ...prev, image: false }));
+    }, [scene.imageStatus]);
+
+    useEffect(() => {
+        if (localLoading.audio) setLocalLoading(prev => ({ ...prev, audio: false }));
+    }, [scene.audioStatus]);
+
+    useEffect(() => {
+        if (localLoading.video) setLocalLoading(prev => ({ ...prev, video: false }));
+    }, [scene.videoStatus]);
 
     const handleRegenClick = (type: 'image' | 'audio' | 'video') => {
         const isCompleted = type === 'image' ? scene.imageStatus === 'completed' : type === 'audio' ? scene.audioStatus === 'completed' : scene.videoStatus === 'completed';
@@ -115,7 +128,8 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     };
 
     const triggerRegeneration = (type: 'image' | 'audio' | 'video') => {
-        const force = true; // If we are here, we either confirmed or it wasn't completed yet (so force doesn't matter much, but let's be consistent)
+        setLocalLoading(prev => ({ ...prev, [type]: true }));
+        const force = true;
         if (type === 'image') onRegenerateImage(sceneIndex, force);
         else if (type === 'audio' && onRegenerateAudio) onRegenerateAudio(sceneIndex, force);
         else if (type === 'video' && onRegenerateVideo) {
@@ -159,6 +173,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                         <div className="absolute inset-0 flex items-center justify-center text-slate-700 bg-slate-900"><ImageIcon className="w-16 h-16 opacity-10" /></div>
                     )}
 
+                    {/* Top Left: Drag & Scene Info */}
                     <div className="absolute top-2 left-2 flex gap-2 items-center z-10">
                         {dragHandleProps && (
                             <div {...dragHandleProps} className="bg-black/60 hover:bg-slate-700 backdrop-blur p-1 rounded-md text-slate-400 hover:text-white cursor-grab active:cursor-grabbing border border-white/10 shadow-sm transition-colors">
@@ -168,6 +183,21 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                         <div className="bg-black/60 backdrop-blur px-2.5 py-1 rounded-md text-xs font-mono text-white pointer-events-none border border-white/10 shadow-sm">
                             Scene {scene.sceneNumber}
                         </div>
+                    </div>
+
+                    {/* Top Right: Delete */}
+                    <div className="absolute top-2 right-2 z-10">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onRemoveScene(sceneIndex); }}
+                            className="bg-black/60 hover:bg-red-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm cursor-pointer hover:scale-105"
+                            title="Remove Scene"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+
+                    {/* Bottom Left: Media Toggles */}
+                    <div className="absolute bottom-2 left-2 flex gap-2 items-center z-10">
                         {canToggle && (
                             <button
                                 onClick={(e) => {
@@ -176,49 +206,44 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                     setShowVideo(newShowVideo);
                                     onUpdateScene(sceneIndex, { mediaType: newShowVideo ? 'video' : 'image' });
                                 }}
-                                className="bg-black/60 hover:bg-purple-600/80 backdrop-blur px-2 py-0.5 rounded-md text-xs font-bold text-white transition-all border border-white/10 shadow-sm hover:scale-105"
+                                className="bg-black/60 hover:bg-purple-600/80 backdrop-blur px-2 py-1 rounded-md text-xs font-bold text-white transition-all border border-white/10 shadow-sm hover:scale-105"
                                 title={showVideo ? "Switch to Image" : "Switch to Video"}
                             >
                                 {showVideo ? '📹 VIDEO' : '🖼️ IMAGE'}
                             </button>
                         )}
                         {hasVideo && showVideo && (
-                            <div className="bg-purple-500/80 backdrop-blur px-2 py-0.5 rounded-md text-xs font-bold text-white pointer-events-none border border-purple-400/30 shadow-sm flex items-center gap-1">
+                            <div className="bg-purple-500/80 backdrop-blur px-2 py-1 rounded-md text-xs font-bold text-white pointer-events-none border border-purple-400/30 shadow-sm flex items-center gap-1">
                                 <Video className="w-3 h-3" /> VEO 2
                             </div>
                         )}
                     </div>
 
-                    {/* Controls Overlay */}
-                    <div className="absolute top-2 right-2 flex gap-2">
+                    {/* Bottom Right: Controls & Duration */}
+                    <div className="absolute bottom-2 right-2 flex gap-2 items-center z-10">
+                        <div className="bg-black/60 backdrop-blur px-2 py-1 rounded-md text-xs font-mono text-white flex items-center pointer-events-none border border-white/10 shadow-sm mr-1">
+                            <Clock className="w-3 h-3 mr-1.5 text-slate-300" /> {scene.durationSeconds}s
+                        </div>
+
                         <button
                             onClick={(e) => { e.stopPropagation(); handleRegenClick('image'); }}
-                            className={`bg-black/60 hover:bg-indigo-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm ${isImageLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-105'}`}
-                            disabled={isImageLoading}
+                            className={`bg-black/60 hover:bg-indigo-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm ${isImageLoading || localLoading.image ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-105'}`}
+                            disabled={isImageLoading || localLoading.image}
                             title="Regenerate Image"
                         >
-                            <RefreshCw className={`w-3.5 h-3.5 ${isImageLoading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-3.5 h-3.5 ${isImageLoading || localLoading.image ? 'animate-spin' : ''}`} />
                         </button>
+
                         {onRegenerateVideo && scene.imageStatus === 'completed' && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleRegenClick('video'); }}
-                                className={`bg-black/60 hover:bg-purple-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm ${isVideoLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-105'}`}
-                                disabled={isVideoLoading}
+                                className={`bg-black/60 hover:bg-purple-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm ${isVideoLoading || localLoading.video ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-105'}`}
+                                disabled={isVideoLoading || localLoading.video}
                                 title="Animate with Veo 2"
                             >
-                                {isVideoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
+                                {isVideoLoading || localLoading.video ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
                             </button>
                         )}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onRemoveScene(sceneIndex); }}
-                            className="bg-black/60 hover:bg-red-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm cursor-pointer hover:scale-105"
-                            title="Remove Scene"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="bg-black/60 backdrop-blur px-2 py-1 rounded-md text-xs font-mono text-white flex items-center pointer-events-none border border-white/10 shadow-sm">
-                            <Clock className="w-3 h-3 mr-1.5 text-slate-300" /> {scene.durationSeconds}s
-                        </div>
                     </div>
                 </div>
 
@@ -232,8 +257,8 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                 </h4>
                                 <button
                                     onClick={toggleEdit}
-                                    disabled={isAudioLoading}
-                                    className={`p-1 rounded-md transition-all ${isEditing ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 hover:text-indigo-400 hover:bg-slate-700'} ${isAudioLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={isAudioLoading || localLoading.audio}
+                                    className={`p-1 rounded-md transition-all ${isEditing ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 hover:text-indigo-400 hover:bg-slate-700'} ${isAudioLoading || localLoading.audio ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                     {isEditing ? <Check className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
                                 </button>
@@ -242,11 +267,11 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                 {onRegenerateAudio && (
                                     <button
                                         onClick={() => handleRegenClick('audio')}
-                                        disabled={isAudioLoading || isEditing}
-                                        className={`p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition-colors ${isAudioLoading || isEditing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        disabled={isAudioLoading || isEditing || localLoading.audio}
+                                        className={`p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition-colors ${isAudioLoading || isEditing || localLoading.audio ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         title="Regenerate Audio"
                                     >
-                                        <RefreshCw className={`w-3.5 h-3.5 ${isAudioLoading ? 'animate-spin' : ''}`} />
+                                        <RefreshCw className={`w-3.5 h-3.5 ${isAudioLoading || localLoading.audio ? 'animate-spin' : ''}`} />
                                     </button>
                                 )}
                                 <AudioPlayerButton audioUrl={scene.audioUrl} status={scene.audioStatus} />

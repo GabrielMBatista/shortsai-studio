@@ -375,16 +375,20 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
     addScene: async () => {
       if (!project) return;
 
-      const newSceneNumber = project.scenes.length + 1;
+      const maxSceneNumber = project.scenes.length > 0
+        ? Math.max(...project.scenes.map(s => s.sceneNumber))
+        : 0;
+      const newSceneNumber = maxSceneNumber + 1;
+
       const newScene: Scene = {
         sceneNumber: newSceneNumber,
         visualDescription: "Describe the visual for this scene...",
         narration: "Enter narration text here...",
         durationSeconds: 5,
-        imageStatus: 'pending',
-        audioStatus: 'pending',
-        videoStatus: 'pending',
-        sfxStatus: 'pending',
+        imageStatus: 'completed', // Set to completed to show placeholder instead of loader
+        audioStatus: 'completed',
+        videoStatus: 'completed',
+        sfxStatus: 'completed',
         mediaType: 'image'
       };
 
