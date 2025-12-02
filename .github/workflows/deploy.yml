@@ -22,15 +22,5 @@ jobs:
             # Pull latest changes
             git pull origin main || git pull origin master
             
-            # Navigate to the API folder (where docker-compose.yml is located)
-            # Adjust this relative path if your folder structure is different
-            cd ../shortsai-api
-            
-            # Restart Studio service only
-            # Force cleanup of potential zombie containers to avoid "No such container" errors
-            docker-compose stop studio || true
-            docker-compose rm -f studio || true
-            # Also clean up API state if it's desynchronized (fixes the specific error seen)
-            docker-compose rm -f api || true
-            
+            # Restart Studio service using its own compose file
             docker-compose up -d --build studio

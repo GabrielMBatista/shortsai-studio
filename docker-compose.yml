@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: shortsai-studio
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=/api
+    restart: always
+    networks:
+      - shortsai-network
+
+networks:
+  shortsai-network:
+    external: true
+    name: shortsai-network
