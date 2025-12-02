@@ -27,4 +27,10 @@ jobs:
             cd ../shortsai-api
             
             # Restart Studio service only
+            # Force cleanup of potential zombie containers to avoid "No such container" errors
+            docker-compose stop studio || true
+            docker-compose rm -f studio || true
+            # Also clean up API state if it's desynchronized (fixes the specific error seen)
+            docker-compose rm -f api || true
+            
             docker-compose up -d --build studio
