@@ -285,18 +285,17 @@ const ScriptView: React.FC<ScriptViewProps> = ({
 
             <header className="mb-8 space-y-6">
                 {/* 1. Global Settings Bar */}
-                <div className="bg-slate-900/60 backdrop-blur-md border border-slate-700/60 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 text-sm">
-                    <div className="flex items-center gap-4 flex-wrap">
-                        {/* Style Badge */}
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-indigo-300">
-                            <LayoutTemplate className="w-4 h-4" />
-                            <span className="font-medium">{projectStyle}</span>
+                {/* 1. Ultra-Compact Toolbar */}
+                <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-lg flex items-center justify-between px-3 py-2 text-xs text-slate-400 mb-4 overflow-x-auto whitespace-nowrap gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5 hover:text-indigo-300 transition-colors cursor-default" title="Visual Style">
+                            <LayoutTemplate className="w-3.5 h-3.5" />
+                            <span className="font-medium text-slate-300">{projectStyle}</span>
                         </div>
-
-                        {/* Duration Badge */}
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-300">
-                            <Clock className="w-4 h-4" />
-                            <span className="font-medium">
+                        <div className="w-px h-3 bg-slate-700/50"></div>
+                        <div className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors cursor-default" title="Estimated Duration">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span className="font-medium text-slate-300">
                                 {(() => {
                                     const totalSeconds = scenes.reduce((acc, s) => {
                                         if (s.durationSeconds && Number(s.durationSeconds) > 0) return acc + Number(s.durationSeconds);
@@ -305,16 +304,13 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                     }, 0);
                                     const minutes = Math.floor(totalSeconds / 60);
                                     const seconds = Math.round(totalSeconds % 60);
-                                    return `${minutes}:${seconds.toString().padStart(2, '0')} ${scenes.some(s => !s.durationSeconds) ? '(Est.)' : ''}`;
+                                    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
                                 })()}
                             </span>
                         </div>
-
-                        <div className="w-px h-6 bg-slate-700/50 hidden sm:block"></div>
-
-                        {/* Language Selector */}
-                        <div className="flex items-center gap-2">
-                            <Globe className="w-4 h-4 text-slate-500" />
+                        <div className="w-px h-3 bg-slate-700/50"></div>
+                        <div className="flex items-center gap-1.5">
+                            <Globe className="w-3.5 h-3.5" />
                             <select
                                 value={selectedLanguage}
                                 onChange={(e) => {
@@ -324,17 +320,14 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                     onUpdateProjectSettings({ language: newVal });
                                 }}
                                 disabled={isGeneratingImages}
-                                className="bg-transparent text-slate-200 outline-none cursor-pointer hover:text-white transition-colors font-medium"
+                                className="bg-transparent text-slate-300 outline-none cursor-pointer hover:text-white transition-colors font-medium appearance-none pr-2"
                             >
                                 {AVAILABLE_LANGUAGES.map(lang => <option key={lang.code} value={lang.label} className="bg-slate-900">{lang.label}</option>)}
                             </select>
                         </div>
-
-                        <div className="w-px h-6 bg-slate-700/50 hidden sm:block"></div>
-
-                        {/* Video Model Selector */}
-                        <div className="flex items-center gap-2">
-                            <Video className="w-4 h-4 text-slate-500" />
+                        <div className="w-px h-3 bg-slate-700/50"></div>
+                        <div className="flex items-center gap-1.5">
+                            <Video className="w-3.5 h-3.5" />
                             <select
                                 value={selectedVideoModel}
                                 onChange={(e) => {
@@ -344,41 +337,36 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                     onUpdateProjectSettings({ videoModel: newVal });
                                 }}
                                 disabled={isGeneratingImages}
-                                className="bg-transparent text-slate-200 outline-none cursor-pointer hover:text-white transition-colors font-medium"
+                                className="bg-transparent text-slate-300 outline-none cursor-pointer hover:text-white transition-colors font-medium appearance-none pr-2 max-w-[100px] truncate"
                             >
-                                <option value="veo-2.0-generate-001" className="bg-slate-900">Veo 2.0 (High Quality)</option>
+                                <option value="veo-2.0-generate-001" className="bg-slate-900">Veo 2.0 HQ</option>
                                 <option value="veo-3.0-generate-preview" className="bg-slate-900">Veo 3.0 Preview</option>
-                                <option value="veo-3.0-fast-generate-preview" className="bg-slate-900">Veo 3.0 Fast Preview</option>
+                                <option value="veo-3.0-fast-generate-preview" className="bg-slate-900">Veo 3.0 Fast</option>
+                            </select>
+                        </div>
+                        <div className="w-px h-3 bg-slate-700/50"></div>
+                        <div className="flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <select
+                                value={selectedProvider}
+                                onChange={(e) => {
+                                    const newVal = e.target.value as any;
+                                    setSelectedProvider(newVal);
+                                    onUpdateProjectSettings({ ttsProvider: newVal });
+                                }}
+                                className="bg-transparent text-slate-300 outline-none cursor-pointer hover:text-white transition-colors font-medium appearance-none pr-2"
+                            >
+                                <option value="gemini" className="bg-slate-900">Gemini</option>
+                                <option value="elevenlabs" className="bg-slate-900">ElevenLabs</option>
+                                <option value="groq" className="bg-slate-900">Groq</option>
                             </select>
                         </div>
                     </div>
-
-                    {/* AI Engine (TTS Provider) */}
-                    <div className="flex items-center gap-1 bg-slate-950/50 rounded-lg p-1 border border-slate-800">
-                        <button
-                            onClick={() => { setSelectedProvider('gemini'); onUpdateProjectSettings({ ttsProvider: 'gemini' }); }}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${selectedProvider === 'gemini' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                        >
-                            Gemini
-                        </button>
-                        <button
-                            onClick={() => { setSelectedProvider('elevenlabs'); onUpdateProjectSettings({ ttsProvider: 'elevenlabs' }); }}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${selectedProvider === 'elevenlabs' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                        >
-                            ElevenLabs
-                        </button>
-                        <button
-                            onClick={() => { setSelectedProvider('groq'); onUpdateProjectSettings({ ttsProvider: 'groq' }); }}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${selectedProvider === 'groq' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                        >
-                            Groq
-                        </button>
-                    </div>
                 </div>
 
-                {/* 2. Title */}
-                <div className="text-center py-2">
-                    <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight tracking-tight" title={generatedTitle || projectTopic}>
+                {/* 2. Title Line */}
+                <div className="text-center mb-4 px-4">
+                    <h1 className="text-2xl font-bold text-white leading-tight tracking-tight truncate" title={generatedTitle || projectTopic}>
                         {(() => {
                             const text = generatedTitle || projectTopic || "Untitled Project";
                             return text.trim().startsWith('{') ? "Untitled Project" : text;
