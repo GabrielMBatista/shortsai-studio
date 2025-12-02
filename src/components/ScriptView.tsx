@@ -283,17 +283,27 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                 </div>
             )}
 
-            <header className="mb-6">
-                {/* 1. Ultra-Compact Toolbar */}
-                <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-lg flex items-center justify-between px-3 py-2 text-xs text-slate-400 mb-4 overflow-x-auto whitespace-nowrap gap-4">
-                    <div className="flex items-center gap-4">
+            <header className="mb-6 flex flex-col items-center">
+                {/* 1. Title (Moved Up) */}
+                <div className="text-center mb-3 px-4 w-full max-w-4xl">
+                    <h1 className="text-xl font-bold text-white leading-tight tracking-tight truncate" title={generatedTitle || projectTopic}>
+                        {(() => {
+                            const text = generatedTitle || projectTopic || "Untitled Project";
+                            return text.trim().startsWith('{') ? "Untitled Project" : text;
+                        })()}
+                    </h1>
+                </div>
+
+                {/* 2. Ultra-Compact Toolbar */}
+                <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-lg flex items-center justify-center px-2 py-1.5 text-xs text-slate-400 mb-3 overflow-x-auto whitespace-nowrap gap-3 max-w-full scrollbar-hide">
+                    <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5 hover:text-indigo-300 transition-colors cursor-default" title="Visual Style">
-                            <LayoutTemplate className="w-3.5 h-3.5" />
+                            <LayoutTemplate className="w-3 h-3" />
                             <span className="font-medium text-slate-300">{projectStyle}</span>
                         </div>
                         <div className="w-px h-3 bg-slate-700/50"></div>
                         <div className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors cursor-default" title="Estimated Duration">
-                            <Clock className="w-3.5 h-3.5" />
+                            <Clock className="w-3 h-3" />
                             <span className="font-medium text-slate-300">
                                 {(() => {
                                     const totalSeconds = scenes.reduce((acc, s) => {
@@ -309,7 +319,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                         </div>
                         <div className="w-px h-3 bg-slate-700/50"></div>
                         <div className="flex items-center gap-1.5">
-                            <Globe className="w-3.5 h-3.5" />
+                            <Globe className="w-3 h-3" />
                             <select
                                 value={selectedLanguage}
                                 onChange={(e) => {
@@ -326,7 +336,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                         </div>
                         <div className="w-px h-3 bg-slate-700/50"></div>
                         <div className="flex items-center gap-1.5">
-                            <Video className="w-3.5 h-3.5" />
+                            <Video className="w-3 h-3" />
                             <select
                                 value={selectedVideoModel}
                                 onChange={(e) => {
@@ -345,7 +355,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                         </div>
                         <div className="w-px h-3 bg-slate-700/50"></div>
                         <div className="flex items-center gap-1">
-                            <Sparkles className="w-3.5 h-3.5" />
+                            <Sparkles className="w-3 h-3" />
                             <select
                                 value={selectedProvider}
                                 onChange={(e) => {
@@ -363,18 +373,8 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                     </div>
                 </div>
 
-                {/* 2. Title Line */}
-                <div className="text-center mb-4 px-4">
-                    <h1 className="text-2xl font-bold text-white leading-tight tracking-tight truncate" title={generatedTitle || projectTopic}>
-                        {(() => {
-                            const text = generatedTitle || projectTopic || "Untitled Project";
-                            return text.trim().startsWith('{') ? "Untitled Project" : text;
-                        })()}
-                    </h1>
-                </div>
-
-                {/* 3. Compact Narration Line */}
-                <div className="flex items-center justify-center gap-3 mb-6 text-sm">
+                {/* 3. Compact Narration Card */}
+                <div className="bg-slate-900/50 border border-slate-800 rounded-lg px-3 py-1.5 flex items-center gap-3 mb-3 text-xs">
                     <span className="text-slate-500 font-medium">Narrator:</span>
                     <div className="relative">
                         {isLoadingVoices ? (
@@ -414,48 +414,48 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                     <button
                         onClick={() => onRegenerateAudio(selectedVoice, selectedProvider, selectedLanguage)}
                         disabled={isGeneratingImages || !isSettingsChanged}
-                        className={`text-xs font-medium transition-colors ${isSettingsChanged ? 'text-indigo-400 hover:text-indigo-300 cursor-pointer underline decoration-indigo-500/30 underline-offset-2' : 'text-slate-600 cursor-not-allowed'}`}
+                        className={`font-medium transition-colors ${isSettingsChanged ? 'text-indigo-400 hover:text-indigo-300 cursor-pointer underline decoration-indigo-500/30 underline-offset-2' : 'text-slate-600 cursor-not-allowed'}`}
                     >
                         Apply to All
                     </button>
                 </div>
 
-                {/* 4. Compact Actions */}
-                <div className="flex items-center justify-center gap-3">
+                {/* 4. Action Buttons Group */}
+                <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-1.5 flex items-center gap-2">
                     {isGeneratingImages && onCancelGeneration ? (
-                        <button onClick={onCancelGeneration} className="flex items-center px-6 py-2 rounded-lg text-sm font-bold bg-red-500/10 text-red-400 border border-red-500/50 hover:bg-red-500/20 transition-all animate-pulse">
-                            <StopCircle className="w-4 h-4 mr-2" /> Stop
+                        <button onClick={onCancelGeneration} className="flex items-center px-4 py-1.5 rounded-md text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/50 hover:bg-red-500/20 transition-all animate-pulse">
+                            <StopCircle className="w-3.5 h-3.5 mr-1.5" /> Stop
                         </button>
                     ) : (
                         <button
                             onClick={onStartImageGeneration}
-                            className="flex items-center px-6 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
+                            className="flex items-center px-4 py-1.5 rounded-md text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
                         >
-                            <Sparkles className="w-4 h-4 mr-2" /> Generate All
+                            <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Generate All
                         </button>
                     )}
 
                     <button
                         onClick={onPreview}
                         disabled={!canPreview}
-                        className={`flex items-center px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95 ${canPreview ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}
+                        className={`flex items-center px-4 py-1.5 rounded-md text-xs font-bold transition-all active:scale-95 ${canPreview ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}
                     >
-                        <PlayCircle className="w-4 h-4 mr-2" /> Preview
+                        <PlayCircle className="w-3.5 h-3.5 mr-1.5" /> Preview
                     </button>
 
                     {onExport && (
                         <button
                             onClick={onExport}
-                            className="flex items-center px-5 py-2 rounded-lg text-sm font-semibold bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95"
+                            className="flex items-center px-4 py-1.5 rounded-md text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95"
                         >
-                            <Download className="w-4 h-4 mr-2" /> Export
+                            <Download className="w-3.5 h-3.5 mr-1.5" /> Export
                         </button>
                     )}
                 </div>
 
                 {/* Music Section (Optional/Collapsible) */}
                 {includeMusic && IS_SUNO_ENABLED && (
-                    <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-500">
+                    <div className="mt-3 flex items-center justify-center gap-3 text-xs text-slate-500">
                         <div className="flex items-center gap-1.5">
                             <Music className="w-3 h-3 text-pink-400" />
                             <span>Music:</span>
