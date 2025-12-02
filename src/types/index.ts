@@ -44,6 +44,22 @@ export interface ApiKeys {
 export type Role = 'USER' | 'ADMIN';
 export type SubscriptionPlan = 'FREE' | 'PRO';
 
+export interface Plan {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  monthly_images_limit: number;
+  monthly_videos_limit: number;
+  monthly_minutes_tts: number;
+  daily_requests_limit: number;
+  daily_videos_limit: number;
+  features?: any;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface User {
   id: string;
   name: string;

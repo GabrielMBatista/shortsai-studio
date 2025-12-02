@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { User, Role, SubscriptionPlan } from '../types';
+import { User, Role, SubscriptionPlan, Plan } from '../types';
 import Loader from './Loader';
-import { Shield, Users, Film, Layers, Ban, TrendingUp, Loader2, Search, Filter, ArrowUp, ArrowDown, CheckCircle2, Save, X, Edit2 } from 'lucide-react';
+import { Shield, Users, Film, Layers, Ban, TrendingUp, Loader2, Search, Filter, ArrowUp, ArrowDown, CheckCircle2, Save, X, Edit2, CreditCard, Plus, Trash2 } from 'lucide-react';
 import LogConsole from './LogConsole';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -27,15 +27,18 @@ interface AdminUser extends User {
 const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [users, setUsers] = useState<AdminUser[]>([]);
+    const [plans, setPlans] = useState<Plan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editingUser, setEditingUser] = useState<string | null>(null);
+    const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
+    const [isCreatingPlan, setIsCreatingPlan] = useState(false);
 
     // Edit Form State
     const [editForm, setEditForm] = useState<{ role: Role, plan: SubscriptionPlan, isBlocked: boolean }>({
         role: 'USER', plan: 'FREE', isBlocked: false
     });
 
-    const [activeTab, setActiveTab] = useState<'overview' | 'users'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'plans'>('overview');
     const [dateRange, setDateRange] = useState<number>(30);
 
     // Filter & Sort State
@@ -51,7 +54,7 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
     });
 
     useEffect(() => {
-        if (activeTab === 'users') {
+        if (activeTab === 'users' || activeTab === 'plans') {
             fetchData();
         }
     }, [filters, sortConfig, activeTab]);
@@ -105,9 +108,10 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
                 order: sortConfig.direction
             }).toString();
 
-            const [statsRes, usersRes] = await Promise.all([
+            const [statsRes, usersRes, plansRes] = await Promise.all([
                 activeTab === 'overview' ? fetch(`/api/admin/stats?days=${dateRange}`) : Promise.resolve({ ok: true, json: async () => stats }),
-                activeTab === 'users' ? fetch(`/api/admin/users?${query}`) : Promise.resolve({ ok: true, json: async () => users })
+                activeTab === 'users' ? fetch(`/api/admin/users?${query}`) : Promise.resolve({ ok: true, json: async () => users }),
+                activeTab === 'plans' ? fetch(`/api/admin/plans`) : Promise.resolve({ ok: true, json: async () => plans })
             ]);
 
             if (statsRes.ok) setStats(await statsRes.json());
@@ -121,6 +125,7 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
                 }));
                 setUsers(mappedUsers);
             }
+            if (plansRes.ok) setPlans(await plansRes.json());
         } catch (e) {
             console.error("Failed to fetch admin data", e);
         } finally {
@@ -159,6 +164,45 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
         }
     };
 
+    const handleSavePlan = async (plan: Partial<Plan>) => {
+        try {
+            const url = plan.id ? `/api/admin/plans/${plan.id}` : '/api/admin/plans';
+            const method = plan.id ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(plan)
+            });
+
+            if (res.ok) {
+                setEditingPlan(null);
+                setIsCreatingPlan(false);
+                fetchData();
+            } else {
+                const err = await res.json();
+                alert(`Error saving plan: ${err.error}`);
+            }
+        } catch (e) {
+            console.error("Failed to save plan", e);
+            alert("Failed to save plan");
+        }
+    };
+
+    const handleDeletePlan = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this plan? This might affect users assigned to it.")) return;
+        try {
+            const res = await fetch(`/api/admin/plans/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchData();
+            } else {
+                alert("Failed to delete plan");
+            }
+        } catch (e) {
+            console.error("Failed to delete plan", e);
+        }
+    };
+
     const handleSort = (key: string) => {
         setSortConfig(current => ({
             key,
@@ -188,6 +232,12 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                     >
                         User Management
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('plans')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'plans' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        Plans & Limits
                     </button>
                 </div>
             </div>
@@ -485,6 +535,202 @@ const AdminDashboard: React.FC<{ currentUser: User }> = ({ currentUser }) => {
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            )}
+            {activeTab === 'plans' && (
+                <div className="animate-fade-in">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold text-white">Subscription Plans</h2>
+                        <button
+                            onClick={() => {
+                                setEditingPlan({
+                                    id: '',
+                                    name: '',
+                                    slug: '',
+                                    description: '',
+                                    price: 0,
+                                    monthly_images_limit: 10,
+                                    monthly_videos_limit: 5,
+                                    monthly_minutes_tts: 10,
+                                    daily_requests_limit: 50,
+                                    daily_videos_limit: 2,
+                                    features: {},
+                                    created_at: '',
+                                    updated_at: ''
+                                });
+                                setIsCreatingPlan(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors font-medium shadow-lg shadow-indigo-500/20"
+                        >
+                            <Plus className="w-4 h-4" /> Create Plan
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {plans.map(plan => (
+                            <div key={plan.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-6 flex flex-col relative group hover:border-indigo-500/50 transition-colors">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white">{plan.name}</h3>
+                                        <span className="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded mt-1 inline-block">{plan.slug}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-2xl font-bold text-white">${Number(plan.price).toFixed(2)}</span>
+                                        <span className="text-slate-500 text-sm">/mo</span>
+                                    </div>
+                                </div>
+
+                                <p className="text-slate-400 text-sm mb-6 flex-grow">{plan.description || "No description"}</p>
+
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-slate-500">Monthly Videos</span>
+                                        <span className="text-white font-medium">{plan.monthly_videos_limit}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-slate-500">Monthly Images</span>
+                                        <span className="text-white font-medium">{plan.monthly_images_limit}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-slate-500">TTS Minutes</span>
+                                        <span className="text-white font-medium">{plan.monthly_minutes_tts}</span>
+                                    </div>
+                                    <div className="h-px bg-slate-700/50 my-2"></div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-slate-500">Daily Videos</span>
+                                        <span className="text-white font-medium">{plan.daily_videos_limit}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 mt-auto pt-4 border-t border-slate-700">
+                                    <button
+                                        onClick={() => { setEditingPlan(plan); setIsCreatingPlan(false); }}
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm font-medium"
+                                    >
+                                        <Edit2 className="w-4 h-4" /> Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeletePlan(plan.id)}
+                                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                        title="Delete Plan"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Plan Edit Modal */}
+            {editingPlan && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                        <div className="p-6 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 z-10">
+                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <CreditCard className="w-5 h-5 text-indigo-500" />
+                                {isCreatingPlan ? 'Create New Plan' : 'Edit Plan'}
+                            </h3>
+                            <button onClick={() => setEditingPlan(null)} className="text-slate-400 hover:text-white"><X className="w-6 h-6" /></button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 mb-1">Plan Name</label>
+                                    <input
+                                        type="text"
+                                        value={editingPlan.name}
+                                        onChange={e => setEditingPlan({ ...editingPlan, name: e.target.value })}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        placeholder="e.g. Pro"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 mb-1">Slug (Unique ID)</label>
+                                    <input
+                                        type="text"
+                                        value={editingPlan.slug}
+                                        onChange={e => setEditingPlan({ ...editingPlan, slug: e.target.value })}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-mono"
+                                        placeholder="e.g. pro"
+                                        disabled={!isCreatingPlan}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-slate-400 mb-1">Description</label>
+                                <textarea
+                                    value={editingPlan.description || ''}
+                                    onChange={e => setEditingPlan({ ...editingPlan, description: e.target.value })}
+                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none h-20 resize-none"
+                                    placeholder="Plan description..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-slate-400 mb-1">Price ($)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editingPlan.price}
+                                    onChange={e => setEditingPlan({ ...editingPlan, price: parseFloat(e.target.value) })}
+                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
+
+                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                                <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><Shield className="w-4 h-4 text-emerald-400" /> Limits Configuration</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">Monthly Videos</label>
+                                        <input
+                                            type="number"
+                                            value={editingPlan.monthly_videos_limit}
+                                            onChange={e => setEditingPlan({ ...editingPlan, monthly_videos_limit: parseInt(e.target.value) })}
+                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">Monthly Images</label>
+                                        <input
+                                            type="number"
+                                            value={editingPlan.monthly_images_limit}
+                                            onChange={e => setEditingPlan({ ...editingPlan, monthly_images_limit: parseInt(e.target.value) })}
+                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">Monthly TTS Minutes</label>
+                                        <input
+                                            type="number"
+                                            value={editingPlan.monthly_minutes_tts}
+                                            onChange={e => setEditingPlan({ ...editingPlan, monthly_minutes_tts: parseInt(e.target.value) })}
+                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">Daily Videos (Rate Limit)</label>
+                                        <input
+                                            type="number"
+                                            value={editingPlan.daily_videos_limit}
+                                            onChange={e => setEditingPlan({ ...editingPlan, daily_videos_limit: parseInt(e.target.value) })}
+                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-slate-800 flex justify-end gap-3 bg-slate-900 sticky bottom-0 z-10 rounded-b-2xl">
+                            <button onClick={() => setEditingPlan(null)} className="px-4 py-2 text-slate-400 hover:text-white transition-colors">Cancel</button>
+                            <button onClick={() => handleSavePlan(editingPlan)} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium shadow-lg shadow-indigo-500/20 transition-colors">
+                                {isCreatingPlan ? 'Create Plan' : 'Save Changes'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
