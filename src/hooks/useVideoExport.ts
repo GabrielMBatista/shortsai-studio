@@ -8,11 +8,11 @@ interface UseVideoExportProps {
     scenes: Scene[];
     bgMusicUrl?: string;
     title?: string;
-    outroFile?: File | null;
+    endingVideoFile?: File | null;
     showSubtitles?: boolean;
 }
 
-export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubtitles = true }: UseVideoExportProps) => {
+export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, showSubtitles = true }: UseVideoExportProps) => {
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState("");
     const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -172,38 +172,38 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubti
                 try { bgMusicBuffer = await loadAudioBuffer(mainAudioCtx, bgMusicUrl); } catch (e) { }
             }
 
-            // Load Outro Video & Audio
-            let outroElement: HTMLVideoElement | null = null;
-            let outroBuffer: AudioBuffer | null = null;
-            let outroDuration = 0;
+            // Load Ending Video & Audio
+            let endingVideoElement: HTMLVideoElement | null = null;
+            let endingAudioBuffer: AudioBuffer | null = null;
+            let endingVideoDuration = 0;
 
-            if (outroFile) {
-                setDownloadProgress("Loading outro video...");
+            if (endingVideoFile) {
+                setDownloadProgress("Loading ending video...");
 
                 // Load Video Element (for visuals)
-                outroElement = document.createElement('video');
-                outroElement.src = URL.createObjectURL(outroFile);
-                outroElement.crossOrigin = "anonymous";
-                outroElement.muted = true; // We will play audio via WebAudio, not the element
+                endingVideoElement = document.createElement('video');
+                endingVideoElement.src = URL.createObjectURL(endingVideoFile);
+                endingVideoElement.crossOrigin = "anonymous";
+                endingVideoElement.muted = true; // We will play audio via WebAudio, not the element
 
                 await new Promise((resolve) => {
-                    outroElement!.onloadedmetadata = () => {
-                        outroDuration = outroElement!.duration;
+                    endingVideoElement!.onloadedmetadata = () => {
+                        endingVideoDuration = endingVideoElement!.duration;
                         resolve(null);
                     };
-                    outroElement!.onerror = () => {
-                        console.warn("Failed to load outro video");
-                        outroElement = null;
+                    endingVideoElement!.onerror = () => {
+                        console.warn("Failed to load ending video");
+                        endingVideoElement = null;
                         resolve(null);
                     };
                 });
 
-                // Decode Outro Audio (for mixing)
+                // Decode Ending Audio (for mixing)
                 try {
-                    const arrayBuffer = await outroFile.arrayBuffer();
-                    outroBuffer = await mainAudioCtx.decodeAudioData(arrayBuffer);
+                    const arrayBuffer = await endingVideoFile.arrayBuffer();
+                    endingAudioBuffer = await mainAudioCtx.decodeAudioData(arrayBuffer);
                 } catch (e) {
-                    console.warn("Failed to decode outro audio track", e);
+                    console.warn("Failed to decode ending audio track", e);
                 }
             }
 
@@ -212,7 +212,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubti
             setDownloadProgress("Mixing audio...");
 
             const totalScenesDuration = assets.reduce((acc, s) => acc + s.renderDuration, 0);
-            const totalDuration = totalScenesDuration + outroDuration;
+            const totalDuration = totalScenesDuration + endingVideoDuration;
 
             // Create Offline Context
             const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalDuration * 48000), 48000);
@@ -276,18 +276,18 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubti
                 musicSource.stop(musicEnd + 0.5);
             }
 
-            // Schedule Outro Audio
-            if (outroBuffer) {
-                const outroSource = offlineCtx.createBufferSource();
-                outroSource.buffer = outroBuffer;
+            // Schedule Ending Audio
+            if (endingAudioBuffer) {
+                const endingSource = offlineCtx.createBufferSource();
+                endingSource.buffer = endingAudioBuffer;
 
-                const outroGain = offlineCtx.createGain();
-                outroGain.gain.value = 1.0;
+                const endingGain = offlineCtx.createGain();
+                endingGain.gain.value = 1.0;
 
-                outroSource.connect(outroGain);
-                outroGain.connect(masterGain);
+                endingSource.connect(endingGain);
+                endingGain.connect(masterGain);
 
-                outroSource.start(totalScenesDuration);
+                endingSource.start(totalScenesDuration);
             }
 
             // Render the mix
@@ -295,9 +295,9 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubti
 
             // 5. EXPORT BRANCHING
             if (format === 'mp4') {
-                await exportMp4(canvas, ctx, assets, outroElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title);
+                await exportMp4(canvas, ctx, assets, endingVideoElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title);
             } else {
-                await exportWebM(canvas, ctx, mainAudioCtx, assets, outroElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title);
+                await exportWebM(canvas, ctx, mainAudioCtx, assets, endingVideoElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title);
             }
 
         } catch (err: any) {
@@ -317,7 +317,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubti
         canvas: HTMLCanvasElement,
         ctx: CanvasRenderingContext2D,
         assets: any[],
-        outroElement: HTMLVideoElement | null,
+        endingVideoElement: HTMLVideoElement | null,
         totalScenesDuration: number,
         totalDuration: number,
         audioBuffer: AudioBuffer,
@@ -436,7 +436,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubti
             }
 
             // Draw Frame
-            drawFrame(ctx, canvas.width, canvas.height, time, assets, outroElement, totalScenesDuration, subtitleLayouts);
+            drawFrame(ctx, canvas.width, canvas.height, time, assets, endingVideoElement, totalScenesDuration, subtitleLayouts);
 
             const frame = new VideoFrame(canvas, {
                 timestamp: time * 1_000_000 // microseconds
@@ -469,7 +469,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubti
         ctx: CanvasRenderingContext2D,
         audioCtx: AudioContext,
         assets: any[],
-        outroElement: HTMLVideoElement | null,
+        endingVideoElement: HTMLVideoElement | null,
         totalScenesDuration: number,
         totalDuration: number,
         audioBuffer: AudioBuffer,
@@ -516,7 +516,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubti
                 return;
             }
 
-            drawFrame(ctx, canvas.width, canvas.height, elapsedTime, assets, outroElement, totalScenesDuration, subtitleLayouts);
+            drawFrame(ctx, canvas.width, canvas.height, elapsedTime, assets, endingVideoElement, totalScenesDuration, subtitleLayouts);
 
             setDownloadProgress(`Rendering (${Math.round((elapsedTime / totalDuration) * 100)}%)...`);
             requestAnimationFrame(drawLoop);
@@ -533,29 +533,29 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, outroFile, showSubti
         h: number,
         time: number,
         assets: any[],
-        outroElement: HTMLVideoElement | null,
+        endingVideoElement: HTMLVideoElement | null,
         totalScenesDuration: number,
         subtitleLayouts: SubtitleLayout[]
     ) => {
-        // Outro Phase
-        if (time >= totalScenesDuration && outroElement) {
+        // Ending Phase
+        if (time >= totalScenesDuration && endingVideoElement) {
             // For WebCodecs, we need to seek the video element if we want frame-perfect accuracy, 
             // but for simple playback, updating it in real-time or seeking works.
             // Since WebCodecs loop is async but fast, we should ideally seek the video element to `time - totalScenesDuration`.
             // However, seeking HTMLVideoElement is slow. 
             // For this implementation, we'll assume the video element can keep up or we seek it.
-            const outroTime = time - totalScenesDuration;
-            outroElement.currentTime = outroTime;
+            const endingTime = time - totalScenesDuration;
+            endingVideoElement.currentTime = endingTime;
 
-            const vw = outroElement.videoWidth;
-            const vh = outroElement.videoHeight;
+            const vw = endingVideoElement.videoWidth;
+            const vh = endingVideoElement.videoHeight;
             if (vw > 0 && vh > 0) {
                 const scale = Math.max(w / vw, h / vh);
                 const sw = vw * scale;
                 const sh = vh * scale;
                 const ox = (w - sw) / 2;
                 const oy = (h - sh) / 2;
-                ctx.drawImage(outroElement, ox, oy, sw, sh);
+                ctx.drawImage(endingVideoElement, ox, oy, sw, sh);
             } else {
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, w, h);

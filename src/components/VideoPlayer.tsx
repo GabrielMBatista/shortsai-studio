@@ -25,8 +25,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const musicRef = useRef<HTMLAudioElement | null>(null);
 
   const [showExportOptions, setShowExportOptions] = useState(false);
-  const [includeOutro, setIncludeOutro] = useState(false);
-  const [outroFile, setOutroFile] = useState<File | null>(null);
+  const [includeEndingVideo, setIncludeEndingVideo] = useState(false);
+  const [endingVideoFile, setEndingVideoFile] = useState<File | null>(null);
   const [exportFormat, setExportFormat] = useState<'mp4' | 'webm'>('mp4');
   const [isMp4Supported, setIsMp4Supported] = useState(true);
 
@@ -49,7 +49,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     downloadProgress,
     downloadError,
     eta
-  } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, outroFile, showSubtitles });
+  } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, endingVideoFile, showSubtitles });
 
   // Reset state when scenes change
   useEffect(() => {
@@ -265,20 +265,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
               <div className="flex items-center justify-between mb-4">
                 <label className="text-sm font-medium text-slate-300">Merge Video</label>
                 <div
-                  onClick={() => setIncludeOutro(!includeOutro)}
-                  className={`w-10 h-5 rounded-full cursor-pointer transition-colors relative ${includeOutro ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                  onClick={() => setIncludeEndingVideo(!includeEndingVideo)}
+                  className={`w-10 h-5 rounded-full cursor-pointer transition-colors relative ${includeEndingVideo ? 'bg-indigo-500' : 'bg-slate-700'}`}
                 >
-                  <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${includeOutro ? 'translate-x-5' : 'translate-x-0'}`} />
+                  <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${includeEndingVideo ? 'translate-x-5' : 'translate-x-0'}`} />
                 </div>
               </div>
 
-              {includeOutro && (
+              {includeEndingVideo && (
                 <div className="animate-fade-in-up">
                   <div className="relative group">
                     <input
                       type="file"
                       accept="video/*"
-                      onChange={(e) => setOutroFile(e.target.files?.[0] || null)}
+                      onChange={(e) => setEndingVideoFile(e.target.files?.[0] || null)}
                       className="block w-full text-xs text-slate-400
                                         file:mr-3 file:py-2 file:px-3
                                         file:rounded-lg file:border-0
@@ -287,9 +287,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                                         hover:file:bg-indigo-500/20
                                         cursor-pointer border border-slate-700 rounded-lg bg-slate-800/50 p-1"
                     />
-                    {outroFile && (
+                    {endingVideoFile && (
                       <button
-                        onClick={() => setOutroFile(null)}
+                        onClick={() => setEndingVideoFile(null)}
                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-red-400 bg-slate-900 rounded-full"
                       >
                         <X className="w-3 h-3" />
