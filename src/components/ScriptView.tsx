@@ -321,7 +321,8 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                     </div>
 
                     <div className="flex flex-col gap-4 w-full lg:w-auto">
-                        <div className="flex flex-col sm:flex-row items-center gap-3 bg-slate-900/60 p-2 rounded-xl border border-slate-700/60 backdrop-blur-md">
+                        {/* Top Row: Providers & Video Model */}
+                        <div className="flex flex-col sm:flex-row items-center gap-3 bg-slate-900/60 p-2 rounded-xl border border-slate-700/60 backdrop-blur-md justify-between">
                             <div className="flex items-center bg-slate-950/50 rounded-lg p-1 border border-slate-800 w-full sm:w-auto justify-center sm:justify-start">
                                 <button
                                     type="button"
@@ -363,7 +364,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
 
                             <div className="hidden sm:block w-px h-8 bg-slate-700/50"></div>
 
-                            <div className="flex items-center gap-2 px-2">
+                            <div className="flex items-center gap-2 px-2 flex-1 min-w-[200px]">
                                 <Video className="w-4 h-4 text-slate-500" />
                                 <select
                                     id="videoModel"
@@ -376,17 +377,18 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                         onUpdateProjectSettings({ videoModel: newVal });
                                     }}
                                     disabled={isGeneratingImages}
-                                    className="bg-transparent text-slate-200 text-sm py-1 outline-none cursor-pointer hover:text-white transition-colors appearance-none font-medium min-w-[80px]"
+                                    className="bg-transparent text-slate-200 text-sm py-1 outline-none cursor-pointer hover:text-white transition-colors appearance-none font-medium w-full"
                                 >
                                     <option value="veo-2.0-generate-001" className="bg-slate-900">Veo 2.0 (High Quality)</option>
                                     <option value="veo-3.0-generate-preview" className="bg-slate-900">Veo 3.0 Preview</option>
                                     <option value="veo-3.0-fast-generate-preview" className="bg-slate-900">Veo 3.0 Fast Preview</option>
                                 </select>
                             </div>
+                        </div>
 
-                            <div className="hidden sm:block w-px h-8 bg-slate-700/50"></div>
-
-                            <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
+                        {/* Bottom Row: Language & Voice */}
+                        <div className="flex flex-col sm:flex-row items-center gap-3 bg-slate-900/60 p-2 rounded-xl border border-slate-700/60 backdrop-blur-md">
+                            <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start flex-1">
                                 <div className="flex items-center gap-2 px-2">
                                     <Globe className="w-4 h-4 text-slate-500" />
                                     <select
@@ -408,7 +410,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
 
                                 <div className="h-4 w-px bg-slate-700/50 hidden sm:block"></div>
 
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-1">
                                     {isLoadingVoices ? (
                                         <div className="px-2 py-1 text-sm text-slate-400 flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> <span className="hidden sm:inline">Loading...</span></div>
                                     ) : (
@@ -423,7 +425,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                                 onUpdateProjectSettings({ voiceName: newVal });
                                             }}
                                             disabled={isGeneratingImages || filteredVoices.length === 0}
-                                            className="bg-transparent text-white text-sm py-1 outline-none cursor-pointer hover:text-indigo-300 transition-colors appearance-none max-w-[150px] sm:max-w-[220px] truncate font-medium"
+                                            className="bg-transparent text-white text-sm py-1 outline-none cursor-pointer hover:text-indigo-300 transition-colors appearance-none w-full truncate font-medium"
                                         >
                                             {filteredVoices.length > 0 ? (
                                                 filteredVoices.map(v => <option key={v.name} value={v.name} className="bg-slate-900">{v.label} ({v.gender})</option>)
