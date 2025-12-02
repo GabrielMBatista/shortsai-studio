@@ -91,7 +91,14 @@ const App: React.FC = () => {
             const user = await restoreSession();
             if (user) {
                 setCurrentUser(user);
-                setStep(AppStep.DASHBOARD);
+
+                // Restore last step if available
+                const savedStep = localStorage.getItem('shortsai_last_step') as AppStep;
+                if (savedStep && Object.values(AppStep).includes(savedStep)) {
+                    setStep(savedStep);
+                } else {
+                    setStep(AppStep.DASHBOARD);
+                }
             } else {
                 setStep(AppStep.AUTH);
             }
@@ -100,11 +107,17 @@ const App: React.FC = () => {
         initApp();
     }, []);
 
+    // Wrapper to set step and persist it
+    const handleSetStep = (newStep: AppStep) => {
+        setStep(newStep);
+        localStorage.setItem('shortsai_last_step', newStep);
+    };
+
     const handleLogin = async (user: User) => {
         try {
             const loggedUser = await loginUser(user.email, user.name, user.avatar, user.id);
             setCurrentUser(loggedUser);
-            setStep(AppStep.DASHBOARD);
+            handleSetStep(AppStep.DASHBOARD);
             showToast(`Welcome back, ${loggedUser.name.split(' ')[0]}!`, 'success');
         } catch (err) {
             showToast("Failed to login. Please try again.", 'error');
@@ -117,7 +130,8 @@ const App: React.FC = () => {
         setIsLoggingOut(true);
         await logoutUser();
         setCurrentUser(null);
-        setStep(AppStep.AUTH);
+        handleSetStep(AppStep.AUTH);
+        localStorage.removeItem('shortsai_last_step'); // Clear saved step on logout
         setIsLoggingOut(false);
         showToast("Logged out successfully.", 'info');
     };
@@ -126,7 +140,7 @@ const App: React.FC = () => {
     const handleNewProject = () => {
         setProject(null);
         lastSavedProjectJson.current = "";
-        setStep(AppStep.INPUT);
+        handleSetStep(AppStep.INPUT);
     };
 
     const handleOpenProject = async (p: VideoProject) => {
@@ -140,7 +154,7 @@ const App: React.FC = () => {
                 };
                 lastSavedProjectJson.current = JSON.stringify(sanitizedProject);
                 setProject(sanitizedProject);
-                setStep(AppStep.SCRIPTING);
+                handleSetStep(AppStep.SCRIPTING);
             } else {
                 showToast("Failed to load project details.", 'error');
             }
@@ -212,7 +226,7 @@ const App: React.FC = () => {
     // Auto-transition from GENERATING_IMAGES to SCRIPTING when done
     useEffect(() => {
         if (step === AppStep.GENERATING_IMAGES && project?.status && ['completed', 'failed', 'paused'].includes(project.status)) {
-            setStep(AppStep.SCRIPTING);
+            handleSetStep(AppStep.SCRIPTING);
         }
     }, [project?.status, step]);
 
@@ -256,7 +270,7 @@ const App: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         {step !== AppStep.DASHBOARD ? (
-                            <button onClick={() => { refreshProjects(); setStep(AppStep.DASHBOARD); }} className="text-slate-400 hover:text-white transition-colors">
+                            <button onClick={() => { refreshProjects(); handleSetStep(AppStep.DASHBOARD); }} className="text-slate-400 hover:text-white transition-colors">
                                 <ChevronLeft className="w-6 h-6" />
                             </button>
                         ) : <Film className="h-8 w-8 text-indigo-500" />}
@@ -267,14 +281,14 @@ const App: React.FC = () => {
                         <div className="flex items-center gap-3 border-l border-slate-800 pl-4">
                             {currentUser.role === 'ADMIN' && (
                                 <button
-                                    onClick={() => setStep(AppStep.ADMIN)}
+                                    onClick={() => handleSetStep(AppStep.ADMIN)}
                                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${step === AppStep.ADMIN ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                                 >
                                     <Shield className="w-4 h-4" />
                                     <span className="text-sm font-bold">Admin</span>
                                 </button>
                             )}
-                            <button onClick={() => setStep(AppStep.SETTINGS)} className="flex items-center gap-2 group">
+                            <button onClick={() => handleSetStep(AppStep.SETTINGS)} className="flex items-center gap-2 group">
                                 <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-slate-600 transition-transform group-hover:scale-105 group-hover:border-indigo-500" />
                             </button>
                             <button onClick={handleLogout} className="text-slate-400 hover:text-red-400 transition-colors"><LogOut className="w-5 h-5" /></button>
@@ -334,7 +348,7 @@ const App: React.FC = () => {
                         isGeneratingImages={isGenerating || step === AppStep.GENERATING_IMAGES}
                         onCancelGeneration={() => { cancelGeneration(); showToast("Generation cancelled.", 'info'); }}
                         canPreview={Array.isArray(project.scenes) && project.scenes.some(s => s.imageStatus === 'completed')}
-                        onPreview={() => setStep(AppStep.PREVIEW)}
+                        onPreview={() => handleSetStep(AppStep.PREVIEW)}
                         includeMusic={project.includeMusic}
                         musicStatus={project.bgMusicStatus}
                         musicUrl={project.bgMusicUrl}
@@ -357,7 +371,7 @@ const App: React.FC = () => {
                 {step === AppStep.PREVIEW && project && (
                     <VideoPlayer
                         scenes={Array.isArray(project.scenes) ? project.scenes : []}
-                        onClose={() => setStep(AppStep.SCRIPTING)}
+                        onClose={() => handleSetStep(AppStep.SCRIPTING)}
                         bgMusicUrl={project.bgMusicUrl}
                         title={getDisplayTitle(project)}
                     />

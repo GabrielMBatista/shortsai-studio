@@ -291,10 +291,14 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                 <Clock className="w-3 h-3 mr-1" />
                                 {(() => {
                                     const totalSeconds = scenes.reduce((acc, s) => {
-                                        if (s.durationSeconds) return acc + Number(s.durationSeconds);
-                                        // Estimate based on word count (avg 150 wpm = 2.5 words/sec)
+                                        // Use actual duration if audio is generated
+                                        if (s.durationSeconds && Number(s.durationSeconds) > 0) {
+                                            return acc + Number(s.durationSeconds);
+                                        }
+                                        // Fallback estimate: 150 wpm = 2.5 words/sec
                                         const wordCount = s.narration ? s.narration.split(/\s+/).length : 0;
-                                        return acc + (wordCount / 2.5);
+                                        // Minimum 3 seconds per scene for pacing
+                                        return acc + Math.max(3, wordCount / 2.5);
                                     }, 0);
                                     const minutes = Math.floor(totalSeconds / 60);
                                     const seconds = Math.round(totalSeconds % 60);
