@@ -371,6 +371,36 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
         onError("Failed to save settings.");
       }
     },
-    skipCurrentScene: () => project && user && workflowClient.sendCommand('skip_scene', project.id, user.id)
+    skipCurrentScene: () => project && user && workflowClient.sendCommand('skip_scene', project.id, user.id),
+    addScene: async () => {
+      if (!project) return;
+
+      const newSceneNumber = project.scenes.length + 1;
+      const newScene: Scene = {
+        sceneNumber: newSceneNumber,
+        visualDescription: "Describe the visual for this scene...",
+        narration: "Enter narration text here...",
+        durationSeconds: 5,
+        imageStatus: 'pending',
+        audioStatus: 'pending',
+        videoStatus: 'pending',
+        sfxStatus: 'pending',
+        mediaType: 'image'
+      };
+
+      const updatedProject = {
+        ...project,
+        scenes: [...project.scenes, newScene]
+      };
+
+      setProject(updatedProject); // Optimistic
+
+      try {
+        await saveProject(updatedProject);
+      } catch (e) {
+        console.error("Failed to add scene", e);
+        onError("Failed to add scene.");
+      }
+    }
   };
 };

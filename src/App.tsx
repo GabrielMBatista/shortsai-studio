@@ -52,7 +52,8 @@ const App: React.FC = () => {
         regenerateAllAudio,
         regenerateMusic,
         removeScene,
-        updateProjectSettings
+        updateProjectSettings,
+        addScene
     } = useVideoGeneration({
         user: currentUser,
         onError: (msg) => showToast(msg, 'error'),
@@ -343,6 +344,7 @@ const App: React.FC = () => {
                         onSkip={skipCurrentScene}
                         generationMessage={generationMessage}
                         onRemoveScene={removeScene}
+                        onAddScene={addScene}
                         onExport={handleExport}
                         onUpdateProjectSettings={updateProjectSettings}
                     />

@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED } from '../types';
-import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download } from 'lucide-react';
+import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download, Plus } from 'lucide-react';
 import { generatePreviewAudio, getVoices } from '../services/geminiService';
 import SceneCard from './script/SceneCard';
 import AudioPlayerButton from './common/AudioPlayerButton';
@@ -39,6 +39,7 @@ interface ScriptViewProps {
     onSkip?: () => void;
     generationMessage?: string;
     onRemoveScene: (index: number) => void;
+    onAddScene?: () => void;
     onExport?: () => void;
     onUpdateProjectSettings: (settings: { voiceName?: string; ttsProvider?: TTSProvider; language?: string }) => Promise<void>;
 }
@@ -118,7 +119,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     generatedTitle, generatedDescription,
     onStartImageGeneration, onGenerateImagesOnly, onGenerateAudioOnly, onRegenerateAudio, onRegenerateSceneImage, onRegenerateSceneAudio, onRegenerateSceneVideo, onUpdateScene, isGeneratingImages, onCancelGeneration,
     canPreview, onPreview, includeMusic, musicStatus, musicUrl, musicPrompt, onRegenerateMusic,
-    isPaused, fatalError, onResume, onSkip, generationMessage, onRemoveScene, onExport, onUpdateProjectSettings
+    isPaused, fatalError, onResume, onSkip, generationMessage, onRemoveScene, onAddScene, onExport, onUpdateProjectSettings
 }) => {
     const [selectedProvider, setSelectedProvider] = useState<TTSProvider>(projectProvider);
     const [selectedVoice, setSelectedVoice] = useState(projectVoice);
@@ -535,6 +536,19 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                         onRemoveScene={onRemoveScene}
                     />
                 ))}
+
+                {/* Add Scene Button */}
+                {onAddScene && (
+                    <button
+                        onClick={onAddScene}
+                        className="flex flex-col items-center justify-center h-full min-h-[400px] bg-slate-800/30 border-2 border-dashed border-slate-700 rounded-2xl hover:bg-slate-800/50 hover:border-indigo-500/50 transition-all group"
+                    >
+                        <div className="p-4 bg-slate-800 rounded-full mb-4 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">
+                            <Plus className="w-8 h-8 text-slate-400 group-hover:text-indigo-400" />
+                        </div>
+                        <span className="text-slate-400 font-semibold group-hover:text-indigo-300">Add New Scene</span>
+                    </button>
+                )}
             </div>
         </div>
     );

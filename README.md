@@ -43,15 +43,17 @@ O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em v�
 
 ### 🌍 Deploy em Produção (Docker/VPS)
 
+O deploy é automatizado via **GitHub Actions** (`.github/workflows/deploy.yml`), que se conecta ao VPS via SSH e atualiza o container.
+
 O frontend é servido via **Nginx**, que atua como um proxy reverso para o backend.
 
-*   **Configuração de Proxy**: O Nginx redireciona automaticamente requisições de `/api` para o container do backend (`http://api:3333`).
-*   **Variáveis de Ambiente**: O frontend usa caminhos relativos (`/api`), então não é necessário recompilar para mudar o domínio, mas é necessário configurar o CORS e Auth no backend corretamente.
-*   **Rebuild**: Sempre que alterar o código do frontend, reconstrua a imagem no VPS:
+*   **Configuração de Proxy**: O Nginx redireciona automaticamente requisições de `/api` para o container do backend (`http://shortsai-api:3333`).
+*   **Variáveis de Ambiente**: O frontend usa caminhos relativos (`/api`), então não é necessário recompilar para mudar o domínio.
+*   **Manual Rebuild (Fallback)**:
     ```bash
-    docker-compose build studio
-    docker-compose up -d studio
+    docker-compose up -d --build studio
     ```
+    *Nota: O Docker Compose gerencia automaticamente a substituição dos containers (rolling update).*
 
 ---
 
