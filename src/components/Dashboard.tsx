@@ -175,7 +175,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
                             >
                                 <Archive className="w-4 h-4" />
-                                {projects.find(p => p.id === contextMenu.projectId)?.isArchived ? 'Unarchive' : 'Archive'}
+                                {projects.find(p => p.id === contextMenu.projectId)?.isArchived ? t('folders.unarchive') : t('folders.archive')}
                             </button>
 
                             <div className="border-t border-slate-700 my-1" />
@@ -189,7 +189,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                                 {t('folders.root_folder')}
                             </button>
 
-                            {folders.map(f => (
+                            {[...folders].sort((a, b) => a.name.localeCompare(b.name)).map(f => (
                                 <button
                                     key={f.id}
                                     onClick={() => handleMoveToFolder(contextMenu.projectId, f.id)}

@@ -1,7 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, ApiKeys, IS_SUNO_ENABLED } from '../types';
-import { Save, Key, User as UserIcon, ShieldAlert, Music, Loader2, Globe } from 'lucide-react';
+import Tutorial from './Tutorial';
+import { Step } from 'react-joyride';
+import { Save, Key, User as UserIcon, ShieldAlert, Music, Loader2, Globe, HelpCircle } from 'lucide-react';
 import { updateUserApiKeys } from '../services/storageService';
 import { useTranslation } from 'react-i18next';
 
@@ -18,6 +19,27 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdateUser }) =
   const [groqKey, setGroqKey] = useState('');
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [runTutorial, setRunTutorial] = useState(false);
+
+  const tutorialSteps: Step[] = [
+    {
+      target: 'body',
+      content: 'Bem-vindo às configurações! Aqui você pode gerenciar seu perfil e chaves de API.',
+      placement: 'center',
+    },
+    {
+      target: '#geminiKey',
+      content: 'A chave do Google Gemini é obrigatória para gerar roteiros e inteligência do vídeo. Obtenha no Google AI Studio.',
+    },
+    {
+      target: '#elevenLabsKey',
+      content: 'Opcional: Adicione sua chave ElevenLabs para narrações ultra-realistas.',
+    },
+    {
+      target: 'button[type="submit"]',
+      content: 'Não esqueça de salvar suas alterações aqui!',
+    }
+  ];
 
   useEffect(() => {
     if (user.apiKeys?.gemini) setGeminiKey(user.apiKeys.gemini);
@@ -58,11 +80,31 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdateUser }) =
 
   return (
     <div className="max-w-3xl mx-auto w-full px-4 py-8">
-      <div className="flex items-center justify-between mb-8"><h1 className="text-3xl font-bold text-white flex items-center gap-3"><UserIcon className="w-8 h-8 text-indigo-400" />{t('settings.title')}</h1></div>
+      <Tutorial run={runTutorial} steps={tutorialSteps} onFinish={() => setRunTutorial(false)} />
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <UserIcon className="w-8 h-8 text-indigo-400" />
+          {t('settings.title')}
+        </h1>
+        <button
+          onClick={() => setRunTutorial(true)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 rounded-lg hover:bg-indigo-500/20 transition-colors text-sm font-medium"
+        >
+          <HelpCircle className="w-4 h-4" />
+          Tour
+        </button>
+      </div>
+
       <div className="grid gap-8">
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 flex flex-col md:flex-row items-center gap-6">
           <img src={user.avatar} alt={user.name} className="w-20 h-20 rounded-full border-2 border-indigo-500" />
-          <div className="text-center md:text-left flex-1"><h2 className="text-xl font-bold text-white">{user.name}</h2><p className="text-slate-400">{user.email}</p><span className={`inline-block mt-2 px-2 py-1 text-xs rounded border ${user.subscriptionPlan === 'PRO' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-slate-500/20 text-slate-300 border-slate-500/30'}`}>{user.subscriptionPlan === 'PRO' ? 'Pro Plan' : 'Free Plan'}</span></div>
+          <div className="text-center md:text-left flex-1">
+            <h2 className="text-xl font-bold text-white">{user.name}</h2>
+            <p className="text-slate-400">{user.email}</p>
+            <span className={`inline-block mt-2 px-2 py-1 text-xs rounded border ${user.subscriptionPlan === 'PRO' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-slate-500/20 text-slate-300 border-slate-500/30'}`}>
+              {user.subscriptionPlan === 'PRO' ? 'Pro Plan' : 'Free Plan'}
+            </span>
+          </div>
         </div>
 
         {/* Language Selector */}
