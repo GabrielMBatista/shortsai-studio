@@ -525,7 +525,9 @@ export const saveProject = async (project: VideoProject): Promise<VideoProject> 
             const existingScenes = freshProject?.scenes || [];
 
             const updatedScenes = await Promise.all(savedProject.scenes.map(async (scene) => {
-                const existing = existingScenes.find(s => s.sceneNumber === scene.sceneNumber);
+                // Match by ID if available
+                let existing = scene.id ? existingScenes.find(s => s.id === scene.id) : null;
+
                 if (!existing) {
                     if (!backendProjectId) {
                         console.warn("Skipping scene creation: No backendProjectId");
@@ -540,8 +542,18 @@ export const saveProject = async (project: VideoProject): Promise<VideoProject> 
                     };
                     const res = await apiFetch('/scenes', { method: 'POST', body: JSON.stringify(scenePayload) });
                     return { ...scene, id: res.id || res._id };
+                } else {
+                    // Update scene order if changed
+                    if (existing.sceneNumber !== scene.sceneNumber) {
+                        try {
+                            await apiFetch(`/scenes/${existing.id}`, {
+                                method: 'PATCH',
+                                body: JSON.stringify({ scene_number: scene.sceneNumber })
+                            });
+                        } catch (e) { console.warn("Failed to update scene order", e); }
+                    }
+                    return { ...scene, id: existing.id };
                 }
-                return { ...scene, id: existing.id };
             }));
             savedProject.scenes = updatedScenes;
         } catch (e) { console.warn("Scene sync failed", e); }

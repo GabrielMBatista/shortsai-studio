@@ -22,7 +22,7 @@
         "delete_success": "Projeto excluído com sucesso.",
         "hello": "Olá, {{name}}",
         "subtitle": "Pronto para criar seu próximo vídeo viral?",
-        "create_magic": "Criar Mágica",
+        "create_magic": "Criar Novo Vídeo",
         "recent_projects": "Projetos Recentes",
         "syncing": "Sincronizando...",
         "projects_count": "{{count}} projeto",
