@@ -14,6 +14,7 @@ interface FolderListProps {
     isCollapsed: boolean;
     onToggleCollapse: () => void;
     className?: string;
+    isLoading?: boolean;
 }
 
 const FolderList: React.FC<FolderListProps> = ({
@@ -25,7 +26,8 @@ const FolderList: React.FC<FolderListProps> = ({
     onDeleteFolder,
     isCollapsed,
     onToggleCollapse,
-    className
+    className,
+    isLoading
 }) => {
     const { t } = useTranslation();
     const [isCreating, setIsCreating] = useState(false);
@@ -132,96 +134,102 @@ const FolderList: React.FC<FolderListProps> = ({
             )}
 
             <div className="flex-1 overflow-y-auto space-y-1 px-2">
-                {folders.map(folder => (
-                    <DroppableFolder
-                        key={folder.id}
-                        id={folder.id}
-                        className={`rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
-                    >
-                        <div
-                            className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm font-medium cursor-pointer ${selectedFolderId === folder.id
-                                ? 'bg-indigo-500/20 text-indigo-400'
-                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                                } ${isCollapsed ? 'justify-center flex-col gap-1 py-3' : ''}`}
-                            onClick={() => onSelectFolder(folder.id)}
-                            title={isCollapsed ? folder.name : undefined}
+                {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className={`h-9 rounded-lg bg-slate-800/50 animate-pulse ${isCollapsed ? 'mx-1' : ''}`} />
+                    ))
+                ) : (
+                    folders.map(folder => (
+                        <DroppableFolder
+                            key={folder.id}
+                            id={folder.id}
+                            className={`rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
                         >
-                            {!isCollapsed && editingFolderId === folder.id ? (
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    value={editName}
-                                    onChange={(e) => setEditName(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleUpdate(folder.id)}
-                                    onBlur={() => setEditingFolderId(null)}
-                                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-indigo-500"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                            ) : (
-                                <>
-                                    <div className={`flex items-center gap-3 truncate ${isCollapsed ? 'justify-center w-full flex-col gap-1' : ''}`}>
-                                        {selectedFolderId === folder.id ? (
-                                            <FolderOpen className="w-4 h-4 flex-shrink-0" />
-                                        ) : (
-                                            <Folder className="w-4 h-4 flex-shrink-0" />
-                                        )}
-                                        {!isCollapsed ? (
-                                            <>
-                                                <span className="truncate">{folder.name}</span>
-                                                {folder._count?.projects ? (
-                                                    <span className="text-xs text-slate-500">({folder._count.projects})</span>
-                                                ) : null}
-                                            </>
-                                        ) : (
-                                            <span className="text-[10px] font-bold">{getInitials(folder.name)}</span>
-                                        )}
-                                    </div>
-
-                                    {!isCollapsed && (
-                                        <div className="relative">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setMenuOpenId(menuOpenId === folder.id ? null : folder.id);
-                                                }}
-                                                className={`p-1 rounded hover:bg-slate-700 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity ${menuOpenId === folder.id ? 'opacity-100 bg-slate-700' : ''}`}
-                                            >
-                                                <MoreVertical className="w-3 h-3" />
-                                            </button>
-
-                                            {menuOpenId === folder.id && (
-                                                <div className="absolute right-0 top-6 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 py-1">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setEditingFolderId(folder.id);
-                                                            setEditName(folder.name);
-                                                            setMenuOpenId(null);
-                                                        }}
-                                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white"
-                                                    >
-                                                        <Edit2 className="w-3 h-3" /> {t('folders.rename')}
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDelete(folder.id);
-                                                        }}
-                                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-slate-700 hover:text-red-300"
-                                                    >
-                                                        <Trash2 className="w-3 h-3" /> {t('folders.delete')}
-                                                    </button>
-                                                </div>
+                            <div
+                                className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm font-medium cursor-pointer ${selectedFolderId === folder.id
+                                    ? 'bg-indigo-500/20 text-indigo-400'
+                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                    } ${isCollapsed ? 'justify-center flex-col gap-1 py-3' : ''}`}
+                                onClick={() => onSelectFolder(folder.id)}
+                                title={isCollapsed ? folder.name : undefined}
+                            >
+                                {!isCollapsed && editingFolderId === folder.id ? (
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        value={editName}
+                                        onChange={(e) => setEditName(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleUpdate(folder.id)}
+                                        onBlur={() => setEditingFolderId(null)}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-indigo-500"
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                ) : (
+                                    <>
+                                        <div className={`flex items-center gap-3 truncate ${isCollapsed ? 'justify-center w-full flex-col gap-1' : ''}`}>
+                                            {selectedFolderId === folder.id ? (
+                                                <FolderOpen className="w-4 h-4 flex-shrink-0" />
+                                            ) : (
+                                                <Folder className="w-4 h-4 flex-shrink-0" />
+                                            )}
+                                            {!isCollapsed ? (
+                                                <>
+                                                    <span className="truncate">{folder.name}</span>
+                                                    {folder._count?.projects ? (
+                                                        <span className="text-xs text-slate-500">({folder._count.projects})</span>
+                                                    ) : null}
+                                                </>
+                                            ) : (
+                                                <span className="text-[10px] font-bold">{getInitials(folder.name)}</span>
                                             )}
                                         </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    </DroppableFolder>
-                ))}
+
+                                        {!isCollapsed && (
+                                            <div className="relative">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMenuOpenId(menuOpenId === folder.id ? null : folder.id);
+                                                    }}
+                                                    className={`p-1 rounded hover:bg-slate-700 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity ${menuOpenId === folder.id ? 'opacity-100 bg-slate-700' : ''}`}
+                                                >
+                                                    <MoreVertical className="w-3 h-3" />
+                                                </button>
+
+                                                {menuOpenId === folder.id && (
+                                                    <div className="absolute right-0 top-6 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 py-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setEditingFolderId(folder.id);
+                                                                setEditName(folder.name);
+                                                                setMenuOpenId(null);
+                                                            }}
+                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white"
+                                                        >
+                                                            <Edit2 className="w-3 h-3" /> {t('folders.rename')}
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(folder.id);
+                                                            }}
+                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-slate-700 hover:text-red-300"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" /> {t('folders.delete')}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </DroppableFolder>
+                    ))
+                )}
             </div>
-        </div>
+        </div >
     );
 };
 

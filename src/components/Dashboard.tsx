@@ -26,33 +26,49 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
 
     const handleCreateFolder = async (name: string) => {
         await createFolder(name);
+        handleRefreshFolders();
         onRefreshProjects();
     };
 
     const handleUpdateFolder = async (id: string, name: string) => {
         await updateFolder(id, name);
+        handleRefreshFolders();
         onRefreshProjects();
     };
 
     const handleDeleteFolder = async (id: string) => {
         await deleteFolder(id);
+        handleRefreshFolders();
         onRefreshProjects();
     };
     const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
     const [showArchived, setShowArchived] = useState(false);
     const [filterTag, setFilterTag] = useState('');
     const [folders, setFolders] = useState<FolderType[]>([]);
+    const [isLoadingFolders, setIsLoadingFolders] = useState(true);
 
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, projectId: string } | null>(null);
 
     useEffect(() => {
-        getFolders().then(setFolders);
+        setIsLoadingFolders(true);
+        getFolders().then(data => {
+            setFolders(data);
+            setIsLoadingFolders(false);
+        });
     }, []);
 
     const handleRefreshFolders = () => {
+        // Don't set loading here to avoid flickering on every small update, or maybe do?
+        // Let's keep it silent for background updates, but we can set it if we want.
+        // For now, let's just fetch.
         getFolders().then(setFolders);
     };
+
+    // Refresh folders when projects change (to update counts)
+    useEffect(() => {
+        handleRefreshFolders();
+    }, [projects]);
 
     const formatDate = (ts: number) => new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
@@ -194,6 +210,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                     onDeleteFolder={handleDeleteFolder}
                     isCollapsed={isSidebarCollapsed}
                     onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                    isLoading={isLoadingFolders}
                 />
 
                 {/* Main Content */}
