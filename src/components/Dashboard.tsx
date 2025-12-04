@@ -85,7 +85,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
 
     const handleExportContext = async () => {
         try {
-            const data = await exportProjectContext(selectedFolderId || undefined, filterTag || undefined);
+            const data = await exportProjectContext(selectedFolderId, filterTag || undefined);
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -267,10 +267,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                                 <button
                                     onClick={handleExportContext}
                                     className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
-                                    title="Export context for AI reference"
+                                    title={t('dashboard.export_context')}
                                 >
                                     <Download className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Export Context</span>
+                                    <span className="hidden sm:inline">{t('dashboard.export_context')}</span>
                                 </button>
 
                                 <button

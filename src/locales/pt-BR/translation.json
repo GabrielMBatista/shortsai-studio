@@ -44,6 +44,7 @@
         "no_projects_title": "Nenhum projeto ainda",
         "no_projects_desc": "Seu estúdio está vazio. Inicie seu primeiro fluxo de trabalho automatizado para gerar roteiros, imagens e narrações em segundos.",
         "start_project": "Começar seu primeiro projeto",
+        "export_context": "Exportar Contexto",
         "progress": "Progresso"
     },
     "input": {
