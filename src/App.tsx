@@ -448,6 +448,7 @@ const App: React.FC = () => {
                         onDeleteProject={handleRequestDelete}
                         onRefreshProjects={refreshProjects}
                         isLoading={isLoadingProjects}
+                        showToast={showToast}
                     />
                 )}
 

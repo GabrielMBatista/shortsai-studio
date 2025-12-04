@@ -17,9 +17,10 @@ interface DashboardProps {
     onDeleteProject: (projectId: string) => void;
     onRefreshProjects: () => void;
     isLoading?: boolean;
+    showToast?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onOpenProject, onDeleteProject, onRefreshProjects, isLoading = false }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onOpenProject, onDeleteProject, onRefreshProjects, isLoading = false, showToast }) => {
     const { t } = useTranslation();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -125,6 +126,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
         try {
             await patchProjectMetadata(projectId, { is_archived: newStatus });
             onRefreshProjects();
+            handleRefreshFolders();
+            if (showToast) showToast(newStatus ? t('folders.archived_success') : t('folders.unarchived_success'), 'success');
         } catch (e) {
             console.error(e);
             // Revert
@@ -133,6 +136,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                 delete next[projectId];
                 return next;
             });
+            if (showToast) showToast(t('common.error'), 'error');
         }
     };
 
@@ -143,6 +147,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
         try {
             await patchProjectMetadata(projectId, { folder_id: folderId });
             onRefreshProjects();
+            handleRefreshFolders();
+            if (showToast) showToast(t('folders.move_success'), 'success');
         } catch (e) {
             console.error(e);
             // Revert
@@ -151,6 +157,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                 delete next[projectId];
                 return next;
             });
+            if (showToast) showToast(t('common.error'), 'error');
         }
     };
 
