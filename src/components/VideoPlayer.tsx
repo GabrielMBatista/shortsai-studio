@@ -41,7 +41,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     }
   }, []);
 
-  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(0.8);
 
   // Hook for Download Logic
   const {
@@ -93,9 +93,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   // Set music volume
   useEffect(() => {
     if (musicRef.current) {
-      musicRef.current.volume = 0.3;
+      musicRef.current.volume = 0.3; // Keep music lower
     }
-  }, [bgMusicUrl]);
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [bgMusicUrl, volume]);
 
   const handleAudioEnded = () => {
     if (currentSceneIndex < validScenes.length - 1) {
@@ -207,14 +210,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           onEnded={handleAudioEnded}
           onTimeUpdate={handleTimeUpdate}
           autoPlay={isPlaying}
-          muted={isMuted}
+        // muted={isMuted} -> Removed, handled by volume
         />
         {bgMusicUrl && (
           <audio
             ref={musicRef}
             src={bgMusicUrl}
             loop
-            muted={isMuted}
+          // muted={isMuted} -> Removed
           />
         )}
 
@@ -386,7 +389,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         <button onClick={handleDownloadClick} disabled={isDownloading} className={`p-3 rounded-full transition-colors flex items-center justify-center ${isDownloading ? 'text-slate-500 cursor-wait' : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'}`}><Download className="w-5 h-5" /></button>
         <div className="w-px h-6 bg-white/10 mx-1"></div>
         <button onClick={() => setShowSubtitles(!showSubtitles)} className={`p-3 rounded-full transition-colors ${showSubtitles ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>{showSubtitles ? <Captions className="w-5 h-5" /> : <CaptionsOff className="w-5 h-5" />}</button>
-        <button onClick={() => setIsMuted(!isMuted)} className={`p-3 transition-colors rounded-full hover:bg-white/10 ${!isMuted ? 'text-white' : 'text-slate-600'}`}>{!isMuted ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}</button>
+
+        <div className="flex items-center gap-2 px-2 group">
+          <button onClick={() => setVolume(volume === 0 ? 0.8 : 0)} className={`p-1 transition-colors rounded-full hover:bg-white/10 ${volume > 0 ? 'text-white' : 'text-slate-600'}`}>
+            {volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={volume}
+            onChange={(e) => setVolume(parseFloat(e.target.value))}
+            className="w-16 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+          />
+        </div>
       </div>
     </div >
   );
