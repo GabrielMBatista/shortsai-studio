@@ -151,7 +151,8 @@
         "next": "Próximo",
         "skip": "Pular",
         "finish": "Concluir",
-        "close": "Fechar"
+        "close": "Fechar",
+        "success_saved": "Salvo com sucesso!"
     },
     "settings": {
         "title": "Configurações do Usuário",

@@ -142,7 +142,13 @@
         "error": "Error",
         "success": "Success",
         "delete": "Delete",
-        "loading": "Loading..."
+        "loading": "Loading...",
+        "back": "Back",
+        "next": "Next",
+        "skip": "Skip",
+        "finish": "Finish",
+        "close": "Close",
+        "success_saved": "Saved successfully!"
     },
     "settings": {
         "title": "User Settings",
