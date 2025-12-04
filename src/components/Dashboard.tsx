@@ -22,6 +22,10 @@ interface DashboardProps {
     page?: number;
     setPage?: (page: number) => void;
     totalPages?: number;
+    selectedFolderId: string | null;
+    setSelectedFolderId: (id: string | null) => void;
+    showArchived: boolean;
+    setShowArchived: (show: boolean) => void;
 }
 
 const useIsMobile = () => {
@@ -35,7 +39,23 @@ const useIsMobile = () => {
     return isMobile;
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onOpenProject, onDeleteProject, onRefreshProjects, isLoading = false, showToast, page, setPage, totalPages }) => {
+const Dashboard: React.FC<DashboardProps> = ({
+    user,
+    projects,
+    onNewProject,
+    onOpenProject,
+    onDeleteProject,
+    onRefreshProjects,
+    isLoading = false,
+    showToast,
+    page,
+    setPage,
+    totalPages,
+    selectedFolderId,
+    setSelectedFolderId,
+    showArchived,
+    setShowArchived
+}) => {
     const { t } = useTranslation();
     const isMobile = useIsMobile();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -58,9 +78,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
         handleRefreshFolders();
         onRefreshProjects();
     };
-    const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
-    const [showArchived, setShowArchived] = useState(false);
-    // const [filterTag, setFilterTag] = useState(''); // Removed as per request
     const [folders, setFolders] = useState<FolderType[]>([]);
     const [isLoadingFolders, setIsLoadingFolders] = useState(true);
 
@@ -141,19 +158,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
 
     const filteredProjects = useMemo(() => {
         return projectsSource.map(p => ({ ...p, ...optimisticUpdates[p.id] })).filter(p => {
+            // Optimistic filtering
             if (showArchived) {
+                // If we are in archived view, we expect isArchived to be true.
+                // If optimistic update says false (unarchived), hide it.
+                // If optimistic update says true (archived), show it.
+                // Note: backend already filtered by isArchived=true.
+                // So p.isArchived is true.
+                // If optimistic update changes it to false, we hide it.
                 return p.isArchived;
             }
-            if (p.isArchived) return false; // Hide archived by default
+
+            // Default view (isArchived=false)
+            if (p.isArchived) return false;
 
             if (selectedFolderId) {
                 if (p.folderId !== selectedFolderId) return false;
             } else {
-                // Home/Root view: Only show projects NOT in any folder
+                // Home/Root view
                 if (p.folderId) return false;
             }
-
-            // if (filterTag && !p.tags?.some(t => t.toLowerCase().includes(filterTag.toLowerCase()))) return false;
 
             return true;
         });
@@ -374,12 +398,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
 
                         {/* Filters Bar */}
                         <div className="flex items-center gap-4 mb-6 bg-slate-800/30 p-2 rounded-lg border border-slate-700/50">
-                            <div className="flex items-center gap-2 text-slate-400 px-2">
-                                <Filter className="w-4 h-4" />
-                                <span className="text-sm font-medium">{t('dashboard.filters')}</span>
-                            </div>
-
-
+                            {totalPages && totalPages > 1 && (
+                                <div className="hidden md:flex">
+                                    <Pagination
+                                        currentPage={page || 1}
+                                        totalPages={totalPages}
+                                        onPageChange={(p) => setPage && setPage(p)}
+                                    />
+                                </div>
+                            )}
 
                             <button
                                 onClick={() => setShowArchived(!showArchived)}
@@ -429,15 +456,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
                                         />
                                     ))}
                                 </div>
-                                {totalPages && totalPages > 1 && (
-                                    <div className="hidden md:flex justify-center">
-                                        <Pagination
-                                            currentPage={page || 1}
-                                            totalPages={totalPages}
-                                            onPageChange={(p) => setPage && setPage(p)}
-                                        />
-                                    </div>
-                                )}
+
                                 {isMobile && totalPages && page && page < totalPages && (
                                     <div ref={observerTarget} className="h-20 flex items-center justify-center w-full">
                                         {isLoading && <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />}

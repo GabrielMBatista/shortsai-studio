@@ -2,14 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserProjects, deleteProject } from '../services/storageService';
 import { useState } from 'react';
 
-export const useProjects = (userId?: string) => {
+export const useProjects = (userId?: string, folderId?: string | null, isArchived?: boolean) => {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(12); // Default to 12 items per page
 
   const projectsQuery = useQuery({
-    queryKey: ['projects', userId, page, limit],
-    queryFn: () => getUserProjects(userId!, limit, page),
+    queryKey: ['projects', userId, page, limit, folderId, isArchived],
+    queryFn: () => getUserProjects(userId!, limit, page, folderId, isArchived),
     enabled: !!userId,
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000,

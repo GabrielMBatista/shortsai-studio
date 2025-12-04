@@ -31,6 +31,10 @@ const App: React.FC = () => {
     const [tutorialSteps, setTutorialSteps] = useState<Step[]>([]);
     const [isTourMenuOpen, setIsTourMenuOpen] = useState(false);
 
+    // Dashboard State (Lifted)
+    const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+    const [showArchived, setShowArchived] = useState(false);
+
     const settingsTourSteps: Step[] = [
         {
             target: 'body',
@@ -72,7 +76,7 @@ const App: React.FC = () => {
         page,
         setPage,
         totalPages
-    } = useProjects(currentUser?.id);
+    } = useProjects(currentUser?.id, selectedFolderId, showArchived);
 
     // UI State for Toasts & Modals
     const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
@@ -460,6 +464,10 @@ const App: React.FC = () => {
                         page={page}
                         setPage={setPage}
                         totalPages={totalPages}
+                        selectedFolderId={selectedFolderId}
+                        setSelectedFolderId={setSelectedFolderId}
+                        showArchived={showArchived}
+                        setShowArchived={setShowArchived}
                     />
                 )}
 

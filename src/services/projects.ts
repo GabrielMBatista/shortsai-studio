@@ -124,10 +124,23 @@ export const patchProjectMetadata = async (projectId: string, updates: { folder_
     }
 };
 
-export const getUserProjects = async (userId: string, limit: number = 100, page: number = 1): Promise<{ projects: VideoProject[], total: number }> => {
+export const getUserProjects = async (userId: string, limit: number = 100, page: number = 1, folderId?: string | null, isArchived?: boolean): Promise<{ projects: VideoProject[], total: number }> => {
     try {
         const offset = (page - 1) * limit;
-        const response = await apiFetch(`/projects?user_id=${userId}&limit=${limit}&offset=${offset}`);
+        let url = `/projects?user_id=${userId}&limit=${limit}&offset=${offset}`;
+
+        if (folderId) {
+            url += `&folder_id=${folderId}`;
+        } else if (folderId === null) {
+            // Explicitly fetch root folder (no folder)
+            url += `&folder_id=root`;
+        }
+
+        if (isArchived !== undefined) {
+            url += `&is_archived=${isArchived}`;
+        }
+
+        const response = await apiFetch(url);
 
         let data = [];
         let total = 0;
