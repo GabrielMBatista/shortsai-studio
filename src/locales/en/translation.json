@@ -19,7 +19,10 @@
         "delete": "Delete",
         "delete_confirm": "Delete this folder? Projects will be moved to \"All Projects\".",
         "move_to_folder": "Move to Folder",
-        "root_folder": "All Projects (Root)"
+        "root_folder": "All Projects (Root)",
+        "home": "Home",
+        "archive": "Archive",
+        "unarchive": "Unarchive"
     },
     "dashboard": {
         "title": "Your Projects",
@@ -41,6 +44,7 @@
         "no_projects_title": "No projects yet",
         "no_projects_desc": "Your studio is empty. Start your first automated workflow to generate scripts, images, and voiceovers in seconds.",
         "start_project": "Start your first project",
+        "export_context": "Export Context",
         "progress": "Progress"
     },
     "input": {
@@ -149,6 +153,23 @@
         "finish": "Finish",
         "close": "Close",
         "success_saved": "Saved successfully!"
+    },
+    "video_player": {
+        "no_scenes": "No valid scenes to play.",
+        "close": "Close",
+        "export_options": "Export Options",
+        "resolution_note": "Resolution: 1080x1920 (9:16 Vertical)",
+        "format": "Format",
+        "mp4_not_supported": "MP4 export is not supported by your browser. Please use WebM.",
+        "merge_video": "Merge Ending Video",
+        "upload_placeholder": "Upload a vertical video (1080x1920) to play after the generated content.",
+        "cancel": "Cancel",
+        "start_export": "Start Export",
+        "export_failed": "Export Failed",
+        "exporting": "Exporting Video",
+        "est_time": "Est. time:",
+        "warning_tab": "Keep this tab active.",
+        "warning_desc": "Switching tabs may pause the renderer and cause the video to freeze or desync."
     },
     "settings": {
         "title": "User Settings",

@@ -146,7 +146,7 @@ export const deleteProject = async (projectId: string) => {
     try { await apiFetch(`/projects/${projectId}`, { method: 'DELETE' }); } catch (e) { }
 };
 
-export const exportProjectContext = async (folderId?: string | null, tag?: string) => {
+export const exportProjectContext = async (folderId?: string | null, tag?: string, limit: number = 100) => {
     const params = new URLSearchParams();
     if (folderId) {
         params.append('folderId', folderId);
@@ -154,6 +154,7 @@ export const exportProjectContext = async (folderId?: string | null, tag?: strin
         params.append('folderId', 'root');
     }
     if (tag) params.append('tag', tag);
+    params.append('limit', limit.toString());
 
     // We fetch directly to get the blob/json
     const res = await fetch(`${API_BASE_URL}/projects/export-context?${params.toString()}`);

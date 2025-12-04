@@ -3,6 +3,7 @@ import { Scene } from '../types';
 import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer, Clock } from 'lucide-react';
 import { useVideoExport } from '../hooks/useVideoExport';
 import SubtitleOverlay from './SubtitleOverlay';
+import { useTranslation } from 'react-i18next';
 
 interface VideoPlayerProps {
   scenes: Scene[];
@@ -12,6 +13,7 @@ interface VideoPlayerProps {
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, title = "shorts-ai-video" }) => {
+  const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -148,8 +150,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     return (
       <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center text-white">
         <div className="text-center">
-          <p className="mb-4">No valid scenes to play.</p>
-          <button onClick={onClose} className="px-4 py-2 bg-slate-800 rounded-lg">Close</button>
+          <p className="mb-4">{t('video_player.no_scenes')}</p>
+          <button onClick={onClose} className="px-4 py-2 bg-slate-800 rounded-lg">{t('video_player.close')}</button>
         </div>
       </div>
     );
@@ -245,16 +247,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         {/* EXPORT OPTIONS MODAL */}
         {showExportOptions && !isDownloading && (
           <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center text-white p-6 text-center animate-fade-in-up">
-            <h3 className="text-xl font-bold mb-2 text-white">Export Options</h3>
-            <p className="text-xs text-slate-400 mb-6">Resolution: 1080x1920 (9:16 Vertical)</p>
+            <h3 className="text-xl font-bold mb-2 text-white">{t('video_player.export_options')}</h3>
+            <p className="text-xs text-slate-400 mb-6">{t('video_player.resolution_note')}</p>
 
             <div className="w-full max-w-xs mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-              <label className="text-sm font-medium text-slate-300 block mb-3 text-left">Format</label>
+              <label className="text-sm font-medium text-slate-300 block mb-3 text-left">{t('video_player.format')}</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => isMp4Supported && setExportFormat('mp4')}
                   disabled={!isMp4Supported}
-                  title={!isMp4Supported ? "MP4 export is not supported by your browser. Please use WebM." : ""}
+                  title={!isMp4Supported ? t('video_player.mp4_not_supported') : ""}
                   className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all ${exportFormat === 'mp4'
                     ? 'bg-indigo-600 border-indigo-500 text-white'
                     : !isMp4Supported
@@ -275,7 +277,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
             <div className="w-full max-w-xs mb-8 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
               <div className="flex items-center justify-between mb-4">
-                <label className="text-sm font-medium text-slate-300">Merge Video</label>
+                <label className="text-sm font-medium text-slate-300">{t('video_player.merge_video')}</label>
                 <div
                   onClick={() => setIncludeEndingVideo(!includeEndingVideo)}
                   className={`w-10 h-5 rounded-full cursor-pointer transition-colors relative ${includeEndingVideo ? 'bg-indigo-500' : 'bg-slate-700'}`}
@@ -309,7 +311,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                     )}
                   </div>
                   <p className="text-[10px] text-slate-500 mt-2 text-left leading-relaxed">
-                    Upload a vertical video (1080x1920) to play after the generated content.
+                    {t('video_player.upload_placeholder')}
                   </p>
                 </div>
               )}
@@ -320,14 +322,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                 onClick={() => setShowExportOptions(false)}
                 className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-semibold transition-colors text-sm"
               >
-                Cancel
+                {t('video_player.cancel')}
               </button>
               <button
                 onClick={confirmExport}
                 className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
               >
                 <Download className="w-4 h-4" />
-                Start Export
+                {t('video_player.start_export')}
               </button>
             </div>
           </div>
@@ -341,25 +343,25 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                 <div className="p-4 bg-red-500/10 rounded-full mb-4 ring-2 ring-red-500/50">
                   <AlertTriangle className="w-8 h-8 text-red-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-white">Export Failed</h3>
+                <h3 className="text-xl font-bold mb-2 text-white">{t('video_player.export_failed')}</h3>
                 <p className="text-slate-400 text-xs font-mono mb-6 max-w-[90%] leading-relaxed bg-slate-800/50 p-3 rounded border border-slate-700 break-words">{downloadError}</p>
                 <button
                   onClick={cancelExport}
                   className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg font-semibold transition-colors text-sm hover:text-white"
                 >
-                  Close
+                  {t('video_player.close')}
                 </button>
               </div>
             ) : (
               <>
                 <Loader2 className="w-10 h-10 animate-spin text-indigo-500 mb-4" />
-                <h3 className="text-lg font-bold mb-2">Exporting Video</h3>
+                <h3 className="text-lg font-bold mb-2">{t('video_player.exporting')}</h3>
                 <p className="text-slate-400 text-sm font-mono mb-4 font-semibold tracking-wide">{downloadProgress}</p>
 
                 {eta && (
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 text-indigo-300 rounded-full text-xs font-mono mb-6 border border-indigo-500/20">
                     <Timer className="w-3.5 h-3.5" />
-                    <span>Est. time: {eta}</span>
+                    <span>{t('video_player.est_time')} {eta}</span>
                   </div>
                 )}
 
@@ -368,7 +370,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                 </div>
                 <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg max-w-[280px]">
                   <p className="text-[10px] text-yellow-200/80 leading-tight">
-                    ⚠️ <b>Keep this tab active.</b><br />Switching tabs may pause the renderer and cause the video to freeze or desync.
+                    ⚠️ <b>{t('video_player.warning_tab')}</b><br />{t('video_player.warning_desc')}
                   </p>
                 </div>
               </>

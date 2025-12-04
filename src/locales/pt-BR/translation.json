@@ -154,6 +154,23 @@
         "close": "Fechar",
         "success_saved": "Salvo com sucesso!"
     },
+    "video_player": {
+        "no_scenes": "Nenhuma cena válida para reproduzir.",
+        "close": "Fechar",
+        "export_options": "Opções de Exportação",
+        "resolution_note": "Resolução: 1080x1920 (9:16 Vertical)",
+        "format": "Formato",
+        "mp4_not_supported": "Exportação MP4 não suportada pelo navegador. Use WebM.",
+        "merge_video": "Unir Vídeo Final",
+        "upload_placeholder": "Envie um vídeo vertical (1080x1920) para tocar após o conteúdo gerado.",
+        "cancel": "Cancelar",
+        "start_export": "Iniciar Exportação",
+        "export_failed": "Falha na Exportação",
+        "exporting": "Exportando Vídeo",
+        "est_time": "Tempo est.:",
+        "warning_tab": "Mantenha esta aba ativa.",
+        "warning_desc": "Trocar de aba pode pausar o renderizador e causar congelamento ou dessincronia."
+    },
     "settings": {
         "title": "Configurações do Usuário",
         "language": "Idioma / Language",
