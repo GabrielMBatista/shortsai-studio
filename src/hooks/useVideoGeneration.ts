@@ -13,7 +13,12 @@ interface UseVideoGenerationProps {
 
 export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGenerationProps) => {
   const [project, setProject] = useState<VideoProject | null>(null);
+  const projectRef = useRef<VideoProject | null>(null);
   const [workflowState, setWorkflowState] = useState<WorkflowState | null>(null);
+
+  useEffect(() => {
+    projectRef.current = project;
+  }, [project]);
   const queryClient = useQueryClient();
   const deletedSceneIds = useRef<Set<string>>(new Set());
 
@@ -360,24 +365,37 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
       }
     },
     removeScene: async (index: number) => {
-      if (!project) return;
+      const currentProject = projectRef.current;
+      if (!currentProject) return;
 
-      const sceneToRemove = project.scenes[index];
-      const newScenes = project.scenes
-        .filter((_, i) => i !== index)
-        .map((s, i) => ({ ...s, sceneNumber: i + 1 })); // Reorder
+      const sceneToRemove = currentProject.scenes[index];
+      if (!sceneToRemove) return;
 
-      const updatedProject = { ...project, scenes: newScenes };
+      // Track deletion immediately
+      if (sceneToRemove.id) {
+        deletedSceneIds.current.add(sceneToRemove.id);
+      }
 
       // Optimistic update
-      setProject(updatedProject);
+      setProject(prev => {
+        if (!prev) return null;
+        const newScenes = prev.scenes
+          .filter(s => s.id ? s.id !== sceneToRemove.id : s !== sceneToRemove)
+          .map((s, i) => ({ ...s, sceneNumber: i + 1 }));
+        return { ...prev, scenes: newScenes };
+      });
 
       try {
         if (sceneToRemove.id) {
-          deletedSceneIds.current.add(sceneToRemove.id);
           await deleteScene(sceneToRemove.id);
         }
+
         // Save project to update scene numbers of remaining scenes
+        const newScenes = currentProject.scenes
+          .filter(s => s.id ? s.id !== sceneToRemove.id : s !== sceneToRemove)
+          .map((s, i) => ({ ...s, sceneNumber: i + 1 }));
+
+        const updatedProject = { ...currentProject, scenes: newScenes };
         await saveProject(updatedProject);
       } catch (e) {
         console.error("Failed to remove scene", e);

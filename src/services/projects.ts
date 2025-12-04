@@ -62,7 +62,13 @@ export const saveProject = async (project: VideoProject): Promise<VideoProject> 
     if (apiSuccess && savedProject.scenes && savedProject.scenes.length > 0) {
         try {
             const freshProject = await getProject(backendProjectId);
-            const existingScenes = freshProject?.scenes || [];
+
+            if (!freshProject) {
+                console.warn("Failed to fetch project state, skipping scene sync");
+                return savedProject;
+            }
+
+            const existingScenes = freshProject.scenes || [];
 
             const updatedScenes = await Promise.all(savedProject.scenes.map(async (scene) => {
                 // Match by ID if available
