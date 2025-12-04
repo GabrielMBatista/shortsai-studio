@@ -321,7 +321,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="h-screen overflow-hidden bg-[#0f172a] text-slate-50 flex flex-col font-sans">
+        <div className="min-h-screen overflow-x-hidden bg-[#0f172a] text-slate-50 flex flex-col font-sans">
             {/* Notifications */}
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
@@ -434,7 +434,7 @@ const App: React.FC = () => {
                 </div>
             </nav>
 
-            <main className="flex-grow flex flex-col relative overflow-y-auto overflow-x-hidden">
+            <main className="flex-grow flex flex-col relative">
                 {step === AppStep.ADMIN && currentUser && currentUser.role === 'ADMIN' && (
                     <AdminDashboard currentUser={currentUser} />
                 )}
