@@ -147,7 +147,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     projectId,
                     payload: {
                         userId,
-                        imageUrl: scene.imageUrl,
+                        // imageUrl: scene.imageUrl, // Removed to avoid 413 payload too large. Fetched server-side.
                         prompt: scene.visualDescription,
                         keys: apiKeys,
                         modelId: videoModel,
