@@ -289,9 +289,9 @@ const ScriptView: React.FC<ScriptViewProps> = ({
             )}
 
             <header className="mb-8 bg-slate-900/40 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-                <div className="flex flex-col lg:flex-row gap-6 items-start justify-between">
+                <div className="flex flex-col xl:flex-row gap-6 items-start justify-between">
                     {/* Left Column: Title & Metadata */}
-                    <div className="flex-1 min-w-0 space-y-4">
+                    <div className="flex-1 min-w-0 space-y-4 w-full">
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="px-2.5 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold tracking-wide uppercase">
                                 {projectStyle}
@@ -315,7 +315,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                             </span>
                         </div>
 
-                        <h1 className="text-3xl font-bold text-white leading-tight tracking-tight" title={generatedTitle || projectTopic}>
+                        <h1 className="text-3xl font-bold text-white leading-tight tracking-tight break-words" title={generatedTitle || projectTopic}>
                             {(() => {
                                 const text = generatedTitle || projectTopic || t('script.untitled_project');
                                 return text.trim().startsWith('{') ? t('script.untitled_project') : text;
@@ -324,10 +324,10 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                     </div>
 
                     {/* Right Column: Controls */}
-                    <div className="flex flex-col gap-4 w-full lg:w-auto">
+                    <div className="flex flex-col gap-4 w-full xl:w-auto shrink-0">
                         {/* Row 1: Provider & Voice */}
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-lg p-1.5 gap-1">
+                        <div className="flex flex-col md:flex-row gap-3">
+                            <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-lg p-1.5 gap-1 self-start md:self-auto">
                                 <button
                                     onClick={() => {
                                         setSelectedProvider('gemini');
@@ -360,7 +360,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                 </button>
                             </div>
 
-                            <div className="flex-1 bg-slate-950/50 border border-slate-800 rounded-lg px-3 flex items-center gap-3 w-full sm:w-auto sm:min-w-[280px]">
+                            <div className="flex-1 bg-slate-950/50 border border-slate-800 rounded-lg px-3 flex items-center gap-3 w-full md:w-auto md:min-w-[320px]">
                                 <div className="flex items-center gap-2 text-slate-400 border-r border-slate-800 pr-3 mr-1">
                                     <Globe className="w-3.5 h-3.5" />
                                     <select
@@ -378,7 +378,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                     </select>
                                 </div>
 
-                                <div className="flex-1 relative">
+                                <div className="flex-1 relative min-w-[120px]">
                                     {isLoadingVoices ? (
                                         <span className="text-slate-500 text-xs flex items-center"><Loader2 className="w-3 h-3 animate-spin mr-2" />{t('script.loading_voices')}</span>
                                     ) : (
@@ -423,75 +423,73 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                 <button
                                     onClick={handlePreviewVoice}
                                     disabled={isGeneratingImages || isLoadingVoices}
-                                    className="p-1.5 text-slate-500 hover:text-indigo-400 transition-colors"
+                                    className="p-1.5 text-slate-500 hover:text-indigo-400 transition-colors shrink-0"
                                 >
                                     {previewState.status === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : previewState.status === 'playing' ? <Square className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
                                 </button>
                             </div>
+                        </div>
 
-
-
-                            {/* Row 2: Actions & Video Model */}
-                            <div className="flex flex-wrap items-center gap-3 justify-end">
-                                {/* Video Model Selector (Moved Here) */}
-                                <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 gap-2 relative group">
-                                    <Video className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
-                                    <select
-                                        value={selectedVideoModel}
-                                        onChange={(e) => {
-                                            const newVal = e.target.value;
-                                            setSelectedVideoModel(newVal);
-                                            localStorage.setItem('shortsai_pref_video_model', newVal);
-                                            onUpdateProjectSettings({ videoModel: newVal });
-                                        }}
-                                        disabled={isGeneratingImages}
-                                        className="bg-transparent text-slate-300 text-xs font-medium outline-none cursor-pointer hover:text-white transition-colors appearance-none pr-4"
-                                    >
-                                        <option value="veo-2.0-generate-001" className="bg-slate-900">Veo 2 (High Quality)</option>
-                                        <option value="veo-3.0-generate-preview" className="bg-slate-900">Veo 3 (Preview)</option>
-                                        <option value="veo-3.0-fast-generate-preview" className="bg-slate-900">Veo 3 Fast (Preview)</option>
-                                    </select>
-                                    <ChevronDown className="w-3 h-3 text-slate-500 absolute right-2 pointer-events-none group-hover:text-white transition-colors" />
-                                </div>
-
-                                <button
-                                    onClick={() => onRegenerateAudio(selectedVoice, selectedProvider, selectedLanguage)}
-                                    disabled={isGeneratingImages || !isSettingsChanged}
-                                    className={`px-4 py-2 rounded-lg border text-xs font-semibold transition-all flex items-center gap-2 ${isSettingsChanged ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20' : 'bg-slate-800/50 border-slate-700 text-slate-500 cursor-not-allowed'}`}
+                        {/* Row 2: Actions & Video Model */}
+                        <div className="flex flex-wrap items-center gap-3 justify-start md:justify-end">
+                            {/* Video Model Selector */}
+                            <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 gap-2 relative group">
+                                <Video className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+                                <select
+                                    value={selectedVideoModel}
+                                    onChange={(e) => {
+                                        const newVal = e.target.value;
+                                        setSelectedVideoModel(newVal);
+                                        localStorage.setItem('shortsai_pref_video_model', newVal);
+                                        onUpdateProjectSettings({ videoModel: newVal });
+                                    }}
+                                    disabled={isGeneratingImages}
+                                    className="bg-transparent text-slate-300 text-xs font-medium outline-none cursor-pointer hover:text-white transition-colors appearance-none pr-4"
                                 >
-                                    <RefreshCw className="w-3.5 h-3.5" /> {t('script.apply_voice')}
-                                </button>
-
-                                {isGeneratingImages && onCancelGeneration ? (
-                                    <button onClick={onCancelGeneration} className="flex items-center px-5 py-2 rounded-lg text-sm font-bold bg-red-500/10 text-red-400 border border-red-500/50 hover:bg-red-500/20 transition-all animate-pulse">
-                                        <StopCircle className="w-4 h-4 mr-2" /> {t('script.stop')}
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={onStartImageGeneration}
-                                        className="flex items-center px-5 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
-                                    >
-                                        <Sparkles className="w-4 h-4 mr-2" /> {t('script.generate_all')}
-                                    </button>
-                                )}
-
-                                <button
-                                    onClick={onPreview}
-                                    disabled={!canPreview}
-                                    className={`flex items-center px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95 ${canPreview ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}
-                                >
-                                    <PlayCircle className="w-4 h-4 mr-2" /> {t('script.preview')}
-                                </button>
-
-                                {onExport && (
-                                    <button
-                                        onClick={onExport}
-                                        className="flex items-center px-4 py-2 rounded-lg text-sm font-semibold bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95"
-                                    >
-                                        <Download className="w-4 h-4 mr-2" /> {t('script.export_assets')}
-                                    </button>
-                                )}
+                                    <option value="veo-2.0-generate-001" className="bg-slate-900">Veo 2 (High Quality)</option>
+                                    <option value="veo-3.0-generate-preview" className="bg-slate-900">Veo 3 (Preview)</option>
+                                    <option value="veo-3.0-fast-generate-preview" className="bg-slate-900">Veo 3 Fast (Preview)</option>
+                                </select>
+                                <ChevronDown className="w-3 h-3 text-slate-500 absolute right-2 pointer-events-none group-hover:text-white transition-colors" />
                             </div>
+
+                            <button
+                                onClick={() => onRegenerateAudio(selectedVoice, selectedProvider, selectedLanguage)}
+                                disabled={isGeneratingImages || !isSettingsChanged}
+                                className={`px-4 py-2 rounded-lg border text-xs font-semibold transition-all flex items-center gap-2 ${isSettingsChanged ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20' : 'bg-slate-800/50 border-slate-700 text-slate-500 cursor-not-allowed'}`}
+                            >
+                                <RefreshCw className="w-3.5 h-3.5" /> {t('script.apply_voice')}
+                            </button>
+
+                            {isGeneratingImages && onCancelGeneration ? (
+                                <button onClick={onCancelGeneration} className="flex items-center px-5 py-2 rounded-lg text-sm font-bold bg-red-500/10 text-red-400 border border-red-500/50 hover:bg-red-500/20 transition-all animate-pulse">
+                                    <StopCircle className="w-4 h-4 mr-2" /> {t('script.stop')}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={onStartImageGeneration}
+                                    className="flex items-center px-5 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
+                                >
+                                    <Sparkles className="w-4 h-4 mr-2" /> {t('script.generate_all')}
+                                </button>
+                            )}
+
+                            <button
+                                onClick={onPreview}
+                                disabled={!canPreview}
+                                className={`flex items-center px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95 ${canPreview ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}
+                            >
+                                <PlayCircle className="w-4 h-4 mr-2" /> {t('script.preview')}
+                            </button>
+
+                            {onExport && (
+                                <button
+                                    onClick={onExport}
+                                    className="flex items-center px-4 py-2 rounded-lg text-sm font-semibold bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95"
+                                >
+                                    <Download className="w-4 h-4 mr-2" /> {t('script.export_assets')}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
