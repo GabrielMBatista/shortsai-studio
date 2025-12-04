@@ -190,6 +190,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     {/* Top Right: Delete */}
                     <div className="absolute top-2 right-2 z-10">
                         <button
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => { e.stopPropagation(); onRemoveScene(sceneIndex); }}
                             className="bg-black/60 hover:bg-red-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm cursor-pointer hover:scale-105"
                             title={t('scene.remove_scene')}
