@@ -26,7 +26,7 @@ const Tutorial: React.FC<TutorialProps> = ({ run, steps, onFinish }) => {
         }
     };
 
-    const styles: Styles = {
+    const styles: Partial<Styles> = {
         options: {
             arrowColor: '#1e293b',
             backgroundColor: '#1e293b',
@@ -48,13 +48,27 @@ const Tutorial: React.FC<TutorialProps> = ({ run, steps, onFinish }) => {
             fontSize: '0.875rem',
             fontWeight: 600,
             padding: '0.5rem 1rem',
+            outline: 'none',
         },
         buttonBack: {
-            color: '#94a3b8',
+            backgroundColor: '#334155',
+            borderRadius: '0.5rem',
+            color: '#f1f5f9',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            padding: '0.5rem 1rem',
             marginRight: '0.5rem',
+            border: '1px solid #475569',
+            outline: 'none',
         },
         buttonSkip: {
+            backgroundColor: 'transparent',
+            borderRadius: '0.5rem',
             color: '#94a3b8',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            padding: '0.5rem 1rem',
+            outline: 'none',
         },
     };
 

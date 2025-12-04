@@ -351,7 +351,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
             </div>
             <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
                 {activeProject ? (
-                    <div className="w-32 bg-slate-800 border border-indigo-500/50 rounded-lg shadow-2xl overflow-hidden opacity-90 pointer-events-none cursor-grabbing">
+                    <div className="w-32 bg-slate-800 border border-indigo-500/50 rounded-lg shadow-2xl overflow-hidden opacity-50 pointer-events-none cursor-grabbing">
                         <div className="aspect-video bg-slate-900 relative">
                             {activeProject.scenes[0]?.imageUrl && (
                                 <img src={activeProject.scenes[0].imageUrl} className="w-full h-full object-cover" />
