@@ -1,43 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { Folder, Plus, MoreVertical, Edit2, Trash2, FolderOpen } from 'lucide-react';
 import { Folder as FolderType } from '../types';
-import { createFolder, updateFolder, deleteFolder, getFolders } from '../services/storageService';
 import { useTranslation } from 'react-i18next';
 
 interface FolderListProps {
+    folders: FolderType[];
     selectedFolderId: string | null;
     onSelectFolder: (folderId: string | null) => void;
-    onFoldersChange?: () => void; // Trigger refresh of projects
+    onCreateFolder: (name: string) => Promise<void>;
+    onUpdateFolder: (id: string, name: string) => Promise<void>;
+    onDeleteFolder: (id: string) => Promise<void>;
+    isCollapsed: boolean;
+    onToggleCollapse: () => void;
+    className?: string;
 }
 
-const FolderList: React.FC<FolderListProps> = ({ selectedFolderId, onSelectFolder, onFoldersChange }) => {
+const FolderList: React.FC<FolderListProps> = ({
+    folders,
+    selectedFolderId,
+    onSelectFolder,
+    onCreateFolder,
+    onUpdateFolder,
+    onDeleteFolder,
+    isCollapsed,
+    onToggleCollapse,
+    className
+}) => {
     const { t } = useTranslation();
-    const [folders, setFolders] = useState<FolderType[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-    const [isCollapsed, setIsCollapsed] = useState(false);
-
-    const fetchFolders = async () => {
-        const data = await getFolders();
-        setFolders(data);
-    };
-
-    useEffect(() => {
-        fetchFolders();
-    }, []);
 
     const handleCreate = async () => {
         if (!newFolderName.trim()) return;
         try {
-            await createFolder(newFolderName);
+            await onCreateFolder(newFolderName);
             setNewFolderName('');
             setIsCreating(false);
-            fetchFolders();
-            onFoldersChange?.();
         } catch (e) {
             console.error(e);
         }
@@ -46,11 +48,9 @@ const FolderList: React.FC<FolderListProps> = ({ selectedFolderId, onSelectFolde
     const handleUpdate = async (id: string) => {
         if (!editName.trim()) return;
         try {
-            await updateFolder(id, editName);
+            await onUpdateFolder(id, editName);
             setEditingFolderId(null);
             setMenuOpenId(null);
-            fetchFolders();
-            onFoldersChange?.();
         } catch (e) {
             console.error(e);
         }
@@ -59,11 +59,9 @@ const FolderList: React.FC<FolderListProps> = ({ selectedFolderId, onSelectFolde
     const handleDelete = async (id: string) => {
         if (!confirm(t('folders.delete_confirm'))) return;
         try {
-            await deleteFolder(id);
+            await onDeleteFolder(id);
             if (selectedFolderId === id) onSelectFolder(null);
             setMenuOpenId(null);
-            fetchFolders();
-            onFoldersChange?.();
         } catch (e) {
             console.error(e);
         }
@@ -79,7 +77,7 @@ const FolderList: React.FC<FolderListProps> = ({ selectedFolderId, onSelectFolde
     };
 
     return (
-        <div className={`bg-slate-900/50 border-r border-slate-800 flex flex-col gap-2 h-full transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+        <div className={`bg-slate-900/50 border-r border-slate-800 flex flex-col gap-2 h-full transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} ${className || ''}`}>
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-4 mb-2`}>
                 {!isCollapsed && <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{t('folders.title')}</h3>}
                 <div className="flex gap-1">
@@ -92,7 +90,7 @@ const FolderList: React.FC<FolderListProps> = ({ selectedFolderId, onSelectFolde
                         </button>
                     )}
                     <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        onClick={onToggleCollapse}
                         className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
                     >
                         {isCollapsed ? <FolderOpen className="w-4 h-4" /> : <div className="w-4 h-4 flex items-center justify-center">«</div>}

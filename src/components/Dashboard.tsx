@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, VideoProject, Folder as FolderType } from '../types';
-import { Plus, Clock, Film, Play, Trash2, Zap, Sparkles, ArrowRight, Archive, Download, Filter, MoreVertical, FolderInput, Folder } from 'lucide-react';
+import { Plus, Clock, Film, Play, Trash2, Zap, Sparkles, ArrowRight, Archive, Download, Filter, MoreVertical, FolderInput, Folder, Menu, X } from 'lucide-react';
 import Loader from './Loader';
 import { useTranslation } from 'react-i18next';
 import FolderList from './FolderList';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import ProjectCard from './ProjectCard';
-import { exportProjectContext, patchProjectMetadata, getFolders } from '../services/storageService';
+import { exportProjectContext, patchProjectMetadata, getFolders, createFolder, updateFolder, deleteFolder } from '../services/storageService';
 
 interface DashboardProps {
     user: User;
@@ -21,6 +21,23 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onOpenProject, onDeleteProject, onRefreshProjects, isLoading = false }) => {
     const { t } = useTranslation();
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const handleCreateFolder = async (name: string) => {
+        await createFolder(name);
+        onRefreshProjects();
+    };
+
+    const handleUpdateFolder = async (id: string, name: string) => {
+        await updateFolder(id, name);
+        onRefreshProjects();
+    };
+
+    const handleDeleteFolder = async (id: string) => {
+        await deleteFolder(id);
+        onRefreshProjects();
+    };
     const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
     const [showArchived, setShowArchived] = useState(false);
     const [filterTag, setFilterTag] = useState('');
@@ -151,15 +168,49 @@ const Dashboard: React.FC<DashboardProps> = ({ user, projects, onNewProject, onO
     return (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="flex h-[calc(100vh-64px)]" onClick={() => setContextMenu(null)}>
-                {/* Sidebar */}
+                {/* Mobile Menu Overlay */}
+                {isMobileMenuOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    />
+                )}
+
+                {/* Sidebar - Mobile Drawer & Desktop Static */}
                 <FolderList
+                    className={`
+                        fixed md:relative z-50 h-full
+                        transition-transform duration-300 ease-in-out
+                        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                    `}
+                    folders={folders}
                     selectedFolderId={selectedFolderId}
-                    onSelectFolder={setSelectedFolderId}
-                    onFoldersChange={handleRefreshFolders}
+                    onSelectFolder={(id) => {
+                        setSelectedFolderId(id);
+                        setIsMobileMenuOpen(false);
+                    }}
+                    onCreateFolder={handleCreateFolder}
+                    onUpdateFolder={handleUpdateFolder}
+                    onDeleteFolder={handleDeleteFolder}
+                    isCollapsed={isSidebarCollapsed}
+                    onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 />
 
                 {/* Main Content */}
-                <div className="flex-1 overflow-y-auto bg-[#0f172a] relative">
+                <div className="flex-1 overflow-y-auto bg-[#0f172a] relative flex flex-col">
+                    {/* Mobile Header */}
+                    <div className="md:hidden flex items-center p-4 border-b border-slate-800 bg-slate-900/50 flex-shrink-0">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsMobileMenuOpen(true);
+                            }}
+                            className="p-2 -ml-2 text-slate-400 hover:text-white"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+                        <span className="ml-2 font-bold text-white">ShortsAI</span>
+                    </div>
                     {/* Context Menu */}
                     {contextMenu && (
                         <div

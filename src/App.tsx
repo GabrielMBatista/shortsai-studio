@@ -12,19 +12,56 @@ import Toast, { ToastType } from './components/Toast';
 import ConfirmModal from './components/ConfirmModal';
 import { loginUser, logoutUser, restoreSession, saveProject, getProject } from './services/storageService';
 import AdminDashboard from './components/AdminDashboard';
-import { Film, LogOut, ChevronLeft, Shield } from 'lucide-react';
+import Tutorial from './components/Tutorial';
+import { Step } from 'react-joyride';
+import { Film, LogOut, ChevronLeft, Shield, HelpCircle } from 'lucide-react';
 import { useVideoGeneration } from './hooks/useVideoGeneration';
 import { useProjects } from './hooks/useProjects';
-
-
-import { useTranslation } from 'react-i18next'; // Import useTranslation
+import { useTranslation } from 'react-i18next';
 
 const App: React.FC = () => {
-    const { t, i18n } = useTranslation(); // Initialize hook
+    const { t, i18n } = useTranslation();
     // Global State
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [step, setStep] = useState<AppStep>(AppStep.AUTH);
     const [isInitializing, setIsInitializing] = useState(true);
+
+    // Tour State
+    const [runTutorial, setRunTutorial] = useState(false);
+    const [tutorialSteps, setTutorialSteps] = useState<Step[]>([]);
+    const [isTourMenuOpen, setIsTourMenuOpen] = useState(false);
+
+    const settingsTourSteps: Step[] = [
+        {
+            target: 'body',
+            content: 'Bem-vindo às configurações! Aqui você pode gerenciar seu perfil e chaves de API.',
+            placement: 'center',
+        },
+        {
+            target: '#geminiKey',
+            content: (
+                <div>
+                    A chave do Google Gemini é obrigatória para gerar roteiros e inteligência do vídeo.
+                    <br />
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline mt-2 block">Obter chave no Google AI Studio</a>
+                </div>
+            ),
+        },
+        {
+            target: '#elevenLabsKey',
+            content: (
+                <div>
+                    Opcional: Adicione sua chave ElevenLabs para narrações ultra-realistas.
+                    <br />
+                    <a href="https://elevenlabs.io/app/speech-synthesis" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline mt-2 block">Obter chave na ElevenLabs</a>
+                </div>
+            ),
+        },
+        {
+            target: 'button[type="submit"]',
+            content: 'Não esqueça de salvar suas alterações aqui!',
+        }
+    ];
 
     // Data Fetching (TanStack Query)
     const { projects: userProjects, isLoading: isLoadingProjects, deleteProject, refreshProjects } = useProjects(currentUser?.id);
@@ -68,8 +105,6 @@ const App: React.FC = () => {
     const lastSavedProjectJson = useRef<string>("");
 
     // --- Helpers ---
-
-    // --- Helpers ---
     const showToast = (message: string, type: ToastType = 'info') => {
         setToast({ message, type });
     };
@@ -85,6 +120,22 @@ const App: React.FC = () => {
             }
         }
         return title;
+    };
+
+    // Wrapper to set step and persist it
+    const handleSetStep = (newStep: AppStep) => {
+        setStep(newStep);
+        localStorage.setItem('shortsai_last_step', newStep);
+    };
+
+    const handleStartTour = (tour: 'settings') => {
+        setIsTourMenuOpen(false);
+        if (tour === 'settings') {
+            handleSetStep(AppStep.SETTINGS);
+            setTutorialSteps(settingsTourSteps);
+            // Small delay to ensure DOM is ready
+            setTimeout(() => setRunTutorial(true), 100);
+        }
     };
 
     // --- Auth & Data Loading ---
@@ -134,12 +185,6 @@ const App: React.FC = () => {
         };
         initApp();
     }, []);
-
-    // Wrapper to set step and persist it
-    const handleSetStep = (newStep: AppStep) => {
-        setStep(newStep);
-        localStorage.setItem('shortsai_last_step', newStep);
-    };
 
     const handleLogin = async (user: User) => {
         try {
@@ -283,6 +328,9 @@ const App: React.FC = () => {
             {/* Global Loader */}
             {isLoggingOut && <Loader fullScreen text="Signing out..." />}
 
+            {/* Global Tutorial */}
+            <Tutorial run={runTutorial} steps={tutorialSteps} onFinish={() => setRunTutorial(false)} />
+
             {/* Modals */}
             <ConfirmModal
                 isOpen={deleteModal.isOpen}
@@ -293,8 +341,6 @@ const App: React.FC = () => {
                 isDestructive={true}
                 confirmText={t('dashboard.delete_button')}
             />
-
-
 
             {/* Navbar */}
             <nav className="border-b border-slate-800 bg-[#0f172a]/80 backdrop-blur sticky top-0 z-40">
@@ -310,6 +356,31 @@ const App: React.FC = () => {
 
                     {currentUser && (
                         <div className="flex items-center gap-3 border-l border-slate-800 pl-4">
+                            {/* Tour Menu */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsTourMenuOpen(!isTourMenuOpen)}
+                                    className={`p-2 rounded-lg transition-colors ${isTourMenuOpen ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                    title="Tours & Help"
+                                >
+                                    <HelpCircle className="w-5 h-5" />
+                                </button>
+
+                                {isTourMenuOpen && (
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 py-1">
+                                        <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                            Interactive Tours
+                                        </div>
+                                        <button
+                                            onClick={() => handleStartTour('settings')}
+                                            className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                                        >
+                                            Settings & API Keys
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Language Selector (Mini) */}
                             <div className="flex items-center gap-1 mr-2">
                                 <button

@@ -145,7 +145,12 @@
         "error": "Erro",
         "success": "Sucesso",
         "delete": "Excluir",
-        "loading": "Carregando..."
+        "loading": "Carregando...",
+        "back": "Voltar",
+        "next": "Próximo",
+        "skip": "Pular",
+        "finish": "Concluir",
+        "close": "Fechar"
     },
     "settings": {
         "title": "Configurações do Usuário",
