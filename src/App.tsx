@@ -504,6 +504,9 @@ const App: React.FC = () => {
                         onReorderScenes={reorderScenes}
                         onExport={handleExport}
                         onUpdateProjectSettings={updateProjectSettings}
+                        projectId={project.id}
+                        userId={currentUser?.id || ''}
+                        apiKeys={currentUser?.apiKeys || {}}
                     />
                 )}
 

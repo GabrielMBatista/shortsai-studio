@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Scene } from '../../types';
+import { Scene, ApiKeys } from '../../types';
+import { useSceneVideoGeneration } from '../../hooks/useSceneVideoGeneration';
 import { Loader2, AlertCircle, ImageIcon, RefreshCw, Clock, ChevronDown, ChevronUp, Mic, Pencil, Check, Trash2, Video, GripVertical } from 'lucide-react';
 import AudioPlayerButton from '../common/AudioPlayerButton';
 import ConfirmModal from '../ConfirmModal';
@@ -15,10 +16,15 @@ interface SceneCardProps {
     onUpdateScene: (index: number, updates: Partial<Scene>) => void;
     onRemoveScene: (index: number) => void;
     dragHandleProps?: any;
+    projectId: string;
+    userId: string;
+    apiKeys: ApiKeys;
+    videoModel: string;
 }
 
-const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateImage, onRegenerateAudio, onRegenerateVideo, onUpdateScene, onRemoveScene, dragHandleProps }) => {
+const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateImage, onRegenerateAudio, onRegenerateVideo, onUpdateScene, onRemoveScene, dragHandleProps, projectId, userId, apiKeys, videoModel }) => {
     const { t } = useTranslation();
+    const { generate: generateVideo, isPending: isVideoPending } = useSceneVideoGeneration();
     const [isPromptOpen, setIsPromptOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [narrationText, setNarrationText] = useState(scene.narration);
@@ -97,7 +103,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     // UI purely reflects backend state. No local 'isBusy' state.
     const isImageLoading = ['pending', 'queued', 'processing', 'loading'].includes(scene.imageStatus);
     const isAudioLoading = ['pending', 'queued', 'processing', 'loading'].includes(scene.audioStatus);
-    const isVideoLoading = scene.videoStatus ? ['pending', 'queued', 'processing', 'loading'].includes(scene.videoStatus) : false;
+    const isVideoLoading = isVideoPending || (scene.videoStatus ? ['pending', 'queued', 'processing', 'loading'].includes(scene.videoStatus) : false);
 
     // Check if both video and image are available for toggle
     const hasVideo = scene.videoStatus === 'completed' && scene.videoUrl;
@@ -134,8 +140,23 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
         const force = true;
         if (type === 'image') onRegenerateImage(sceneIndex, force);
         else if (type === 'audio' && onRegenerateAudio) onRegenerateAudio(sceneIndex, force);
-        else if (type === 'video' && onRegenerateVideo) {
-            onRegenerateVideo(sceneIndex, force);
+        else if (type === 'video') {
+            if (scene.id && projectId) {
+                generateVideo({
+                    sceneId: scene.id,
+                    projectId,
+                    payload: {
+                        userId,
+                        imageUrl: scene.imageUrl,
+                        prompt: scene.visualDescription,
+                        keys: apiKeys,
+                        modelId: videoModel,
+                        withAudio: false
+                    }
+                });
+            } else if (onRegenerateVideo) {
+                onRegenerateVideo(sceneIndex, force);
+            }
         }
         setModalConfig({ isOpen: false, type: null });
     };

@@ -2,7 +2,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import SceneCard from './SceneCard';
-import { Scene, TTSProvider } from '../../types';
+import { Scene, TTSProvider, ApiKeys } from '../../types';
 
 interface SortableSceneCardProps {
     id: string;
@@ -13,6 +13,10 @@ interface SortableSceneCardProps {
     onRegenerateVideo?: (index: number, force: boolean) => void;
     onUpdateScene: (index: number, updates: Partial<Scene>) => void;
     onRemoveScene: (index: number) => void;
+    projectId: string;
+    userId: string;
+    apiKeys: ApiKeys;
+    videoModel: string;
 }
 
 export const SortableSceneCard: React.FC<SortableSceneCardProps> = (props) => {

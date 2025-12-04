@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED } from '../types';
+import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED, ApiKeys } from '../types';
 import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download, Plus, Clock, Video } from 'lucide-react';
 import { generatePreviewAudio, getVoices } from '../services/geminiService';
 import SceneCard from './script/SceneCard';
@@ -47,6 +47,9 @@ interface ScriptViewProps {
     onExport?: () => void;
     onUpdateProjectSettings: (settings: { voiceName?: string; ttsProvider?: TTSProvider; language?: string; videoModel?: string; audioModel?: string }) => Promise<void>;
     onReorderScenes?: (oldIndex: number, newIndex: number) => void;
+    projectId: string;
+    userId: string;
+    apiKeys: ApiKeys;
 }
 
 const MetadataCard: React.FC<{ title?: string; description?: string }> = ({ title, description }) => {
@@ -141,7 +144,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     generatedTitle, generatedDescription,
     onStartImageGeneration, onGenerateImagesOnly, onGenerateAudioOnly, onRegenerateAudio, onRegenerateSceneImage, onRegenerateSceneAudio, onRegenerateSceneVideo, onUpdateScene, isGeneratingImages, onCancelGeneration,
     canPreview, onPreview, includeMusic, musicStatus, musicUrl, musicPrompt, onRegenerateMusic,
-    isPaused, fatalError, onResume, onSkip, generationMessage, onRemoveScene, onAddScene, onExport, onUpdateProjectSettings, onReorderScenes
+    isPaused, fatalError, onResume, onSkip, generationMessage, onRemoveScene, onAddScene, onExport, onUpdateProjectSettings, onReorderScenes, projectId, userId, apiKeys
 }) => {
     const { t } = useTranslation();
     const [selectedProvider, setSelectedProvider] = useState<TTSProvider>(projectProvider);
@@ -606,6 +609,10 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                 onRegenerateVideo={onRegenerateSceneVideo}
                                 onUpdateScene={onUpdateScene}
                                 onRemoveScene={onRemoveScene}
+                                projectId={projectId}
+                                userId={userId}
+                                apiKeys={apiKeys}
+                                videoModel={selectedVideoModel}
                             />
                         ))}
 
