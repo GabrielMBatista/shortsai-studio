@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function useSceneVideoGeneration() {
     const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -45,16 +45,21 @@ export function useSceneVideoGeneration() {
         },
     });
 
-    // 3. Efeito colateral: Quando completa, atualiza a lista de cenas principal
-    if (jobStatusQuery.data?.status === 'COMPLETED') {
-        queryClient.invalidateQueries({ queryKey: ['project-scenes'] });
-        // Opcional: Limpar activeJobId depois de um tempo
-        // setActiveJobId(null); // Careful with infinite loops if not handled
-    }
+    // 3. Efeito colateral: Quando completa, atualiza a lista de cenas e limpa o job
+    useEffect(() => {
+        if (jobStatusQuery.data?.status === 'COMPLETED' || jobStatusQuery.data?.status === 'FAILED') {
+            queryClient.invalidateQueries({ queryKey: ['project-scenes'] });
+            // Clear activeJobId after a short delay to allow UI to update
+            const timer = setTimeout(() => {
+                setActiveJobId(null);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [jobStatusQuery.data?.status, queryClient]);
 
     return {
         generate: generateMutation.mutate,
-        isPending: generateMutation.isPending || jobStatusQuery.data?.status === 'PROCESSING' || jobStatusQuery.data?.status === 'QUEUED',
+        isPending: generateMutation.isPending || (!!activeJobId && jobStatusQuery.data?.status === 'PROCESSING') || (!!activeJobId && jobStatusQuery.data?.status === 'QUEUED'),
         status: jobStatusQuery.data?.status,
         job: jobStatusQuery.data
     };

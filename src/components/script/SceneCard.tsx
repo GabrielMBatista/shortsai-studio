@@ -103,7 +103,10 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     // UI purely reflects backend state. No local 'isBusy' state.
     const isImageLoading = ['pending', 'queued', 'processing', 'loading'].includes(scene.imageStatus);
     const isAudioLoading = ['pending', 'queued', 'processing', 'loading'].includes(scene.audioStatus);
-    const isVideoLoading = isVideoPending || (scene.videoStatus ? ['pending', 'queued', 'processing', 'loading'].includes(scene.videoStatus) : false);
+    // Video loading: check hook state BUT override if backend shows completed/failed
+    const isVideoLoadingFromStatus = scene.videoStatus ? ['pending', 'queued', 'processing', 'loading'].includes(scene.videoStatus) : false;
+    const isVideoCompleted = scene.videoStatus === 'completed' || scene.videoStatus === 'failed' || scene.videoStatus === 'error';
+    const isVideoLoading = isVideoCompleted ? false : (isVideoPending || isVideoLoadingFromStatus);
 
     // Check if both video and image are available for toggle
     const hasVideo = scene.videoStatus === 'completed' && scene.videoUrl;
