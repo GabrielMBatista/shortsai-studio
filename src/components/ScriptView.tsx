@@ -493,22 +493,23 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Music Section (Optional) */}
-                    {includeMusic && IS_SUNO_ENABLED && (
-                        <div className="mt-6 pt-4 border-t border-slate-800/50 flex items-center justify-between text-xs text-slate-500">
-                            <div className="flex items-center gap-2">
-                                <Music className="w-3.5 h-3.5 text-pink-400" />
-                                <span className="font-medium text-slate-400">{t('script.background_music')}</span>
-                                {musicStatus && (
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${musicStatus === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
-                                        {musicStatus}
-                                    </span>
-                                )}
-                            </div>
-                            {musicUrl && <AudioPlayerButton audioUrl={musicUrl} status={musicStatus || 'pending'} label={t('script.play_music')} />}
+                {/* Music Section (Optional) */}
+                {includeMusic && IS_SUNO_ENABLED && (
+                    <div className="mt-6 pt-4 border-t border-slate-800/50 flex items-center justify-between text-xs text-slate-500">
+                        <div className="flex items-center gap-2">
+                            <Music className="w-3.5 h-3.5 text-pink-400" />
+                            <span className="font-medium text-slate-400">{t('script.background_music')}</span>
+                            {musicStatus && (
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${musicStatus === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                                    {musicStatus}
+                                </span>
+                            )}
                         </div>
-                    )}
+                        {musicUrl && <AudioPlayerButton audioUrl={musicUrl} status={musicStatus || 'pending'} label={t('script.play_music')} />}
+                    </div>
+                )}
             </header>
 
             <div className="mb-8 bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden transition-all duration-300 shadow-lg">
