@@ -24,6 +24,7 @@ const App: React.FC = () => {
 
     // Tour State
     const [runTutorial, setRunTutorial] = useState(false);
+    const [activeTour, setActiveTour] = useState<'settings' | 'creation' | 'script' | null>(null);
     const [tutorialSteps, setTutorialSteps] = useState<Step[]>([]);
 
     // Dashboard State
@@ -110,6 +111,7 @@ const App: React.FC = () => {
     };
 
     const handleStartTour = (tour: 'settings' | 'creation' | 'script') => {
+        setActiveTour(tour);
         if (tour === 'settings') {
             handleSetStep(AppStep.SETTINGS);
             setTutorialSteps(getSettingsTourSteps(t));
@@ -189,6 +191,19 @@ const App: React.FC = () => {
         localStorage.removeItem('shortsai_last_step');
         localStorage.removeItem('shortsai_last_project_id');
         showToast(t('app.logout'), 'info');
+    };
+
+    const handleGenerateNewProjectWrapper = async (...args: any[]) => {
+        if (activeTour === 'creation') {
+            setIsLoadingProject(true);
+            setTimeout(() => {
+                setIsLoadingProject(false);
+                handleStartTour('script');
+            }, 2000);
+            return;
+        }
+        // @ts-ignore
+        return generateNewProject(...args);
     };
 
     const handleNewProject = () => {
@@ -279,7 +294,7 @@ const App: React.FC = () => {
             onCloseToast={() => setToast(null)}
             runTutorial={runTutorial}
             tutorialSteps={tutorialSteps}
-            onFinishTutorial={() => setRunTutorial(false)}
+            onFinishTutorial={() => { setRunTutorial(false); setActiveTour(null); }}
             onStartTour={handleStartTour}
             deleteModal={deleteModal}
             onConfirmDelete={handleConfirmDelete}
@@ -314,7 +329,7 @@ const App: React.FC = () => {
                 onSetStep={handleSetStep}
                 onUpdateUser={(u) => { setCurrentUser(u); showToast(t('settings.updated'), 'success'); }}
                 showToast={showToast}
-                generateNewProject={generateNewProject}
+                generateNewProject={handleGenerateNewProjectWrapper}
                 generateAssets={generateAssets}
                 generateImagesOnly={generateImagesOnly}
                 generateAudioOnly={generateAudioOnly}

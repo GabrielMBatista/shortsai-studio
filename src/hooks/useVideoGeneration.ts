@@ -22,9 +22,11 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
   const queryClient = useQueryClient();
   const deletedSceneIds = useRef<Set<string>>(new Set());
 
+  const isMock = project?.id === 'mock-project-tour';
+
   // 1. Connect to Backend via Client
   useEffect(() => {
-    if (!project?.id) return;
+    if (!project?.id || project.id === 'mock-project-tour') return;
 
     workflowClient.connect(project.id, (state) => {
       setWorkflowState(state);
@@ -95,12 +97,43 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
     setProject(prev => prev ? { ...prev, status: 'failed' } : null);
   };
 
+  const simulateProcessing = (() => {
+    return (callback: () => void, delayMs = 2000) => {
+        setTimeout(callback, delayMs);
+    };
+  })();
+
   const generateAssets = async () => {
     if (!project || !user) return;
 
     // Optimistic update to prevent immediate fallback
     setProject(prev => prev ? { ...prev, status: 'generating' } : null);
     onStepChange(AppStep.GENERATING_IMAGES);
+
+    if (isMock) {
+        setProject(prev => {
+           if (!prev) return null;
+           return {
+               ...prev,
+               scenes: prev.scenes.map(s => ({ ...s, imageStatus: 'loading', audioStatus: 'loading' }))
+           };
+        });
+        simulateProcessing(() => {
+             setProject(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    status: 'completed',
+                    scenes: prev.scenes.map(s => ({
+                         ...s,
+                         imageStatus: 'completed',
+                         audioStatus: 'completed'
+                    }))
+                };
+             });
+        }, 3000);
+        return;
+    }
 
     try {
       await workflowClient.sendCommand('generate_all', project.id, user.id, undefined, { apiKeys: user.apiKeys });
@@ -115,6 +148,27 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
     setProject(prev => prev ? { ...prev, status: 'generating' } : null);
     onStepChange(AppStep.GENERATING_IMAGES);
 
+    if (isMock) {
+        setProject(prev => {
+           if (!prev) return null;
+           return {
+               ...prev,
+               scenes: prev.scenes.map(s => ({ ...s, imageStatus: 'loading' }))
+           };
+        });
+        simulateProcessing(() => {
+             setProject(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    status: 'completed',
+                    scenes: prev.scenes.map(s => ({ ...s, imageStatus: 'completed' }))
+                };
+             });
+        });
+        return;
+    }
+
     try {
       await workflowClient.sendCommand('generate_all_images', project.id, user.id, undefined, { apiKeys: user.apiKeys });
     } catch (e) {
@@ -128,6 +182,27 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
     setProject(prev => prev ? { ...prev, status: 'generating' } : null);
     onStepChange(AppStep.GENERATING_IMAGES);
 
+    if (isMock) {
+        setProject(prev => {
+           if (!prev) return null;
+           return {
+               ...prev,
+               scenes: prev.scenes.map(s => ({ ...s, audioStatus: 'loading' }))
+           };
+        });
+        simulateProcessing(() => {
+             setProject(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    status: 'completed',
+                    scenes: prev.scenes.map(s => ({ ...s, audioStatus: 'completed' }))
+                };
+             });
+        });
+        return;
+    }
+
     try {
       await workflowClient.sendCommand('generate_all_audio', project.id, user.id, undefined, { apiKeys: user.apiKeys });
     } catch (e) {
@@ -137,6 +212,10 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
 
   const cancelGeneration = () => {
     if (!project || !user) return;
+    if (isMock) {
+        setProject(prev => prev ? { ...prev, status: 'draft' } : null);
+        return;
+    }
     workflowClient.sendCommand('cancel', project.id, user.id);
   };
 
@@ -145,6 +224,13 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
 
     // Optimistic update
     setProject(prev => prev ? { ...prev, status: 'generating' } : null);
+    
+    if (isMock) {
+        simulateProcessing(() => {
+            setProject(prev => prev ? { ...prev, status: 'completed' } : null);
+        });
+        return;
+    }
 
     try {
       await workflowClient.sendCommand('resume', project.id, user.id, undefined, { apiKeys: user.apiKeys });
@@ -155,6 +241,23 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
 
   const regenerateSceneAsset = async (sceneId: string, type: 'image' | 'audio' | 'video', force: boolean) => {
     if (!project || !user) return;
+    
+    if (isMock) {
+        simulateProcessing(() => {
+            setProject(prev => {
+               if (!prev) return null;
+               const idx = prev.scenes.findIndex(s => s.id === sceneId);
+               if (idx === -1) return prev;
+               const newScenes = [...prev.scenes];
+               const statusKey = type === 'image' ? 'imageStatus' : type === 'audio' ? 'audioStatus' : 'videoStatus';
+               // @ts-ignore
+               newScenes[idx] = { ...newScenes[idx], [statusKey]: 'completed' };
+               return { ...prev, scenes: newScenes };
+            });
+        }, 1500);
+        return;
+    }
+
     const action = type === 'image' ? 'regenerate_image' : type === 'audio' ? 'regenerate_audio' : 'regenerate_video';
     try {
       await workflowClient.sendCommand(action, project.id, user.id, sceneId, { force, apiKeys: user.apiKeys });
@@ -234,7 +337,9 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
 
     // Update settings in DB
     const updated = { ...project, voiceName: voice, ttsProvider: provider, language, audioModel };
-    await saveProject(updated);
+    if (!isMock) {
+        await saveProject(updated);
+    }
     setProject(updated);
 
     // Send command to regenerate
@@ -242,6 +347,20 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
 
     // Optimistic update
     setProject(prev => prev ? { ...prev, status: 'generating' } : null);
+
+    if (isMock) {
+        simulateProcessing(() => {
+             setProject(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    status: 'completed',
+                    scenes: prev.scenes.map(s => ({ ...s, audioStatus: 'completed' }))
+                };
+             });
+        });
+        return;
+    }
 
     try {
       await workflowClient.sendCommand('generate_all_audio', project.id, user.id, undefined, { force: true, apiKeys: user.apiKeys });
@@ -256,6 +375,13 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
     // Optimistic update
     setProject(prev => prev ? { ...prev, bgMusicStatus: 'loading' } : null);
 
+    if (isMock) {
+        simulateProcessing(() => {
+            setProject(prev => prev ? { ...prev, bgMusicStatus: 'completed' } : null);
+        });
+        return;
+    }
+
     try {
       await workflowClient.sendCommand('generate_music', project.id, user.id, undefined, { force: true, apiKeys: user.apiKeys });
     } catch (e) {
@@ -267,9 +393,9 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
   return {
     project,
     setProject,
-    // State from Backend
-    isGenerating: workflowState?.projectStatus === 'generating',
-    generationMessage: workflowState?.generationMessage || '',
+    // State from Backend or Local Mock
+    isGenerating: workflowState?.projectStatus === 'generating' || project?.status === 'generating',
+    generationMessage: workflowState?.generationMessage || (project?.status === 'generating' ? 'Generating assets...' : ''),
     isPaused: workflowState?.projectStatus === 'paused',
     fatalError: workflowState?.fatalError,
 
@@ -306,8 +432,10 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
             ttsProvider: overrides.provider || project.ttsProvider,
             language: overrides.language || project.language
           };
-          // We await the save to ensure backend sees new values
-          await saveProject(updated);
+          if (!isMock) {
+            // We await the save to ensure backend sees new values
+            await saveProject(updated);
+          }
           setProject(updated);
         }
 
@@ -348,13 +476,12 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
       newScenes[index] = { ...scene, ...updates };
       setProject({ ...project, scenes: newScenes });
 
+      if (isMock) return;
+
       // Persist to Backend
       if (scene.id) {
         try {
           // We use patchScene which handles the API call
-          // It expects sceneNumber to identify the scene if ID isn't passed directly, 
-          // but our patchScene implementation looks up by sceneNumber.
-          // Let's make sure we pass sceneNumber.
           await patchScene(project.id, { sceneNumber: scene.sceneNumber, ...updates });
         } catch (e) {
           console.error("Failed to update scene", e);
@@ -383,6 +510,8 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
         return { ...prev, scenes: newScenes };
       });
 
+      if (isMock) return;
+
       try {
         if (sceneToRemove.id) {
           await deleteScene(sceneToRemove.id);
@@ -404,6 +533,9 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
       if (!project) return;
       const updated = { ...project, ...settings };
       setProject(updated); // Optimistic
+      
+      if (isMock) return;
+
       try {
         await saveProject(updated);
       } catch (e) {
@@ -411,7 +543,7 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
         onError("Failed to save settings.");
       }
     },
-    skipCurrentScene: () => project && user && workflowClient.sendCommand('skip_scene', project.id, user.id),
+    skipCurrentScene: () => !isMock && project && user && workflowClient.sendCommand('skip_scene', project.id, user.id),
     addScene: async () => {
       if (!project) return;
 
@@ -429,7 +561,8 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
         audioStatus: 'completed',
         videoStatus: 'completed',
         sfxStatus: 'completed',
-        mediaType: 'image'
+        mediaType: 'image',
+        id: isMock ? `mock-scene-${Date.now()}` : undefined // Give a mock ID
       };
 
       const updatedProject = {
@@ -438,6 +571,8 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
       };
 
       setProject(updatedProject); // Optimistic
+
+      if (isMock) return;
 
       try {
         await saveProject(updatedProject);
@@ -465,6 +600,8 @@ export const useVideoGeneration = ({ user, onError, onStepChange }: UseVideoGene
       };
 
       setProject(updatedProject); // Optimistic
+
+      if (isMock) return;
 
       try {
         await saveProject(updatedProject);
