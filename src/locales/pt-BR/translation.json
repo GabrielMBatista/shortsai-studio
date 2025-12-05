@@ -268,6 +268,7 @@
             "scene_edit_narration": "Edite o texto da narração manualmente. O áudio deve ser gerado novamente se alterar o texto.",
             "scene_regen_audio": "Regere apenas o áudio desta cena. Necessário após editar o texto.",
             "scene_visual_prompt": "Ajuste o prompt visual (descrição da cena) usado para gerar a imagem.",
+            "scene_edit_prompt": "Edite o prompt visual para refinar a geração da imagem.",
             "no_project": "Selecione um projeto para iniciar o tour."
         }
     },

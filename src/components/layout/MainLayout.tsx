@@ -97,6 +97,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                 {/* Tour Menu */}
                                 <div className="relative">
                                     <button
+                                        id="nav-tours"
                                         onClick={() => setIsTourMenuOpen(!isTourMenuOpen)}
                                         className={`p-2 rounded-lg transition-colors ${isTourMenuOpen ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                                         title="Tours & Help"
@@ -172,7 +173,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                     <span className="text-sm font-bold">Shows</span>
                                 </button>
 
-                                <button onClick={() => onSetStep(AppStep.SETTINGS)} className="flex items-center gap-2 group">
+                                <button id="nav-settings" onClick={() => onSetStep(AppStep.SETTINGS)} className="flex items-center gap-2 group">
                                     <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-slate-600 transition-transform group-hover:scale-105 group-hover:border-indigo-500" />
                                 </button>
                                 <button onClick={onLogout} className="text-slate-400 hover:text-red-400 transition-colors"><LogOut className="w-5 h-5" /></button>

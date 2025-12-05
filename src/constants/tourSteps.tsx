@@ -32,7 +32,7 @@ export const getSettingsTourSteps = (t: TFunction): Step[] => [
         target: 'button[type="submit"]',
         content: t('tour.settings.save'),
     }
-];
+].map(step => ({ ...step, disableBeacon: true })) as Step[];
 
 export const getCreationTourSteps = (t: TFunction): Step[] => [
     {
@@ -70,7 +70,7 @@ export const getCreationTourSteps = (t: TFunction): Step[] => [
         content: t('tour.creation.generate'),
         placement: 'top',
     }
-];
+].map(step => ({ ...step, disableBeacon: true })) as Step[];
 
 export const getScriptTourSteps = (t: TFunction): Step[] => [
     {
@@ -104,6 +104,11 @@ export const getScriptTourSteps = (t: TFunction): Step[] => [
         placement: 'top',
     },
     {
+        target: '#scene-0-edit-prompt',
+        content: t('tour.script.scene_edit_prompt'), // Assuming this key exists or defaulting
+        placement: 'top', // Adjust placement if needed
+    },
+    {
         target: '#btn-add-scene',
         content: t('tour.script.add_scene'),
         placement: 'left',
@@ -123,4 +128,4 @@ export const getScriptTourSteps = (t: TFunction): Step[] => [
         content: t('tour.script.export'),
         placement: 'bottom',
     }
-];
+].map(step => ({ ...step, disableBeacon: true })) as Step[];
