@@ -4,6 +4,7 @@ import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions
 import { useVideoExport } from '../hooks/useVideoExport';
 import SubtitleOverlay from './SubtitleOverlay';
 import { useTranslation } from 'react-i18next';
+import { getSceneMedia } from '../services/scenes';
 
 interface VideoPlayerProps {
   scenes: Scene[];
@@ -20,8 +21,40 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const [currentTime, setCurrentTime] = useState(0);
   const [showSubtitles, setShowSubtitles] = useState(true);
 
-  const validScenes = scenes.filter(s => s.imageStatus === 'completed' && s.imageUrl);
+  // Relaxed validity check: rely on status, not URL presence (since lazy loaded)
+  const validScenes = scenes.filter(s => s.imageStatus === 'completed');
   const activeScene = validScenes[currentSceneIndex];
+
+  const [activeMedia, setActiveMedia] = useState<{ imageUrl?: string | null, audioUrl?: string | null, videoUrl?: string | null }>({});
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+
+  useEffect(() => {
+    if (!activeScene) return;
+
+    const loadMedia = async () => {
+        setIsLoadingMedia(true);
+        let { imageUrl, audioUrl, videoUrl } = activeScene;
+
+        // Fetch if missing and scene has ID
+        if ((!imageUrl || !audioUrl || (!videoUrl && activeScene.videoStatus === 'completed')) && activeScene.id) {
+            try {
+                const media = await getSceneMedia(activeScene.id);
+                if (media) {
+                    if (!imageUrl) imageUrl = media.image_base64;
+                    if (!audioUrl) audioUrl = media.audio_base64;
+                    if (!videoUrl) videoUrl = media.video_base64;
+                }
+            } catch (e) {
+                console.error("Failed to load scene media for player", e);
+            }
+        }
+        setActiveMedia({ imageUrl, audioUrl, videoUrl });
+        setIsLoadingMedia(false);
+    };
+
+    loadMedia();
+  }, [activeScene]);
+
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
@@ -44,6 +77,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const [volume, setVolume] = useState(0.8);
 
   // Hook for Download Logic
+  // NOTE: useVideoExport might need full media. Since we lazily load in player,
+  // we might need to update useVideoExport to handle lazy fetching too.
+  // Passing activeMedia here won't work for ALL scenes.
+  // We pass original scenes. useVideoExport needs simple fix to fetch logic if missing.
   const {
     startExport,
     cancelExport,
@@ -52,6 +89,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     downloadError,
     eta
   } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, endingVideoFile, showSubtitles });
+
 
   // Reset state when scenes change
   useEffect(() => {
@@ -180,9 +218,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       <div className="relative h-[80vh] max-w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
 
         {/* Background Media - Video if available and preferred, otherwise Image */}
-        {(activeScene.mediaType === 'video' || (!activeScene.mediaType && activeScene.videoUrl)) && activeScene.videoUrl && activeScene.videoStatus === 'completed' ? (
+        {(activeScene.mediaType === 'video' || (!activeScene.mediaType && (activeMedia.videoUrl || activeScene.videoUrl))) && (activeMedia.videoUrl || activeScene.videoUrl) && activeScene.videoStatus === 'completed' ? (
           <video
-            src={activeScene.videoUrl}
+            src={activeMedia.videoUrl || activeScene.videoUrl || ''}
             className="w-full h-full object-cover"
             autoPlay
             loop
@@ -190,14 +228,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             playsInline
             onPlay={() => {
               // Ensure audio is synced when video starts
-              if (audioRef.current && Math.abs(audioRef.current.currentTime - (activeScene.videoUrl ? 0 : 0)) > 0.5) {
+              if (audioRef.current && Math.abs(audioRef.current.currentTime - ((activeMedia.videoUrl || activeScene.videoUrl) ? 0 : 0)) > 0.5) {
                 audioRef.current.currentTime = 0;
               }
             }}
           />
         ) : (
           <img
-            src={activeScene.imageUrl || ''}
+            src={activeMedia.imageUrl || activeScene.imageUrl || ''}
             alt={`Scene ${currentSceneIndex + 1}`}
             className={`w-full h-full object-cover transition-transform duration-[20s] ease-linear ${isPlaying ? 'scale-110' : 'scale-100'}`}
           />
@@ -206,7 +244,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         {/* Audio Elements */}
         <audio
           ref={audioRef}
-          src={activeScene.audioUrl || ''}
+          src={activeMedia.audioUrl || activeScene.audioUrl || ''}
           onEnded={handleAudioEnded}
           onTimeUpdate={handleTimeUpdate}
           autoPlay={isPlaying}
