@@ -409,9 +409,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                 <div className="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden mb-6">
                   <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 animate-shimmer w-full" style={{ backgroundSize: '200% 100%' }}></div>
                 </div>
-                <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg max-w-[280px]">
-                  <p className="text-[10px] text-yellow-200/80 leading-tight">
-                    ⚠️ <b>{t('video_player.warning_tab')}</b><br />{t('video_player.warning_desc')}
+                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl max-w-sm w-full">
+                  <p className="text-sm text-yellow-200/90 leading-relaxed">
+                    <span className="text-xl align-middle mr-2">⚠️</span>
+                    <b className="text-base uppercase tracking-wide align-middle">{t('video_player.warning_tab')}</b>
+                    <br />
+                    <span className="block mt-2 opacity-80">
+                      {t('video_player.warning_desc')}
+                    </span>
                   </p>
                 </div>
               </>
