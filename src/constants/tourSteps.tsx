@@ -51,7 +51,7 @@ export const getCreationTourSteps = (t: TFunction): Step[] => [
         placement: 'bottom',
     },
     {
-        target: '#style-section',
+        target: '#style-grid',
         content: t('tour.creation.style'),
         placement: 'top',
     },

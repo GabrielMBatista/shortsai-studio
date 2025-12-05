@@ -232,8 +232,8 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     ) : hasImage ? (
                         <>
                             {!imageLoaded && (
-                                <div className="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center">
-                                    <ImageIcon className="w-12 h-12 text-slate-700 opacity-20" />
+                                <div className="absolute inset-0 bg-slate-700 animate-pulse flex items-center justify-center">
+                                    <ImageIcon className="w-16 h-16 text-slate-500 opacity-50" />
                                 </div>
                             )}
                             <img
@@ -244,8 +244,8 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                             />
                         </>
                     ) : isLoadingMedia ? (
-                         <div className="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center">
-                            <ImageIcon className="w-12 h-12 text-slate-700 opacity-20" />
+                         <div className="absolute inset-0 bg-slate-700 animate-pulse flex items-center justify-center">
+                            <ImageIcon className="w-16 h-16 text-slate-500 opacity-50" />
                         </div>
                     ) : isImageLoading ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-400 bg-slate-900/80 backdrop-blur-sm"><Loader2 className="w-8 h-8 animate-spin mb-2" /><span className="text-xs font-medium animate-pulse">{t('scene.generating_image')}</span></div>

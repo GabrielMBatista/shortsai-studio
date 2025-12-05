@@ -420,7 +420,7 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
                     <div id="style-section" className="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl">
                         <SectionTitle icon={ImageIcon} title={t('input.visual_style')} subtitle={t('input.visual_style_subtitle')} />
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                        <div id="style-grid" className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                             {VIDEO_STYLES.map((s) => {
                                 const Icon = getStyleIcon(s);
                                 const isSelected = style === s;
