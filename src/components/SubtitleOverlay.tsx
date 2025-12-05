@@ -18,59 +18,51 @@ const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ text, duration, curre
   // Find the currently active word
   let activeWordIndex = timings.findIndex(t => currentTime >= t.start && currentTime < t.end);
 
-  // If no word is active (e.g. silence or before start), find the nearest relevant word
+  // Fallback logic
   if (activeWordIndex === -1) {
     if (currentTime < (timings[0]?.start || 0)) {
       activeWordIndex = 0;
     } else if (currentTime > (timings[timings.length - 1]?.end || duration)) {
       activeWordIndex = timings.length - 1;
     } else {
-      // In a gap, keep the last active word or wait for next
       const nextIndex = timings.findIndex(t => t.start > currentTime);
       activeWordIndex = nextIndex !== -1 ? nextIndex : timings.length - 1;
     }
   }
 
-  // Window configuration (Paged View)
-  // Instead of sliding every word (which causes jumps), we show a static "page" of words
-  // and only switch when the active word moves to the next page.
-  const WORDS_PER_PAGE = 6;
+  // Configuration for "Fluid Single Line"
+  // We use a small window (3-4 words) to guarantee 1 line on vertical screens (9:16).
+  // Using an odd number helps center the visual weight.
+  const WORDS_PER_PAGE = 4;
   const pageIndex = Math.floor(activeWordIndex / WORDS_PER_PAGE);
 
-  let start = pageIndex * WORDS_PER_PAGE;
-  let end = start + WORDS_PER_PAGE;
-
-  // Clamp bounds
-  if (start < 0) start = 0;
-  if (end > timings.length) end = timings.length;
-
+  const start = pageIndex * WORDS_PER_PAGE;
+  const end = Math.min(start + WORDS_PER_PAGE, timings.length);
   const visibleTimings = timings.slice(start, end);
 
   return (
-    <div className="absolute bottom-12 left-0 right-0 px-8 text-center z-20 pointer-events-none">
+    <div className="absolute bottom-20 left-0 right-0 px-6 text-center z-20 pointer-events-none flex justify-center items-center h-16">
       <div
-        className="font-bold text-2xl md:text-3xl leading-relaxed flex flex-wrap justify-center gap-x-3 gap-y-2"
+        className="font-bold text-2xl md:text-3xl leading-none flex flex-nowrap justify-center items-center gap-x-2 transition-all duration-300 ease-out"
         style={{
           fontFamily: SUBTITLE_STYLES.fontFamily,
-          textShadow: `0px 2px 4px ${SUBTITLE_STYLES.shadowColor}`
+          textShadow: `0px 2px 8px ${SUBTITLE_STYLES.shadowColor}`
         }}
       >
         {visibleTimings.map((t, i) => {
-          const isActive = currentTime >= t.start && currentTime < t.end;
-          // Calculate absolute index for key to prevent re-mounting
           const absoluteIndex = start + i;
-
+          const isActive = absoluteIndex === activeWordIndex;
+          
           return (
             <span
               key={absoluteIndex}
-              className="transition-colors duration-200"
+              className="transition-all duration-200 ease-out origin-center block"
               style={{
-                color: isActive ? SUBTITLE_STYLES.activeColor : 'rgba(255, 255, 255, 0.85)',
-                opacity: isActive ? 1 : 0.6,
-                transform: isActive ? 'scale(1.1)' : 'scale(1)',
-                textShadow: isActive ? `0 0 15px ${SUBTITLE_STYLES.activeColor}, 0 2px 4px rgba(0,0,0,0.8)` : `0 2px 4px rgba(0,0,0,0.8)`,
-                display: 'inline-block',
-                margin: '0 4px'
+                color: isActive ? SUBTITLE_STYLES.activeColor : 'rgba(255, 255, 255, 0.9)',
+                opacity: isActive ? 1 : 0.5,
+                transform: isActive ? 'scale(1.2)' : 'scale(1)',
+                textShadow: isActive ? `0 0 20px ${SUBTITLE_STYLES.activeColor}, 0 2px 4px rgba(0,0,0,0.8)` : `0 2px 4px rgba(0,0,0,0.8)`,
+                whiteSpace: 'nowrap'
               }}
             >
               {t.word}
