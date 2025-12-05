@@ -162,6 +162,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                         <span className="text-sm font-bold">{t('nav.admin')}</span>
                                     </button>
                                 )}
+                                
+                                {/* Shows Navigation */}
+                                <button
+                                    onClick={() => onSetStep(AppStep.SHOWS)}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${step === AppStep.SHOWS ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                >
+                                    <Film className="w-4 h-4" />
+                                    <span className="text-sm font-bold">Shows</span>
+                                </button>
+
                                 <button onClick={() => onSetStep(AppStep.SETTINGS)} className="flex items-center gap-2 group">
                                     <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-slate-600 transition-transform group-hover:scale-105 group-hover:border-indigo-500" />
                                 </button>

@@ -3,12 +3,29 @@
 export enum AppStep {
   AUTH = 'AUTH',
   DASHBOARD = 'DASHBOARD',
+  SHOWS = 'SHOWS', // Novo passo para gestão de shows
   SETTINGS = 'SETTINGS',
   INPUT = 'INPUT',
   SCRIPTING = 'SCRIPTING',
   GENERATING_IMAGES = 'GENERATING_IMAGES',
   PREVIEW = 'PREVIEW',
   ADMIN = 'ADMIN'
+}
+
+// ...
+
+export interface Show {
+  id: string;
+  name: string;
+  description?: string;
+  style_preset?: string;
+  visual_prompt?: string;
+  default_tts_provider?: TTSProvider;
+  created_at: string;
+  _count?: {
+      episodes: number;
+      characters: number;
+  }
 }
 
 export type WorkflowAction =

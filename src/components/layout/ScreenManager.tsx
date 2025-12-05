@@ -7,6 +7,7 @@ import ScriptView from '../ScriptView';
 import VideoPlayer from '../VideoPlayer';
 import AdminDashboard from '../AdminDashboard';
 import Loader from '../Loader';
+import ShowsView from '../ShowsView';
 import { useTranslation } from 'react-i18next';
 
 interface ScreenManagerProps {
@@ -143,6 +144,13 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
                     setSelectedFolderId={setSelectedFolderId}
                     showArchived={showArchived}
                     setShowArchived={setShowArchived}
+                />
+            )}
+
+            {step === AppStep.SHOWS && currentUser && (
+                <ShowsView 
+                    onOpenShow={(id) => { console.log('Open Show', id); /* Implementar nav pro detalhe depois */ }}
+                    showToast={showToast}
                 />
             )}
 
