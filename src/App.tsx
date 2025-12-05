@@ -129,7 +129,7 @@ const App: React.FC = () => {
             }
             setTutorialSteps(getScriptTourSteps(t));
         }
-        setTimeout(() => setRunTutorial(true), 100);
+        setTimeout(() => setRunTutorial(true), 800);
     };
 
     // --- Restoration Logic ---

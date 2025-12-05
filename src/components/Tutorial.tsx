@@ -96,6 +96,7 @@ const Tutorial: React.FC<TutorialProps> = ({ run, steps, onFinish }) => {
             disableBeacon={true}
             disableOverlayClose={true}
             spotlightClicks={true}
+            floaterProps={{ disableAnimation: true }}
         />
     );
 };
