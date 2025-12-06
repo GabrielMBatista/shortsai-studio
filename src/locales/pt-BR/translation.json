@@ -208,6 +208,10 @@
         "export_failed": "Falha na Exportação",
         "exporting": "Exportando Vídeo",
         "est_time": "Tempo est.:",
+        "calculating": "Calculando...",
+        "preparing_export": "Preparando exportação...",
+        "loading_assets": "Carregando assets ({{percent}}%)...",
+        "encoding_video": "Encoding video ({{percent}}%)...",
         "warning_tab": "Mantenha esta aba ativa.",
         "warning_desc": "Trocar de aba pode pausar o renderizador e causar congelamento ou dessincronia."
     },

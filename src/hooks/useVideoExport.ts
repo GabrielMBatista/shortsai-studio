@@ -3,6 +3,7 @@ import { Scene } from '../types';
 import { getWordTimings, SubtitleLayout } from '../utils/videoUtils';
 import { SUBTITLE_STYLES } from '../utils/styleConstants';
 import * as Mp4Muxer from 'mp4-muxer';
+import i18n from '../i18n';
 
 interface UseVideoExportProps {
     scenes: Scene[];
@@ -131,9 +132,9 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
         setIsDownloading(true);
         setDownloadError(null);
-        setEta("Calculando...");
+        setEta(i18n.t('video_player.calculating'));
         isDownloadingRef.current = true;
-        setDownloadProgress("Preparando exportação...");
+        setDownloadProgress(i18n.t('video_player.preparing_export'));
 
         await new Promise(r => setTimeout(r, 100)); // UI Breath
 
@@ -530,7 +531,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
                 setEta(formatTime(remaining));
             } else if (i < 30) {
                 // Keep showing "Calculando..." for the first frames
-                setEta("Calculando...");
+                setEta(i18n.t('video_player.calculating'));
             }
 
             // Draw Frame - videos will play naturally, no manual seeking needed
