@@ -24,7 +24,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
     // --- Helpers ---
     const loadAudioBuffer = async (ctx: BaseAudioContext, url: string): Promise<AudioBuffer | null> => {
         try {
-            const response = await fetch(url);
+            const response = await fetch(getProxyUrl(url));
             const arrayBuffer = await response.arrayBuffer();
             return await ctx.decodeAudioData(arrayBuffer);
         } catch (e) {
@@ -33,18 +33,29 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         }
     };
 
+    const getProxyUrl = (url: string) => {
+        // If it's already a data URI or local blob, return as is
+        if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+        
+        // Use the API proxy to bypass CORS
+        // Assuming VITE_API_URL is set, otherwise default to localhost
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+        return `${apiUrl}/proxy?url=${encodeURIComponent(url)}`;
+    };
+
     const loadImage = (url: string): Promise<HTMLImageElement> => {
         return new Promise((resolve) => {
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = () => resolve(img);
             img.onerror = () => {
+                console.warn(`Failed to load image via proxy: ${url}`);
                 const fallback = new Image();
                 // 1x1 Transparent pixel
                 fallback.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
                 resolve(fallback);
             };
-            img.src = url;
+            img.src = getProxyUrl(url);
         });
     };
 
@@ -52,7 +63,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         return new Promise((resolve, reject) => {
             const video = document.createElement('video');
             video.crossOrigin = "anonymous";
-            video.src = url;
+            video.src = getProxyUrl(url);
             video.muted = true;
             video.playsInline = true;
             video.preload = "auto";

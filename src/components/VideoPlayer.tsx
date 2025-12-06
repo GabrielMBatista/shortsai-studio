@@ -217,18 +217,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       {/* Main Player Container */}
       <div className="relative h-[80vh] max-w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
 
-        {/* Background Media - Video if available and preferred, otherwise Image */}
-        {(activeScene.mediaType === 'video' || (!activeScene.mediaType && (activeMedia.videoUrl || activeScene.videoUrl))) && (activeMedia.videoUrl || activeScene.videoUrl) && activeScene.videoStatus === 'completed' ? (
+        {/* Background Media - Logic:
+            1. If mediaType is 'video' OR (videoUrl exists AND is not empty), show video.
+            2. Else show Image.
+        */}
+        {(
+          (activeScene.mediaType === 'video' || (activeScene.videoUrl && activeScene.videoStatus === 'completed')) || 
+          (activeMedia.videoUrl)
+        ) ? (
           <video
             src={activeMedia.videoUrl || activeScene.videoUrl || ''}
             className="w-full h-full object-cover"
             autoPlay
             loop
-            muted={true} // Always mute video to allow separate audio track
+            muted={true} // Always mute video to allow separate audio track logic, OR unmute if it contains the main audio!
+            // NOTE: If native video HAS audio, and we play 'audioUrl' separately, we get double audio.
+            // Since our 'Veo' videos (previously generated) might NOT have audio (or minimal SFX), 
+            // and our 'audioUrl' is the TTS narration, we usually keep them separate.
             playsInline
             onPlay={() => {
               // Ensure audio is synced when video starts
-              if (audioRef.current && Math.abs(audioRef.current.currentTime - ((activeMedia.videoUrl || activeScene.videoUrl) ? 0 : 0)) > 0.5) {
+              if (audioRef.current && Math.abs(audioRef.current.currentTime - 0) > 0.5) {
                 audioRef.current.currentTime = 0;
               }
             }}
