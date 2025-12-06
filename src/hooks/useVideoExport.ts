@@ -511,7 +511,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
             setDownloadProgress(`Encoding video (${Math.round((i / totalFrames) * 100)}%)...`);
 
-            // Draw Frame (seek happens inside drawFrame now)
+            // Draw Frame - videos will play naturally, no manual seeking needed
             try {
                 drawFrame(ctx, canvas.width, canvas.height, time, assets, endingVideoElement, totalScenesDuration, subtitleLayouts);
             } catch (drawErr) {
@@ -530,8 +530,9 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
                 await new Promise(r => setTimeout(r, 20));
             }
 
-            // Yield to event loop every few frames to keep UI responsive
-            if (i % 5 === 0) await new Promise(r => setTimeout(r, 0));
+            // Small delay to allow video elements to render their next frame naturally
+            // This is critical for smooth video playback without seek artifacts
+            await new Promise(r => setTimeout(r, 0));
         }
 
         if (isDownloadingRef.current) {
@@ -674,15 +675,29 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         const isVideoFrozen = hasVideo && timeInScene >= asset.videoDuration;
 
         if (isVideoActive) {
-            // Play video normally (no pan/zoom during video playback)
+            // Play video naturally (like the preview does) - no pan/zoom during video playback
             const videoTime = timeInScene;
 
-            // Always set currentTime for accurate frame-by-frame rendering
-            // This ensures every frame is rendered correctly without skipping
-            try {
-                asset.video.currentTime = videoTime;
-            } catch (e) {
-                console.warn("Failed to seek video", e);
+            // Start playing if not already playing  
+            if (asset.video.paused) {
+                try {
+                    asset.video.currentTime = videoTime;
+                    asset.video.play().catch(e => console.warn("Video play failed", e));
+                } catch (e) {
+                    console.warn("Failed to start video", e);
+                }
+            }
+
+            // Only seek if we're significantly off (>1s) - otherwise let it play naturally
+            const currentVideoTime = asset.video.currentTime;
+            const timeDiff = Math.abs(currentVideoTime - videoTime);
+
+            if (timeDiff > 1.0) {
+                try {
+                    asset.video.currentTime = videoTime;
+                } catch (e) {
+                    console.warn("Failed to seek video", e);
+                }
             }
 
             const vw = asset.video.videoWidth;
