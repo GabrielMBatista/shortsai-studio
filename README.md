@@ -13,6 +13,13 @@ O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em v�
 - **Geração de Imagens**: Criação de storyboards 9:16 (`gemini-2.5-flash-image`).
 - **Narração Neural (TTS)**: Vozes ultra-realistas via Gemini, ElevenLabs ou Groq (Llama 3).
 
+### 🎥 Exportação de Vídeo
+- **WebCodecs API**: Encoding nativo do navegador (VP9 + Opus)
+- **Cliente-side Processing**: Renderização completa no navegador sem upload
+- **Proxy de Assets**: Integração com `/api/assets` para contornar CORS
+- **Formatos Suportados**: WebM, MP4 (via conversão)
+- **Qualidade**: 1080x1920 (9:16) a 30fps
+
 ### 🏗️ Arquitetura & Engenharia
 
 ### Pré-requisitos
@@ -40,6 +47,24 @@ O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em v�
 4.  Acesse `http://localhost:3000`.
     *   `GET/POST /projects`: Gerenciamento de projetos (Metadata + Cenas).
     *   `POST /characters`: Biblioteca de personagens consistentes.
+
+### ⚙️ Configuração de Ambiente
+
+O frontend se comunica com a API backend. Configure a URL da API:
+
+**Desenvolvimento Local:**
+```env
+# .env.local
+VITE_API_URL=http://localhost:3333
+```
+
+**Produção (VPS):**
+```env
+# .env.local
+VITE_API_URL=https://seu-dominio.com
+```
+
+**Proxy de Assets**: O frontend automaticamente usa `/api/assets` para contornar CORS ao exportar vídeos. Certifique-se de que a API esteja acessível.
 
 ### 🌍 Deploy em Produção (Docker/VPS)
 
