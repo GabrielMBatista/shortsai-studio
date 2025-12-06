@@ -510,27 +510,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
             setDownloadProgress(`Encoding video (${Math.round((i / totalFrames) * 100)}%)...`);
 
-            // Seek video if needed
-            let accum = 0;
-            for (const asset of assets) {
-                if (time < accum + asset.renderDuration) {
-                    if (asset.video) {
-                        try {
-                            const seekTime = time - accum;
-                            asset.video.currentTime = seekTime;
-                            // Wait for seek if strictly necessary, but blob url puts it in memory usually fast enough
-                            // Adding a micro-wait to ensure frame readiness could help avoid black frames if buggy
-                            // await new Promise(r => requestAnimationFrame(r)); 
-                        } catch (e) {
-                            console.warn("Error seeking video asset", e);
-                        }
-                    }
-                    break;
-                }
-                accum += asset.renderDuration;
-            }
-
-            // Draw Frame
+            // Draw Frame (seek happens inside drawFrame now)
             try {
                 drawFrame(ctx, canvas.width, canvas.height, time, assets, endingVideoElement, totalScenesDuration, subtitleLayouts);
             } catch (drawErr) {
@@ -695,7 +675,18 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         if (isVideoActive) {
             // Play video normally (no pan/zoom during video playback)
             const videoTime = timeInScene;
-            asset.video.currentTime = videoTime;
+
+            // Only seek if we're off by more than 0.1s to avoid micro-seeks that can pause the video
+            const currentVideoTime = asset.video.currentTime;
+            const timeDiff = Math.abs(currentVideoTime - videoTime);
+
+            if (timeDiff > 0.1) {
+                try {
+                    asset.video.currentTime = videoTime;
+                } catch (e) {
+                    console.warn("Failed to seek video", e);
+                }
+            }
 
             const vw = asset.video.videoWidth;
             const vh = asset.video.videoHeight;
