@@ -48,7 +48,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         // Use the API proxy to bypass CORS
         // Assuming VITE_API_URL is set, otherwise default to localhost:3333
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
-        return `${apiUrl}/proxy?url=${encodeURIComponent(url)}`;
+        return `${apiUrl}/assets?url=${encodeURIComponent(url)}`;
     };
 
     const loadImage = (url: string): Promise<HTMLImageElement> => {
