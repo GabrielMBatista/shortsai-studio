@@ -43,9 +43,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             console.error("❌ Invalid Asset URL detected (env var missing?):", url);
         }
 
-        if (url.includes('r2.dev')) {
-            return url;
-        }
+
 
         // Use the API proxy to bypass CORS
         // Assuming VITE_API_URL is set, otherwise default to localhost:3333
