@@ -35,10 +35,20 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
     const getProxyUrl = (url: string) => {
         // If it's already a data URI or local blob, return as is
+        if (!url) return '';
         if (url.startsWith('data:') || url.startsWith('blob:')) return url;
-        
+
+        // Sanity check for bad env vars
+        if (url.includes('undefined/')) {
+            console.error("❌ Invalid Asset URL detected (env var missing?):", url);
+        }
+
+        if (url.includes('r2.dev')) {
+            return url;
+        }
+
         // Use the API proxy to bypass CORS
-        // Assuming VITE_API_URL is set, otherwise default to localhost
+        // Assuming VITE_API_URL is set, otherwise default to localhost:3333
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
         return `${apiUrl}/proxy?url=${encodeURIComponent(url)}`;
     };
@@ -48,8 +58,26 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = () => resolve(img);
-            img.onerror = () => {
-                console.warn(`Failed to load image via proxy: ${url}`);
+            img.onerror = (err) => {
+                console.warn(`❌ Failed to load image via proxy: ${url}`, err);
+                console.log(`Attempted Src: ${img.src}`);
+
+                // Fallback to direct load (sometimes CORS is fine)
+                if (img.src.includes('/proxy?')) {
+                    console.log("Retrying with direct URL...");
+                    const directImg = new Image();
+                    directImg.crossOrigin = "anonymous";
+                    directImg.onload = () => resolve(directImg);
+                    directImg.onerror = () => {
+                        const fallback = new Image();
+                        // 1x1 Transparent pixel
+                        fallback.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+                        resolve(fallback);
+                    };
+                    directImg.src = url;
+                    return;
+                }
+
                 const fallback = new Image();
                 // 1x1 Transparent pixel
                 fallback.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
@@ -151,7 +179,16 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
                 if (useVideo) {
                     try {
-                        video = await loadVideo(s.videoUrl!);
+                        const videoUrl = s.videoUrl!;
+                        // Fetch video as blob to ensure stable seeking and avoid network glitches/CORS during render
+                        console.log(`Fetching video blob for scene ${s.sceneNumber}: ${videoUrl}`);
+                        const response = await fetch(getProxyUrl(videoUrl));
+                        if (!response.ok) throw new Error(`Video fetch failed: ${response.status}`);
+                        const blob = await response.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+
+                        video = await loadVideo(blobUrl);
+                        console.log(`Video loaded successfully for scene ${s.sceneNumber}`);
                     } catch (e) {
                         console.warn(`Failed to load video for scene ${s.sceneNumber}, falling back to image`, e);
                         img = await loadImage(s.imageUrl!);
@@ -162,9 +199,12 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
                 let buffer: AudioBuffer | null = null;
                 if (s.audioUrl) {
+                    console.log(`Fetching audio for scene ${s.sceneNumber}: ${s.audioUrl}`);
                     buffer = await loadAudioBuffer(mainAudioCtx!, s.audioUrl);
                     if (!buffer) {
                         console.warn(`Failed to load audio for scene ${s.sceneNumber}: ${s.audioUrl}`);
+                    } else {
+                        console.log(`Audio loaded for scene ${s.sceneNumber}, duration: ${buffer.duration}`);
                     }
                 }
 
@@ -172,8 +212,6 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
                 const dbDuration = Number(s.durationSeconds) || 0;
                 const fallbackDuration = dbDuration > 0 ? dbDuration : 5;
                 const realDuration = (buffer && Number.isFinite(buffer.duration)) ? buffer.duration : fallbackDuration;
-
-                console.log(`Scene ${s.sceneNumber}: DB Duration=${dbDuration}, Buffer Duration=${buffer?.duration}, Render Duration=${realDuration}`);
 
                 return { ...s, img, video, buffer, renderDuration: realDuration };
             }));
@@ -657,7 +695,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             const visibleWords = timings.slice(start, end);
 
             // Styling Constants
-            const baseFontSize = SUBTITLE_STYLES.canvasFontSize; 
+            const baseFontSize = SUBTITLE_STYLES.canvasFontSize;
             const activeScale = 1.1; // Reduced from 1.2
             const fontName = SUBTITLE_STYLES.fontFamily;
             const fontWeight = SUBTITLE_STYLES.fontWeight;
@@ -669,11 +707,11 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
                 const absIndex = start + i;
                 const isActive = absIndex === activeIndex;
                 const scale = isActive ? activeScale : 1.0;
-                 // Measure with scale applied to get real bounding box needs
+                // Measure with scale applied to get real bounding box needs
                 ctx.font = `${fontWeight} ${baseFontSize * scale}px ${fontName}`;
-                return { 
-                    word: t.word, 
-                    width: ctx.measureText(t.word).width, 
+                return {
+                    word: t.word,
+                    width: ctx.measureText(t.word).width,
                     isActive,
                     scale
                 };
@@ -686,7 +724,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
             wordMetrics.forEach(m => {
                 const wordWidthWithGap = m.width + (currentLine.length > 0 ? gap : 0);
-                
+
                 if (currentLineWidth + wordWidthWithGap > maxWidth && currentLine.length > 0) {
                     lines.push({ words: currentLine, width: currentLineWidth });
                     currentLine = [m];
@@ -706,32 +744,32 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
             lines.forEach((line) => {
                 let currentX = (w - line.width) / 2;
-                
+
                 line.words.forEach(m => {
-                     // Config Font
-                     ctx.font = `${fontWeight} ${baseFontSize * m.scale}px ${fontName}`;
-                     
-                     // Shadow (Standard, no glow)
-                     ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                     ctx.shadowBlur = 4;
-                     ctx.shadowOffsetX = 0;
-                     ctx.shadowOffsetY = 4;
+                    // Config Font
+                    ctx.font = `${fontWeight} ${baseFontSize * m.scale}px ${fontName}`;
 
-                     // Color
-                     if (m.isActive) {
-                         ctx.fillStyle = SUBTITLE_STYLES.activeColor;
-                         ctx.globalAlpha = 1.0;
-                     } else {
-                         ctx.fillStyle = '#FFFFFF';
-                         ctx.globalAlpha = 0.9;
-                     }
+                    // Shadow (Standard, no glow)
+                    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 4;
 
-                     const centerX = currentX + (m.width / 2);
-                     ctx.fillText(m.word, centerX, startY);
+                    // Color
+                    if (m.isActive) {
+                        ctx.fillStyle = SUBTITLE_STYLES.activeColor;
+                        ctx.globalAlpha = 1.0;
+                    } else {
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.globalAlpha = 0.9;
+                    }
 
-                     currentX += m.width + gap;
+                    const centerX = currentX + (m.width / 2);
+                    ctx.fillText(m.word, centerX, startY);
+
+                    currentX += m.width + gap;
                 });
-                
+
                 startY += lineHeight;
             });
             ctx.globalAlpha = 1.0;
