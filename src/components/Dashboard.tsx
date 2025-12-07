@@ -386,23 +386,23 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-slate-700">{t('nav.tours_title')}</h3>
                                     <div className="flex flex-col p-1">
                                         <button onClick={() => { onStartTour('settings'); setIsMobileTourMenuOpen(false); }} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-left">
-                                            <Settings className="w-4 h-4 text-indigo-400" />
+                                            <Settings className="w-4 h-4 animate-[pulse_3s_ease-in-out_infinite] text-blue-400/70" />
                                             {t('nav.settings_tour')}
                                         </button>
                                         <button onClick={() => { onStartTour('creation'); setIsMobileTourMenuOpen(false); }} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-left">
-                                            <PlayCircle className="w-4 h-4 text-purple-400" />
+                                            <PlayCircle className="w-4 h-4 animate-[pulse_3s_ease-in-out_infinite_0.6s] text-green-400/70" />
                                             {t('nav.creation_tour')}
                                         </button>
                                         <button onClick={() => { onStartTour('script'); setIsMobileTourMenuOpen(false); }} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-left">
-                                            <FileText className="w-4 h-4 text-emerald-400" />
+                                            <FileText className="w-4 h-4 animate-[pulse_3s_ease-in-out_infinite_1.2s] text-purple-400/70" />
                                             {t('nav.script_tour')}
                                         </button>
                                         <button onClick={() => { onStartTour('preview'); setIsMobileTourMenuOpen(false); }} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-left">
-                                            <Video className="w-4 h-4 text-pink-400" />
+                                            <Video className="w-4 h-4 animate-[pulse_3s_ease-in-out_infinite_1.8s] text-orange-400/70" />
                                             {t('nav.preview_tour')}
                                         </button>
                                         <button onClick={() => { onStartTour('export'); setIsMobileTourMenuOpen(false); }} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-left">
-                                            <Download className="w-4 h-4 text-blue-400" />
+                                            <Download className="w-4 h-4 animate-[pulse_3s_ease-in-out_infinite_2.4s] text-pink-400/70" />
                                             {t('nav.export_tour')}
                                         </button>
                                     </div>

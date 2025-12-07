@@ -250,45 +250,50 @@ const FolderList: React.FC<FolderListProps> = ({
 
                     <button
                         onClick={() => onStartTour('settings')}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors relative ${isCollapsed ? 'justify-center' : ''}`}
                         title={isCollapsed ? t('nav.settings_tour') : undefined}
                     >
-                        <Settings className="w-4 h-4 flex-shrink-0" />
+                        <Settings className="w-4 h-4 flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite] text-blue-400/70" />
                         {!isCollapsed && <span className="text-sm truncate">{t('nav.settings_tour')}</span>}
+                        <div className="absolute inset-0 bg-blue-500/5 rounded-lg animate-[pulse_3s_ease-in-out_infinite] pointer-events-none"></div>
                     </button>
 
                     <button
                         onClick={() => onStartTour('creation')}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors relative ${isCollapsed ? 'justify-center' : ''}`}
                         title={isCollapsed ? t('nav.creation_tour') : undefined}
                     >
-                        <PlayCircle className="w-4 h-4 flex-shrink-0" />
+                        <PlayCircle className="w-4 h-4 flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite_0.6s] text-green-400/70" />
                         {!isCollapsed && <span className="text-sm truncate">{t('nav.creation_tour')}</span>}
+                        <div className="absolute inset-0 bg-green-500/5 rounded-lg animate-[pulse_3s_ease-in-out_infinite_0.6s] pointer-events-none"></div>
                     </button>
 
                     <button
                         onClick={() => onStartTour('script')}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors relative ${isCollapsed ? 'justify-center' : ''}`}
                         title={isCollapsed ? t('nav.script_tour') : undefined}
                     >
-                        <FileText className="w-4 h-4 flex-shrink-0" />
+                        <FileText className="w-4 h-4 flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite_1.2s] text-purple-400/70" />
                         {!isCollapsed && <span className="text-sm truncate">{t('nav.script_tour')}</span>}
+                        <div className="absolute inset-0 bg-purple-500/5 rounded-lg animate-[pulse_3s_ease-in-out_infinite_1.2s] pointer-events-none"></div>
                     </button>
                     <button
                         onClick={() => onStartTour('preview')}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors relative ${isCollapsed ? 'justify-center' : ''}`}
                         title={isCollapsed ? t('nav.preview_tour') : undefined}
                     >
-                        <Video className="w-4 h-4 flex-shrink-0" />
+                        <Video className="w-4 h-4 flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite_1.8s] text-orange-400/70" />
                         {!isCollapsed && <span className="text-sm truncate">{t('nav.preview_tour')}</span>}
+                        <div className="absolute inset-0 bg-orange-500/5 rounded-lg animate-[pulse_3s_ease-in-out_infinite_1.8s] pointer-events-none"></div>
                     </button>
                     <button
                         onClick={() => onStartTour('export')}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors relative ${isCollapsed ? 'justify-center' : ''}`}
                         title={isCollapsed ? t('nav.export_tour') : undefined}
                     >
-                        <Download className="w-4 h-4 flex-shrink-0" />
+                        <Download className="w-4 h-4 flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite_2.4s] text-pink-400/70" />
                         {!isCollapsed && <span className="text-sm truncate">{t('nav.export_tour')}</span>}
+                        <div className="absolute inset-0 bg-pink-500/5 rounded-lg animate-[pulse_3s_ease-in-out_infinite_2.4s] pointer-events-none"></div>
                     </button>
                 </div>
             </div>
