@@ -5,6 +5,7 @@ import { useVideoExport } from '../hooks/useVideoExport';
 import SubtitleOverlay from './SubtitleOverlay';
 import { useTranslation } from 'react-i18next';
 import { getSceneMedia } from '../services/scenes';
+import { SafeImage } from './common/SafeImage';
 
 interface VideoPlayerProps {
   scenes: Scene[];
@@ -268,7 +269,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             }}
           />
         ) : (
-          <img
+          <SafeImage
             src={activeMedia.imageUrl || activeScene.imageUrl || ''}
             alt={`Scene ${currentSceneIndex + 1}`}
             className={`w-full h-full object-cover transition-transform duration-[20s] ease-linear ${isPlaying ? 'scale-110' : 'scale-100'}`}

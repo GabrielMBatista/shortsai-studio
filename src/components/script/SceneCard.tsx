@@ -6,6 +6,7 @@ import { getSceneMedia } from '../../services/scenes';
 import { Loader2, AlertCircle, ImageIcon, RefreshCw, Clock, ChevronDown, ChevronUp, Mic, Pencil, Check, Trash2, Video, GripVertical } from 'lucide-react';
 import AudioPlayerButton from '../common/AudioPlayerButton';
 import ConfirmModal from '../ConfirmModal';
+import { SafeImage } from '../common/SafeImage';
 import { useTranslation } from 'react-i18next';
 
 interface SceneCardProps {
@@ -220,9 +221,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                 onCancel={() => setModalConfig({ isOpen: false, type: null })}
             />
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden flex flex-col hover:border-slate-600 transition-colors h-full shadow-lg">
-                {/* IMAGE/VIDEO AREA */}
                 <div className="aspect-[9/16] bg-slate-900 relative group border-b border-slate-700/50">
-                    {/* Show video OR image based on preference */}
                     {showVideo && hasVideo ? (
                         <video
                             src={mediaData.videoUrl || scene.videoUrl || ''}
@@ -252,7 +251,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                             />
                         </>
                     ) : isLoadingMedia ? (
-                         <div className="absolute inset-0 bg-slate-700 animate-pulse flex items-center justify-center">
+                        <div className="absolute inset-0 bg-slate-700 animate-pulse flex items-center justify-center">
                             <ImageIcon className="w-16 h-16 text-slate-600 opacity-20" />
                             <Loader2 className="w-8 h-8 text-indigo-400 animate-spin absolute" />
                         </div>
@@ -338,10 +337,10 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                             </button>
                         )}
                     </div>
-                </div>
+                </div >
 
                 {/* CONTENT AREA */}
-                <div className="p-4 flex-1 flex flex-col gap-4">
+                < div className="p-4 flex-1 flex flex-col gap-4" >
                     <div className="flex-1 min-h-0 flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -392,7 +391,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     <div className="mt-auto border-t border-slate-700/50 pt-3">
                         <div className="flex items-center justify-between mb-2">
                             <button
-                                id={sceneIndex === 0 ? 'scene-0-toggle-prompt' : undefined} 
+                                id={sceneIndex === 0 ? 'scene-0-toggle-prompt' : undefined}
                                 onClick={() => setIsPromptOpen(!isPromptOpen)} className="flex items-center text-left text-[10px] uppercase tracking-wider text-slate-500 font-bold hover:text-indigo-400 transition-colors">
                                 <span>{t('scene.visual_prompt')}</span>{isPromptOpen ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                             </button>
@@ -422,8 +421,8 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                             </div>
                         )}
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
         </>
     );
 };

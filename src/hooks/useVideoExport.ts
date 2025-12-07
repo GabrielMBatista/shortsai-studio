@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Scene } from '../types';
+import { getProxyUrl } from '../utils/urlUtils';
 import { getWordTimings, SubtitleLayout } from '../utils/videoUtils';
 import { SUBTITLE_STYLES } from '../utils/styleConstants';
 import * as Mp4Muxer from 'mp4-muxer';
@@ -35,23 +36,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         }
     };
 
-    const getProxyUrl = (url: string) => {
-        // If it's already a data URI or local blob, return as is
-        if (!url) return '';
-        if (url.startsWith('data:') || url.startsWith('blob:')) return url;
 
-        // Sanity check for bad env vars
-        if (url.includes('undefined/')) {
-            console.error("❌ Invalid Asset URL detected (env var missing?):", url);
-        }
-
-
-
-        // Use the API proxy to bypass CORS
-        // Assuming VITE_API_URL is set, otherwise default to localhost:3333
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
-        return `${apiUrl}/assets?url=${encodeURIComponent(url)}`;
-    };
 
     const loadImage = (url: string): Promise<HTMLImageElement> => {
         return new Promise((resolve) => {
