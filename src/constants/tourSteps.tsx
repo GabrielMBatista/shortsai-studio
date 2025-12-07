@@ -105,8 +105,8 @@ export const getScriptTourSteps = (t: TFunction): Step[] => [
     },
     {
         target: '#scene-0-edit-prompt',
-        content: t('tour.script.scene_edit_prompt'), // Assuming this key exists or defaulting
-        placement: 'top', // Adjust placement if needed
+        content: t('tour.script.scene_edit_prompt'), 
+        placement: 'top', 
     },
     {
         target: '#btn-add-scene',
@@ -127,5 +127,33 @@ export const getScriptTourSteps = (t: TFunction): Step[] => [
         target: '#btn-export',
         content: t('tour.script.export'),
         placement: 'bottom',
+    }
+].map(step => ({ ...step, disableBeacon: true })) as Step[];
+
+export const getPreviewTourSteps = (t: TFunction): Step[] => [
+    {
+        target: '#video-preview-player',
+        content: t('tour.preview.player'),
+        placement: 'left',
+    },
+    {
+        target: '#video-controls',
+        content: t('tour.preview.controls'),
+        placement: 'top',
+    },
+    {
+        target: '#btn-toggle-subs',
+        content: t('tour.preview.subtitles'),
+        placement: 'top',
+    },
+    {
+        target: '#video-export-format',
+        content: t('tour.preview.resolution'),
+        placement: 'right',
+    },
+    {
+        target: '#btn-video-export',
+        content: t('tour.preview.export_btn'),
+        placement: 'top',
     }
 ].map(step => ({ ...step, disableBeacon: true })) as Step[];

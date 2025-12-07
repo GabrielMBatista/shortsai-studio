@@ -70,6 +70,7 @@ interface ScreenManagerProps {
     regenerateMusic: () => Promise<void>;
     onExport: () => void;
     getDisplayTitle: (p: VideoProject) => string;
+    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview') => void;
 }
 
 const ScreenManager: React.FC<ScreenManagerProps> = ({
@@ -116,7 +117,8 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
     updateProjectSettings,
     regenerateMusic,
     onExport,
-    getDisplayTitle
+    getDisplayTitle,
+    onStartTour
 }) => {
     const { t } = useTranslation();
 
@@ -224,6 +226,7 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
                     bgMusicUrl={project.bgMusicUrl}
                     title={getDisplayTitle(project)}
                     projectId={project.id}
+                    onStartTour={onStartTour}
                 />
             )}
         </>

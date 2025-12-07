@@ -11,7 +11,7 @@ import MainLayout from './components/layout/MainLayout';
 import ScreenManager from './components/layout/ScreenManager';
 import { useAuth } from './hooks/useAuth';
 import { useAutosave } from './hooks/useAutosave';
-import { getSettingsTourSteps, getCreationTourSteps, getScriptTourSteps } from './constants/tourSteps';
+import { getSettingsTourSteps, getCreationTourSteps, getScriptTourSteps, getPreviewTourSteps } from './constants/tourSteps';
 import { MOCK_PROJECT_TOUR } from './constants/mockProject';
 
 const App: React.FC = () => {
@@ -24,7 +24,7 @@ const App: React.FC = () => {
 
     // Tour State
     const [runTutorial, setRunTutorial] = useState(false);
-    const [activeTour, setActiveTour] = useState<'settings' | 'creation' | 'script' | null>(null);
+    const [activeTour, setActiveTour] = useState<'settings' | 'creation' | 'script' | 'preview' | null>(null);
     const [tutorialSteps, setTutorialSteps] = useState<Step[]>([]);
 
     // Dashboard State
@@ -110,7 +110,7 @@ const App: React.FC = () => {
         localStorage.setItem('shortsai_last_step', newStep);
     };
 
-    const handleStartTour = (tour: 'settings' | 'creation' | 'script') => {
+    const handleStartTour = (tour: 'settings' | 'creation' | 'script' | 'preview') => {
         setActiveTour(tour);
         if (tour === 'settings') {
             handleSetStep(AppStep.SETTINGS);
@@ -128,6 +128,13 @@ const App: React.FC = () => {
                 handleSetStep(AppStep.SCRIPTING);
             }
             setTutorialSteps(getScriptTourSteps(t));
+        } else if (tour === 'preview') {
+             if (step !== AppStep.PREVIEW) {
+                // If not in preview, we can't really tour it easily unless we open one.
+                // Assuming this is triggered FROM preview, or we force open one if possible.
+                // For now, assume user is there or we just set steps.
+             }
+             setTutorialSteps(getPreviewTourSteps(t));
         }
         setTimeout(() => setRunTutorial(true), 800);
     };
@@ -348,6 +355,7 @@ const App: React.FC = () => {
                 regenerateMusic={regenerateMusic}
                 onExport={handleExport}
                 getDisplayTitle={getDisplayTitle}
+                onStartTour={handleStartTour}
             />
         </MainLayout>
     );

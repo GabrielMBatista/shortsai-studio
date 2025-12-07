@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Scene } from '../types';
-import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer, Clock } from 'lucide-react';
+import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer, Clock, HelpCircle } from 'lucide-react';
 import { useVideoExport } from '../hooks/useVideoExport';
 import SubtitleOverlay from './SubtitleOverlay';
 import { useTranslation } from 'react-i18next';
@@ -12,9 +12,10 @@ interface VideoPlayerProps {
   bgMusicUrl?: string;
   title?: string;
   projectId?: string;
+  onStartTour: (tour: 'preview') => void;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, title = "shorts-ai-video", projectId }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, title = "shorts-ai-video", projectId, onStartTour }) => {
   const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
@@ -222,14 +223,24 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       </div>
 
       {/* Close Button */}
-      <button
-        onClick={onClose}
-        className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all z-50">
-        <X className="w-6 h-6" />
-      </button>
+      <div className="absolute top-6 right-6 flex gap-3 z-50">
+        <button
+            onClick={() => onStartTour('preview')}
+            className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all"
+            title={t('nav.tours_title')}
+        >
+            <HelpCircle className="w-6 h-6" />
+        </button>
+        <button
+            id="btn-close-player"
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all">
+            <X className="w-6 h-6" />
+        </button>
+      </div>
 
       {/* Main Player Container */}
-      <div className="relative h-[80vh] max-w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
+      <div id="video-preview-player" className="relative h-[80vh] max-w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
 
         {/* Background Media */}
         {activeScene.mediaType !== 'image' && (
@@ -540,12 +551,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       )}
 
       {/* Controls */}
-      <div className="mt-8 flex items-center gap-2 sm:gap-6 bg-slate-900/50 backdrop-blur-xl border border-white/5 p-3 rounded-full shadow-2xl z-10">
+      <div id="video-controls" className="mt-8 flex items-center gap-2 sm:gap-6 bg-slate-900/50 backdrop-blur-xl border border-white/5 p-3 rounded-full shadow-2xl z-10">
         <button onClick={resetPlayback} className="p-3 text-slate-300 hover:text-white hover:bg-white/10 rounded-full"><SkipBack className="w-5 h-5" /></button>
         <button onClick={isPlaying ? pausePlayback : startPlayback} className="p-4 bg-white text-black hover:bg-slate-200 rounded-full transition-all transform hover:scale-105 shadow-lg shadow-white/10">{isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-0.5" />}</button>
-        <button onClick={handleDownloadClick} disabled={isDownloading} className={`p-3 rounded-full transition-colors flex items-center justify-center ${isDownloading ? 'text-slate-500 cursor-wait' : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'}`}><Download className="w-5 h-5" /></button>
+        <button id="btn-video-export" onClick={handleDownloadClick} disabled={isDownloading} className={`p-3 rounded-full transition-colors flex items-center justify-center ${isDownloading ? 'text-slate-500 cursor-wait' : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'}`}><Download className="w-5 h-5" /></button>
         <div className="w-px h-6 bg-white/10 mx-1"></div>
-        <button onClick={() => setShowSubtitles(!showSubtitles)} className={`p-3 rounded-full transition-colors ${showSubtitles ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>{showSubtitles ? <Captions className="w-5 h-5" /> : <CaptionsOff className="w-5 h-5" />}</button>
+        <button id="btn-toggle-subs" onClick={() => setShowSubtitles(!showSubtitles)} className={`p-3 rounded-full transition-colors ${showSubtitles ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>{showSubtitles ? <Captions className="w-5 h-5" /> : <CaptionsOff className="w-5 h-5" />}</button>
 
         <div className="flex items-center gap-2 px-2 group">
           <button onClick={() => setVolume(volume === 0 ? 0.8 : 0)} className={`p-1 transition-colors rounded-full hover:bg-white/10 ${volume > 0 ? 'text-white' : 'text-slate-600'}`}>

@@ -269,8 +269,15 @@
             "add_scene": "Need more content? Add a new scene manually.",
             "generate_all": "Generates all media (images and audio) for pending scenes.",
             "preview": "Preview your video before exporting.",
-            "export": "All done? Download the final video and assets.",
+            "export": "Download raw assets (images, audio) for external editing. For the final video, use Preview.",
             "no_project": "Please select a project to start the tour."
+        },
+        "preview": {
+            "player": "Watch the final result here. The video is assembled in real-time.",
+            "controls": "Control playback, pause, and navigate through scenes.",
+            "export_btn": "Happy with it? Click here to render and download the final video (MP4/WebM).",
+            "subtitles": "Toggle automatic subtitles on or off.",
+            "resolution": "Choose between 1080p (high quality) or 720p (smaller file)."
         }
     }
 }

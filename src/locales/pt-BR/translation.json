@@ -276,13 +276,20 @@
             "add_scene": "Precisa de mais conteúdo? Adicione uma nova cena manual.",
             "generate_all": "Gera todas as mídias (imagens e áudio) para as cenas pendentes.",
             "preview": "Veja como está ficando seu vídeo antes de exportar.",
-            "export": "Tudo pronto? Baixe os recursos base como imagens e áudio.",
+            "export": "Baixe os arquivos brutos (imagens, áudio) para editar em outro software. Para o vídeo final, use o Preview.",
             "scene_regen_image": "Não gostou da imagem? Clique para gerar uma nova versão usando o prompt visual.",
             "scene_edit_narration": "Edite o texto da narração manualmente. O áudio deve ser gerado novamente se alterar o texto.",
             "scene_regen_audio": "Regere apenas o áudio desta cena. Necessário após editar o texto.",
             "scene_visual_prompt": "Ajuste o prompt visual (descrição da cena) usado para gerar a imagem.",
             "scene_edit_prompt": "Edite o prompt visual para refinar a geração da imagem.",
             "no_project": "Selecione um projeto para iniciar o tour."
+        },
+        "preview": {
+            "player": "Aqui você assiste ao resultado final. O vídeo é montado em tempo real.",
+            "controls": "Controle a reprodução, pause e navegue pelas cenas.",
+            "export_btn": "Gostou? Clique aqui para renderizar e baixar o vídeo final (MP4/WebM).",
+            "subtitles": "Ative ou desative as legendas automáticas.",
+            "resolution": "Escolha entre 1080p (qualidade máxima) ou 720p (arquivo menor)."
         }
     },
     "quota": {
