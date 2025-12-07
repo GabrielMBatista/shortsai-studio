@@ -59,6 +59,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [includeEndingVideo, setIncludeEndingVideo] = useState(false);
@@ -115,6 +116,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       if (musicRef.current) {
         musicRef.current.play().catch(e => console.error("Music play error:", e));
       }
+      if (videoRef.current) {
+        videoRef.current.play().catch(e => console.error("Video play error:", e));
+      }
     } else {
       // Pause audio
       if (audioRef.current) {
@@ -122,6 +126,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       }
       if (musicRef.current) {
         musicRef.current.pause();
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
       }
     }
   }, [isPlaying, activeScene]);
@@ -172,6 +179,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     if (musicRef.current) {
       musicRef.current.currentTime = 0;
     }
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+    }
   };
 
   const handleDownloadClick = () => {
@@ -214,14 +224,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       <div className="relative h-[80vh] max-w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
 
         {/* Background Media */}
-        {(
+        {activeScene.mediaType !== 'image' && (
           (activeScene.mediaType === 'video' || (activeScene.videoUrl && activeScene.videoStatus === 'completed')) || 
           (activeMedia.videoUrl)
         ) ? (
           <video
+            ref={videoRef}
             src={activeMedia.videoUrl || activeScene.videoUrl || ''}
             className="w-full h-full object-cover"
-            autoPlay
             loop
             muted={true}
             playsInline
@@ -397,13 +407,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                 <div className="flex gap-3 w-full max-w-sm">
                   <button
                     onClick={() => setShowExportOptions(false)}
-                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-semibold transition-colors text-sm"
+                    className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-semibold transition-colors text-sm"
                   >
                     {t('video_player.cancel')}
                   </button>
                   <button
                     onClick={confirmExport}
-                    className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 whitespace-nowrap"
+                    className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 whitespace-nowrap"
                   >
                     <Download className="w-4 h-4" />
                     {t('video_player.start_export')}
