@@ -363,6 +363,7 @@ const App: React.FC = () => {
                 onExport={handleExport}
                 getDisplayTitle={getDisplayTitle}
                 onStartTour={handleStartTour}
+                activeTour={activeTour}
             />
         </MainLayout>
     );

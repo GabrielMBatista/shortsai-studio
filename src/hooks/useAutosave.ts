@@ -12,7 +12,7 @@ export const useAutosave = (
 
     useEffect(() => {
         if (project && currentUser && step !== AppStep.DASHBOARD) {
-            if (project.id.startsWith('mock-project-')) return;
+            if (project.id.startsWith('__mock__')) return;
 
             const currentJson = JSON.stringify(project);
             if (currentJson === lastSavedProjectJson.current) {

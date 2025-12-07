@@ -31,7 +31,7 @@ interface ScreenManagerProps {
     generationMessage: string;
     isPaused: boolean;
     fatalError: string | null;
-    
+
     // Handlers
     onNewProject: () => void;
     onOpenProject: (p: VideoProject) => void;
@@ -39,7 +39,7 @@ interface ScreenManagerProps {
     onSetStep: (step: AppStep) => void;
     onUpdateUser: (user: User) => void;
     showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
-    
+
     // Generation Handlers (Matching useVideoGeneration hook)
     generateNewProject: (
         topic: string,
@@ -70,7 +70,8 @@ interface ScreenManagerProps {
     regenerateMusic: () => Promise<void>;
     onExport: () => void;
     getDisplayTitle: (p: VideoProject) => string;
-    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview') => void;
+    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export') => void;
+    activeTour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | null;
 }
 
 const ScreenManager: React.FC<ScreenManagerProps> = ({
@@ -118,7 +119,8 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
     regenerateMusic,
     onExport,
     getDisplayTitle,
-    onStartTour
+    onStartTour,
+    activeTour
 }) => {
     const { t } = useTranslation();
 
@@ -151,7 +153,7 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
             )}
 
             {step === AppStep.SHOWS && currentUser && currentUser.role === 'ADMIN' && (
-                <ShowsView 
+                <ShowsView
                     onOpenShow={(id) => { console.log('Open Show', id); /* Implementar nav pro detalhe depois */ }}
                     showToast={showToast}
                 />
@@ -228,6 +230,7 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
                     title={getDisplayTitle(project)}
                     projectId={project.id}
                     onStartTour={onStartTour}
+                    activeTour={activeTour}
                 />
             )}
         </>

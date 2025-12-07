@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Scene } from '../types';
-import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer, Clock, HelpCircle } from 'lucide-react';
+import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer, Clock } from 'lucide-react';
 import { useVideoExport } from '../hooks/useVideoExport';
 import SubtitleOverlay from './SubtitleOverlay';
 import { useTranslation } from 'react-i18next';
@@ -12,10 +12,11 @@ interface VideoPlayerProps {
   bgMusicUrl?: string;
   title?: string;
   projectId?: string;
-  onStartTour: (tour: 'preview') => void;
+  onStartTour: (tour: 'preview' | 'export') => void;
+  activeTour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | null;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, title = "shorts-ai-video", projectId, onStartTour }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, title = "shorts-ai-video", projectId, onStartTour, activeTour }) => {
   const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
@@ -80,6 +81,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       setExportFormat('webm');
     }
   }, []);
+
+  // Auto-open export modal for export tour
+  useEffect(() => {
+    if (activeTour === 'export') {
+      setTimeout(() => {
+        setShowExportOptions(true);
+        pausePlayback();
+      }, 1000);
+    }
+  }, [activeTour]);
 
   const [volume, setVolume] = useState(0.8);
 
@@ -223,14 +234,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       </div>
 
       {/* Close Button */}
-      <div className="absolute top-6 right-6 flex gap-3 z-50">
-        <button
-          onClick={() => onStartTour('preview')}
-          className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all"
-          title={t('nav.tours_title')}
-        >
-          <HelpCircle className="w-6 h-6" />
-        </button>
+      <div className="absolute top-6 right-6 z-50">
         <button
           id="btn-close-player"
           onClick={onClose}

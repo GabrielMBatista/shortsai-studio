@@ -155,19 +155,6 @@ export const getPreviewTourSteps = (t: TFunction): Step[] => [
 
 export const getExportTourSteps = (t: TFunction): Step[] => [
     {
-        target: '#btn-video-export',
-        content: t('tour.export.welcome'),
-        placement: 'bottom',
-    },
-    {
-        target: '#btn-video-export',
-        content: t('tour.export.open_modal'),
-        placement: 'bottom',
-        spotlightClicks: true,
-        disableOverlayClose: true,
-        hideCloseButton: true,
-    },
-    {
         target: '#video-export-format',
         content: t('tour.export.format_step'),
         placement: 'right',

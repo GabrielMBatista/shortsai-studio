@@ -1,7 +1,7 @@
 import { VideoProject } from '../types';
 
 export const MOCK_PROJECT_COMMON: VideoProject = {
-    id: 'mock-project-unified',
+    id: '__mock__-tour-project',
     userId: 'mock-user',
     createdAt: Date.now(),
     topic: 'Cyberpunk Detective in Neo-Tokyo',
