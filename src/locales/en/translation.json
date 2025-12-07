@@ -197,6 +197,7 @@
         "no_scenes": "No valid scenes to play.",
         "close": "Close",
         "export_options": "Export Options",
+        "resolution": "Resolution",
         "resolution_note": "Resolution: 1080x1920 (9:16 Vertical)",
         "format": "Format",
         "mp4_not_supported": "MP4 export is not supported by your browser. Please use WebM.",

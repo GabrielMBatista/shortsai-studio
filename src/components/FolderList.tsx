@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { Folder, Plus, MoreVertical, Edit2, Trash2, FolderOpen, Loader2 } from 'lucide-react';
+import { Folder, Plus, MoreVertical, Edit2, Trash2, FolderOpen, Loader2, HelpCircle, PlayCircle, Settings, FileText, Video } from 'lucide-react';
 import { Folder as FolderType } from '../types';
 import { useTranslation } from 'react-i18next';
 
@@ -17,6 +17,7 @@ interface FolderListProps {
     className?: string;
     isLoading?: boolean;
     updatingFolderId?: string | null;
+    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview') => void;
 }
 
 const FolderList: React.FC<FolderListProps> = ({
@@ -31,7 +32,8 @@ const FolderList: React.FC<FolderListProps> = ({
     onToggleCollapse,
     className,
     isLoading,
-    updatingFolderId
+    updatingFolderId,
+    onStartTour
 }) => {
     const { t } = useTranslation();
     const [isCreating, setIsCreating] = useState(false);
@@ -239,6 +241,46 @@ const FolderList: React.FC<FolderListProps> = ({
                         </DroppableFolder>
                     ))
                 )}
+            </div>
+            
+            {/* Tours Section */}
+            <div className={`mt-auto border-t border-slate-800 p-2 flex flex-col gap-1`}>
+                {!isCollapsed && <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-2 mb-1">{t('nav.tours_title')}</h3>}
+                
+                <button
+                    onClick={() => onStartTour('settings')}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                    title={isCollapsed ? t('nav.settings_tour') : undefined}
+                >
+                    <Settings className="w-4 h-4 flex-shrink-0" />
+                    {!isCollapsed && <span className="text-sm truncate">{t('nav.settings_tour')}</span>}
+                </button>
+
+                <button
+                    onClick={() => onStartTour('creation')}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                    title={isCollapsed ? t('nav.creation_tour') : undefined}
+                >
+                    <PlayCircle className="w-4 h-4 flex-shrink-0" />
+                    {!isCollapsed && <span className="text-sm truncate">{t('nav.creation_tour')}</span>}
+                </button>
+
+                <button
+                    onClick={() => onStartTour('script')}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                    title={isCollapsed ? t('nav.script_tour') : undefined}
+                >
+                    <FileText className="w-4 h-4 flex-shrink-0" />
+                    {!isCollapsed && <span className="text-sm truncate">{t('nav.script_tour')}</span>}
+                </button>
+                 <button
+                    onClick={() => onStartTour('preview')}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                    title={isCollapsed ? "Preview Tour" : undefined}
+                >
+                    <Video className="w-4 h-4 flex-shrink-0" />
+                    {!isCollapsed && <span className="text-sm truncate">Preview & Export</span>}
+                </button>
             </div>
         </div >
     );

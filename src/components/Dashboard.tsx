@@ -27,6 +27,7 @@ interface DashboardProps {
     setSelectedFolderId: (id: string | null) => void;
     showArchived: boolean;
     setShowArchived: (show: boolean) => void;
+    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview') => void;
 }
 
 const useIsMobile = () => {
@@ -56,7 +57,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     selectedFolderId,
     setSelectedFolderId,
     showArchived,
-    setShowArchived
+    setShowArchived,
+    onStartTour
 }) => {
     const { t } = useTranslation();
     const isMobile = useIsMobile();
@@ -324,6 +326,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                     isLoading={isLoadingFolders}
                     updatingFolderId={updatingFolderId}
+                    onStartTour={onStartTour}
                 />
 
                 {/* Main Content */}

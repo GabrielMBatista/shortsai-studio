@@ -198,6 +198,7 @@
         "no_scenes": "Nenhuma cena válida para reproduzir.",
         "close": "Fechar",
         "export_options": "Opções de Exportação",
+        "resolution": "Resolução",
         "resolution_note": "Resolução: 1080x1920 (9:16 Vertical)",
         "format": "Formato",
         "mp4_not_supported": "Exportação MP4 não suportada pelo navegador. Use WebM.",
