@@ -282,10 +282,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
         {/* EXPORT OPTIONS MODAL */}
         {showExportOptions && !isDownloading && (
-          <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center text-white p-6 animate-fade-in-up">
-            <div className="flex gap-8 max-w-6xl w-full items-start">
-              {/* Main Export Options */}
-              <div className="flex-shrink-0 flex flex-col items-center text-center">
+          <>
+            {/* Dark Overlay with Export Form */}
+            <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center text-white p-6 animate-fade-in-up">
+              <div className="flex flex-col items-center text-center">
                 <h3 className="text-xl font-bold mb-2 text-white">{t('video_player.export_options')}</h3>
                 <p className="text-xs text-slate-400 mb-6">{t('video_player.resolution_note')}</p>
 
@@ -399,38 +399,38 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                   </button>
                 </div>
               </div>
+            </div>
 
-              {/* Export Tips Sidebar (Desktop Only) */}
-              <div className="hidden lg:flex flex-col gap-4 w-80 flex-shrink-0">
-                <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 p-5 rounded-xl border border-indigo-500/20">
-                  <h4 className="text-base font-bold text-indigo-300 mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {t('video_player.tips_title')}
-                  </h4>
-                  <div className="space-y-3 text-sm text-slate-300 leading-relaxed">
-                    <div className="flex gap-3">
-                      <span className="text-indigo-400 flex-shrink-0">⚡</span>
-                      <p>{t('video_player.tip_performance')}</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="text-indigo-400 flex-shrink-0">🎬</span>
-                      <p>{t('video_player.tip_quality')}</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="text-indigo-400 flex-shrink-0">📁</span>
-                      <p>{t('video_player.tip_format')}</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="text-yellow-400 flex-shrink-0">⚠️</span>
-                      <p className="text-yellow-200/90">{t('video_player.tip_stay')}</p>
-                    </div>
+            {/* Export Tips Card (Outside dark overlay, Desktop Only) */}
+            <div className="hidden lg:block absolute right-8 top-1/2 -translate-y-1/2 z-[60] w-80 animate-fade-in-up">
+              <div className="bg-slate-900 p-5 rounded-xl border border-indigo-500/30 shadow-2xl">
+                <h4 className="text-base font-bold text-indigo-300 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {t('video_player.tips_title')}
+                </h4>
+                <div className="space-y-3 text-sm text-slate-300 leading-relaxed">
+                  <div className="flex gap-3">
+                    <span className="text-indigo-400 flex-shrink-0">⚡</span>
+                    <p>{t('video_player.tip_performance')}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-indigo-400 flex-shrink-0">🎬</span>
+                    <p>{t('video_player.tip_quality')}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-indigo-400 flex-shrink-0">📁</span>
+                    <p>{t('video_player.tip_format')}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-yellow-400 flex-shrink-0">⚠️</span>
+                    <p className="text-yellow-200/90">{t('video_player.tip_stay')}</p>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* DOWNLOAD / ERROR OVERLAY */}
