@@ -35,24 +35,24 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     if (!activeScene) return;
 
     const loadMedia = async () => {
-        setIsLoadingMedia(true);
-        let { imageUrl, audioUrl, videoUrl } = activeScene;
+      setIsLoadingMedia(true);
+      let { imageUrl, audioUrl, videoUrl } = activeScene;
 
-        // Fetch if missing and scene has ID
-        if ((!imageUrl || !audioUrl || (!videoUrl && activeScene.videoStatus === 'completed')) && activeScene.id) {
-            try {
-                const media = await getSceneMedia(activeScene.id);
-                if (media) {
-                    if (!imageUrl) imageUrl = media.image_base64;
-                    if (!audioUrl) audioUrl = media.audio_base64;
-                    if (!videoUrl) videoUrl = media.video_base64;
-                }
-            } catch (e) {
-                console.error("Failed to load scene media for player", e);
-            }
+      // Fetch if missing and scene has ID
+      if ((!imageUrl || !audioUrl || (!videoUrl && activeScene.videoStatus === 'completed')) && activeScene.id) {
+        try {
+          const media = await getSceneMedia(activeScene.id);
+          if (media) {
+            if (!imageUrl) imageUrl = media.image_base64;
+            if (!audioUrl) audioUrl = media.audio_base64;
+            if (!videoUrl) videoUrl = media.video_base64;
+          }
+        } catch (e) {
+          console.error("Failed to load scene media for player", e);
         }
-        setActiveMedia({ imageUrl, audioUrl, videoUrl });
-        setIsLoadingMedia(false);
+      }
+      setActiveMedia({ imageUrl, audioUrl, videoUrl });
+      setIsLoadingMedia(false);
     };
 
     loadMedia();
@@ -225,17 +225,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       {/* Close Button */}
       <div className="absolute top-6 right-6 flex gap-3 z-50">
         <button
-            onClick={() => onStartTour('preview')}
-            className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all"
-            title={t('nav.tours_title')}
+          onClick={() => onStartTour('preview')}
+          className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all"
+          title={t('nav.tours_title')}
         >
-            <HelpCircle className="w-6 h-6" />
+          <HelpCircle className="w-6 h-6" />
         </button>
         <button
-            id="btn-close-player"
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all">
-            <X className="w-6 h-6" />
+          id="btn-close-player"
+          onClick={onClose}
+          className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all">
+          <X className="w-6 h-6" />
         </button>
       </div>
 
@@ -244,7 +244,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
         {/* Background Media */}
         {activeScene.mediaType !== 'image' && (
-          (activeScene.mediaType === 'video' || (activeScene.videoUrl && activeScene.videoStatus === 'completed')) || 
+          (activeScene.mediaType === 'video' || (activeScene.videoUrl && activeScene.videoStatus === 'completed')) ||
           (activeMedia.videoUrl)
         ) ? (
           <video
@@ -352,9 +352,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                       WebM
                     </button>
                   </div>
-              </div>
+                </div>
 
-              <div id="video-export-resolution" className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                <div id="video-export-resolution" className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                   <label className="text-sm font-medium text-slate-300 block mb-3 text-left">{t('video_player.resolution')}</label>
                   <div className="flex gap-2">
                     <button
@@ -522,32 +522,32 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       {/* Export Tips Card (Desktop Only - Moved to Side) */}
       {showExportOptions && !isDownloading && (
         <div className="hidden xl:block absolute right-12 top-1/2 -translate-y-1/2 z-[60] w-80 animate-fade-in-up">
-            <div className="bg-slate-900/95 backdrop-blur-md p-6 rounded-2xl border border-indigo-500/30 shadow-2xl ring-1 ring-white/10">
+          <div className="bg-slate-900/95 backdrop-blur-md p-6 rounded-2xl border border-indigo-500/30 shadow-2xl ring-1 ring-white/10">
             <h4 className="text-lg font-bold text-indigo-300 mb-4 flex items-center gap-2">
-                <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {t('video_player.tips_title')}
+              </svg>
+              {t('video_player.tips_title')}
             </h4>
             <div className="space-y-4 text-sm text-slate-300 leading-relaxed">
-                <div className="flex gap-3 items-start">
+              <div className="flex gap-3 items-start">
                 <span className="text-indigo-400 flex-shrink-0 mt-0.5">⚡</span>
                 <p>{t('video_player.tip_performance')}</p>
-                </div>
-                <div className="flex gap-3 items-start">
+              </div>
+              <div className="flex gap-3 items-start">
                 <span className="text-indigo-400 flex-shrink-0 mt-0.5">🎬</span>
                 <p>{t('video_player.tip_quality')}</p>
-                </div>
-                <div className="flex gap-3 items-start">
+              </div>
+              <div className="flex gap-3 items-start">
                 <span className="text-indigo-400 flex-shrink-0 mt-0.5">📁</span>
                 <p>{t('video_player.tip_format')}</p>
-                </div>
-                <div className="flex gap-3 items-start p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+              </div>
+              <div className="flex gap-3 items-start p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                 <span className="text-yellow-400 flex-shrink-0 mt-0.5">⚠️</span>
                 <p className="text-yellow-100/90 font-medium">{t('video_player.tip_stay')}</p>
-                </div>
+              </div>
             </div>
-            </div>
+          </div>
         </div>
       )}
 

@@ -90,14 +90,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenProject, onCon
                     </>
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-slate-800/80">
-                         {/* Show loading state if we expect an image (completed status) but don't have URL yet */}
-                         {project.scenes[0]?.imageStatus === 'completed' ? (
+                        {/* Show loading state if we expect an image (completed status) but don't have URL yet */}
+                        {project.scenes[0]?.imageStatus === 'completed' ? (
                             <div className="flex flex-col items-center">
                                 <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2" />
                             </div>
-                         ) : (
+                        ) : (
                             <Zap className="w-12 h-12 text-slate-700 group-hover:text-indigo-500/50 transition-colors" />
-                         )}
+                        )}
                     </div>
                 )}
 
