@@ -402,8 +402,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             </div>
 
             {/* Export Tips Card (Outside dark overlay, Desktop Only) */}
-            <div className="hidden lg:block absolute right-8 top-1/2 -translate-y-1/2 z-[60] w-80 animate-fade-in-up">
-              <div className="bg-slate-900 p-5 rounded-xl border border-indigo-500/30 shadow-2xl">
+            <div className="hidden xl:block absolute right-4 top-1/2 -translate-y-1/2 z-[60] w-72 animate-fade-in-up">
+              <div className="bg-slate-900/95 backdrop-blur-sm p-5 rounded-xl border border-indigo-500/30 shadow-2xl">
                 <h4 className="text-base font-bold text-indigo-300 mb-4 flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
