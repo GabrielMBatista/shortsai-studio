@@ -375,6 +375,10 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
             // 5. EXPORT BRANCHING
             if (format === 'mp4') {
+                // Check WebCodecs support
+                if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') {
+                    throw new Error("MP4 export requires WebCodecs API support. Please use a modern browser (Chrome 94+, Edge 94+) or try WebM export instead.");
+                }
                 await exportMp4(canvas, ctx, assets, endingVideoElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title);
             } else {
                 await exportWebM(canvas, ctx, mainAudioCtx, assets, endingVideoElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title);
@@ -392,6 +396,60 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         }
     };
 
+    // --- Helper: Seek all video elements to a specific time (for MP4 frame-by-frame encoding) ---
+    const seekVideoElementsToTime = async (
+        time: number,
+        assets: any[],
+        endingVideoElement: HTMLVideoElement | null,
+        totalScenesDuration: number
+    ) => {
+        // Ending Phase Seek
+        if (time >= totalScenesDuration && endingVideoElement) {
+            const endingTime = time - totalScenesDuration;
+            if (Math.abs(endingVideoElement.currentTime - endingTime) > 0.01) {
+                endingVideoElement.currentTime = endingTime;
+                await new Promise<void>((resolve) => {
+                    const handler = () => {
+                        endingVideoElement!.removeEventListener('seeked', handler);
+                        resolve();
+                    };
+                    endingVideoElement!.addEventListener('seeked', handler);
+                    // Timeout fallback
+                    setTimeout(resolve, 100);
+                });
+            }
+            return;
+        }
+
+        // Scenes Phase Seek
+        let accumTime = 0;
+        for (let i = 0; i < assets.length; i++) {
+            if (time < accumTime + assets[i].renderDuration) {
+                const timeInScene = time - accumTime;
+                const asset = assets[i];
+
+                if (asset.video && asset.videoDuration > 0 && timeInScene < asset.videoDuration) {
+                    const targetTime = timeInScene;
+                    // Only seek if significantly different (avoid micro-seeks)
+                    if (Math.abs(asset.video.currentTime - targetTime) > 0.01) {
+                        asset.video.currentTime = targetTime;
+                        await new Promise<void>((resolve) => {
+                            const handler = () => {
+                                asset.video.removeEventListener('seeked', handler);
+                                resolve();
+                            };
+                            asset.video.addEventListener('seeked', handler);
+                            // Timeout fallback
+                            setTimeout(resolve, 100);
+                        });
+                    }
+                }
+                break;
+            }
+            accumTime += assets[i].renderDuration;
+        }
+    };
+
     // --- MP4 Export Strategy (WebCodecs + mp4-muxer) ---
     const exportMp4 = async (
         canvas: HTMLCanvasElement,
@@ -403,6 +461,8 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         audioBuffer: AudioBuffer,
         title?: string
     ) => {
+        console.log("Starting MP4 export...");
+
         const muxer = new Mp4Muxer.Muxer({
             target: new Mp4Muxer.ArrayBufferTarget(),
             video: {
@@ -418,12 +478,14 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             fastStart: 'in-memory'
         });
 
+        let encoderError: Error | null = null;
+
         const videoEncoder = new VideoEncoder({
             output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
             error: (e) => {
                 console.error("VideoEncoder error", e);
-                setDownloadError("Video encoding failed: " + e.message);
-                isDownloadingRef.current = false;
+                encoderError = e;
+                throw new Error("Video encoding failed: " + e.message);
             }
         });
 
@@ -441,8 +503,8 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
             error: (e) => {
                 console.error("AudioEncoder error", e);
-                setDownloadError("Audio encoding failed: " + e.message);
-                isDownloadingRef.current = false;
+                encoderError = e;
+                throw new Error("Audio encoding failed: " + e.message);
             }
         });
 
@@ -511,7 +573,10 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
 
             setDownloadProgress(`Encoding video (${Math.round((i / totalFrames) * 100)}%)...`);
 
-            // Draw Frame - videos will play naturally, no manual seeking needed
+            // Pre-seek all video elements to exact frame time BEFORE drawing
+            await seekVideoElementsToTime(time, assets, endingVideoElement, totalScenesDuration);
+
+            // Draw Frame - videos are now at correct time
             try {
                 drawFrame(ctx, canvas.width, canvas.height, time, assets, endingVideoElement, totalScenesDuration, subtitleLayouts);
             } catch (drawErr) {
@@ -529,19 +594,18 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             if (videoEncoder.encodeQueueSize > 5) {
                 await new Promise(r => setTimeout(r, 20));
             }
-
-            // Small delay to allow video elements to render their next frame naturally
-            // This is critical for smooth video playback without seek artifacts
-            await new Promise(r => setTimeout(r, 0));
         }
 
         if (isDownloadingRef.current) {
             await videoEncoder.flush();
             muxer.finalize();
-        }
 
-        const { buffer } = muxer.target;
-        saveFile(new Blob([buffer], { type: 'video/mp4' }), title, 'mp4');
+            const { buffer } = muxer.target;
+            saveFile(new Blob([buffer], { type: 'video/mp4' }), title, 'mp4');
+            console.log("MP4 export completed successfully!");
+        } else {
+            console.log("MP4 export was cancelled");
+        }
     };
 
     // --- WebM Export Strategy (MediaRecorder) ---
@@ -556,6 +620,24 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         audioBuffer: AudioBuffer,
         title?: string
     ) => {
+        console.log("Starting WebM export...");
+
+        // Check MediaRecorder support
+        if (typeof MediaRecorder === 'undefined') {
+            throw new Error("WebM export requires MediaRecorder API support. Please use a modern browser.");
+        }
+
+        // Try VP9 first, fallback to VP8
+        let mimeType = 'video/webm;codecs=vp9,opus';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+            console.warn("VP9 not supported, trying VP8...");
+            mimeType = 'video/webm;codecs=vp8,opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                throw new Error("WebM export is not supported in this browser. No VP9 or VP8 codec available.");
+            }
+        }
+        console.log(`Using codec: ${mimeType}`);
+
         const dest = audioCtx.createMediaStreamDestination();
         const source = audioCtx.createBufferSource();
         source.buffer = audioBuffer;
@@ -566,7 +648,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         if (audioTrack) stream.addTrack(audioTrack);
 
         const recorder = new MediaRecorder(stream, {
-            mimeType: 'video/webm;codecs=vp9,opus',
+            mimeType: mimeType,
             videoBitsPerSecond: 6000000,
             audioBitsPerSecond: 128000
         });
@@ -578,12 +660,25 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             recorder.onstop = () => {
                 const blob = new Blob(chunks, { type: 'video/webm' });
                 saveFile(blob, title, 'webm');
+                console.log("WebM export completed successfully!");
                 resolve();
             };
         });
 
         recorder.start(1000);
         source.start(0);
+
+        // Start video playback for all video assets (for real-time WebM recording)
+        assets.forEach(asset => {
+            if (asset.video) {
+                asset.video.currentTime = 0;
+                asset.video.play().catch(e => console.warn("Failed to start video for WebM", e));
+            }
+        });
+        if (endingVideoElement) {
+            endingVideoElement.currentTime = 0;
+            endingVideoElement.play().catch(e => console.warn("Failed to start ending video for WebM", e));
+        }
 
         const startTime = Date.now();
         const subtitleLayouts = precomputeSubtitleLayouts(ctx, assets, canvas.width);
@@ -620,13 +715,19 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
     ) => {
         // Ending Phase
         if (time >= totalScenesDuration && endingVideoElement) {
-            // For WebCodecs, we need to seek the video element if we want frame-perfect accuracy, 
-            // but for simple playback, updating it in real-time or seeking works.
-            // Since WebCodecs loop is async but fast, we should ideally seek the video element to `time - totalScenesDuration`.
-            // However, seeking HTMLVideoElement is slow. 
-            // For this implementation, we'll assume the video element can keep up or we seek it.
+            // Pause all scene videos
+            assets.forEach(asset => {
+                if (asset.video && !asset.video.paused) {
+                    asset.video.pause();
+                }
+            });
+
+            // Ensure ending video is playing and at correct time (for WebM)
             const endingTime = time - totalScenesDuration;
-            endingVideoElement.currentTime = endingTime;
+            if (endingVideoElement.paused) {
+                endingVideoElement.currentTime = endingTime;
+                endingVideoElement.play().catch(e => console.warn("Failed to play ending video", e));
+            }
 
             const vw = endingVideoElement.videoWidth;
             const vh = endingVideoElement.videoHeight;
@@ -642,6 +743,11 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
                 ctx.fillRect(0, 0, w, h);
             }
             return;
+        }
+
+        // Pause ending video if we're in scenes phase
+        if (endingVideoElement && !endingVideoElement.paused) {
+            endingVideoElement.pause();
         }
 
         // Scenes Phase
@@ -666,6 +772,13 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         const asset = assets[currentSceneIdx];
         const layout = subtitleLayouts[currentSceneIdx];
 
+        // Pause all videos except the current one (for WebM real-time playback)
+        assets.forEach((a, i) => {
+            if (a.video && i !== currentSceneIdx && !a.video.paused) {
+                a.video.pause();
+            }
+        });
+
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, w, h);
 
@@ -674,32 +787,16 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         const isVideoActive = hasVideo && timeInScene < asset.videoDuration;
         const isVideoFrozen = hasVideo && timeInScene >= asset.videoDuration;
 
+        // For WebM: ensure current video is playing
+        if (isVideoActive && asset.video.paused) {
+            asset.video.play().catch(e => console.warn("Failed to resume video", e));
+        } else if (!isVideoActive && asset.video && !asset.video.paused) {
+            asset.video.pause();
+        }
+
         if (isVideoActive) {
-            // Play video naturally (like the preview does) - no pan/zoom during video playback
-            const videoTime = timeInScene;
-
-            // Start playing if not already playing  
-            if (asset.video.paused) {
-                try {
-                    asset.video.currentTime = videoTime;
-                    asset.video.play().catch(e => console.warn("Video play failed", e));
-                } catch (e) {
-                    console.warn("Failed to start video", e);
-                }
-            }
-
-            // Only seek if we're significantly off (>1s) - otherwise let it play naturally
-            const currentVideoTime = asset.video.currentTime;
-            const timeDiff = Math.abs(currentVideoTime - videoTime);
-
-            if (timeDiff > 1.0) {
-                try {
-                    asset.video.currentTime = videoTime;
-                } catch (e) {
-                    console.warn("Failed to seek video", e);
-                }
-            }
-
+            // Video is already seeked to correct time by seekVideoElementsToTime (for MP4)
+            // or playing naturally (for WebM). Just draw the current frame.
             const vw = asset.video.videoWidth;
             const vh = asset.video.videoHeight;
             if (vw > 0 && vh > 0) {
