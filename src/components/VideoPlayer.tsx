@@ -21,6 +21,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [showSubtitles, setShowSubtitles] = useState(true);
+  const [videoEnded, setVideoEnded] = useState(false);
 
   // Relaxed validity check: rely on status, not URL presence (since lazy loaded)
   const validScenes = scenes.filter(s => s.imageStatus === 'completed');
@@ -97,7 +98,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     setIsPlaying(false);
     setProgress(0);
     setCurrentTime(0);
+    setVideoEnded(false);
   }, [scenes]);
+
+  // Reset video ended state when changing scenes within the same list
+  useEffect(() => {
+    setVideoEnded(false);
+  }, [currentSceneIndex]);
 
   // Handle audio playback and scene progression
   useEffect(() => {
@@ -231,10 +238,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           <video
             ref={videoRef}
             src={activeMedia.videoUrl || activeScene.videoUrl || ''}
-            className="w-full h-full object-cover"
-            loop
+            className={`w-full h-full object-cover ${videoEnded ? 'transition-transform duration-[20s] ease-linear scale-110' : 'scale-100'}`}
             muted={true}
             playsInline
+            onEnded={() => setVideoEnded(true)}
             onPlay={() => {
               if (audioRef.current && Math.abs(audioRef.current.currentTime - 0) > 0.5) {
                 audioRef.current.currentTime = 0;
