@@ -24,6 +24,12 @@ export const setProjectStatus = async (projectId: string, status: BackendProject
 };
 
 export const saveProject = async (project: VideoProject): Promise<VideoProject> => {
+    // 🔒 NEVER save mock/tour projects to backend
+    if (project.id === '__mock__-tour-project') {
+        console.log('[saveProject] Skipping save for mock tour project');
+        return project;
+    }
+
     const apiPayload = toApiProject(project);
     let savedProject = { ...project };
     let backendProjectId = project.id;
@@ -155,7 +161,10 @@ export const getUserProjects = async (userId: string, limit: number = 100, page:
 
         const mappedProjects = data
             .map((p: any) => fromApiProject(p))
-            .filter(p => !p.id.includes('mock-project-'))
+            .filter(p =>
+                !p.id.includes('mock-project-') &&
+                p.id !== '__mock__-tour-project' // Filter mock tour projects
+            )
             .sort((a, b) => b.createdAt - a.createdAt);
 
         return { projects: mappedProjects, total };

@@ -85,7 +85,7 @@ const FolderList: React.FC<FolderListProps> = ({
     };
 
     return (
-        <div className={`bg-slate-900/50 border-r border-slate-800 flex flex-col gap-2 h-full transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} ${className || ''}`}>
+        <div className={`bg-slate-900 md:bg-slate-900/50 border-r border-slate-800 flex flex-col gap-2 h-screen transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} ${className || ''}`}>
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-4 mb-2`}>
                 {!isCollapsed && <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{t('folders.title')}</h3>}
                 <div className="flex gap-1">
@@ -244,8 +244,8 @@ const FolderList: React.FC<FolderListProps> = ({
                     )}
                 </div>
 
-                {/* Tours Section - Inside Scrollable Area */}
-                <div className={`mt-4 border-t border-slate-800 pt-2 flex flex-col gap-1 pb-4`}>
+                {/* Tours Section - Desktop Only (Mobile has icon in header) */}
+                <div className={`mt-4 border-t border-slate-800 pt-2 flex-col gap-1 pb-4 hidden md:flex`}>
                     {!isCollapsed && <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-2 mb-1">{t('nav.tours_title')}</h3>}
 
                     <button

@@ -52,6 +52,9 @@ interface ScriptViewProps {
     apiKeys: ApiKeys;
 }
 
+// Helper to detect mock projects
+const isMockProject = (projectId: string) => projectId === '__mock__-tour-project';
+
 const MetadataCard: React.FC<{ title?: string; description?: string }> = ({ title, description }) => {
     const { t } = useTranslation();
     const [isCopiedTitle, setIsCopiedTitle] = useState(false);
@@ -488,7 +491,10 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                             ) : (
                                 <button
                                     id="btn-generate-all"
-                                    onClick={onStartImageGeneration}
+                                    onClick={() => {
+                                        if (isMockProject(projectId)) return; // Silent for tours
+                                        onStartImageGeneration();
+                                    }}
                                     className="flex items-center px-5 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
                                 >
                                     <Sparkles className="w-4 h-4 mr-2" /> {t('script.generate_all')}
@@ -507,7 +513,10 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                             {onExport && (
                                 <button
                                     id="btn-export"
-                                    onClick={onExport}
+                                    onClick={() => {
+                                        if (isMockProject(projectId)) return; // Silent for tours
+                                        onExport();
+                                    }}
                                     className="flex items-center px-4 py-2 rounded-lg text-sm font-semibold bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95"
                                 >
                                     <Download className="w-4 h-4 mr-2" /> {t('script.export_assets')}
@@ -601,23 +610,53 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                     strategy={rectSortingStrategy}
                 >
                     <div id="scene-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-                        {scenes.map((scene, index) => (
-                            <SortableSceneCard
-                                key={scene.id || `temp-${scene.sceneNumber}`}
-                                id={scene.id || `temp-${scene.sceneNumber}`}
-                                scene={scene}
-                                sceneIndex={index}
-                                onRegenerateImage={onRegenerateSceneImage}
-                                onRegenerateAudio={(idx, force) => onRegenerateSceneAudio && onRegenerateSceneAudio(idx, force, { voice: selectedVoice, provider: selectedProvider, language: selectedLanguage })}
-                                onRegenerateVideo={onRegenerateSceneVideo}
-                                onUpdateScene={onUpdateScene}
-                                onRemoveScene={onRemoveScene}
-                                projectId={projectId}
-                                userId={userId}
-                                apiKeys={apiKeys}
-                                videoModel={selectedVideoModel}
-                            />
-                        ))}
+                        {scenes.map((scene, index) => {
+                            // Silent wrappers for mock projects
+                            const isMock = isMockProject(projectId);
+
+                            const handleRegenerateImage = (idx: number, force: boolean) => {
+                                if (isMock) return; // Silent no-op for tours
+                                onRegenerateSceneImage(idx, force);
+                            };
+
+                            const handleRegenerateAudio = (idx: number, force: boolean) => {
+                                if (isMock) return; // Silent no-op for tours
+                                onRegenerateSceneAudio && onRegenerateSceneAudio(idx, force, { voice: selectedVoice, provider: selectedProvider, language: selectedLanguage });
+                            };
+
+                            const handleRegenerateVideo = (idx: number, force: boolean) => {
+                                if (isMock) return; // Silent no-op for tours
+                                onRegenerateSceneVideo && onRegenerateSceneVideo(idx, force);
+                            };
+
+                            const handleUpdateScene = (idx: number, updates: Partial<Scene>) => {
+                                if (isMock) return; // Silent no-op for tours
+                                onUpdateScene(idx, updates);
+                            };
+
+                            const handleRemoveScene = (idx: number) => {
+                                if (isMock) return; // Silent no-op for tours
+                                onRemoveScene(idx);
+                            };
+
+                            return (
+                                <SortableSceneCard
+                                    key={scene.id || `temp-${scene.sceneNumber}`}
+                                    id={scene.id || `temp-${scene.sceneNumber}`}
+                                    scene={scene}
+                                    sceneIndex={index}
+                                    onRegenerateImage={handleRegenerateImage}
+                                    onRegenerateAudio={handleRegenerateAudio}
+                                    onRegenerateVideo={handleRegenerateVideo}
+                                    onUpdateScene={handleUpdateScene}
+                                    onRemoveScene={handleRemoveScene}
+                                    projectId={projectId}
+                                    userId={userId}
+                                    apiKeys={apiKeys}
+                                    videoModel={selectedVideoModel}
+                                />
+                            );
+                        })}
 
 
 
