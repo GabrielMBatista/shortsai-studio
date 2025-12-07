@@ -208,7 +208,14 @@
         "exporting": "Exporting Video",
         "est_time": "Est. time:",
         "warning_tab": "Keep this tab active.",
-        "warning_desc": "Switching tabs may pause the renderer and cause the video to freeze or desync."
+        "warning_desc": "Switching tabs may pause the renderer and cause the video to freeze or desync.",
+        "tips_title": "Export Tips",
+        "tip_performance": "Rendering time varies by your computer's hardware. More powerful PCs process faster.",
+        "tip_quality": "Choose between 30 or 60 FPS. We export in 1080x1920 (Full HD) for maximum compatibility.",
+        "tip_format": "MP4 offers better compatibility. WebM is faster but some editors may not support it.",
+        "tip_stay": "Keep the tab active throughout the process to avoid encoding pauses.",
+        "frame_rate": "Frame Rate (FPS)",
+        "fps_hint": "60 FPS = smoother. 30 FPS = smaller file."
     },
     "settings": {
         "title": "User Settings",

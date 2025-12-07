@@ -10,9 +10,10 @@ interface UseVideoExportProps {
     title?: string;
     endingVideoFile?: File | null;
     showSubtitles?: boolean;
+    fps?: 30 | 60;
 }
 
-export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, showSubtitles = true }: UseVideoExportProps) => {
+export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, showSubtitles = true, fps = 60 }: UseVideoExportProps) => {
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState("");
     const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -379,9 +380,9 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
                 if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') {
                     throw new Error("MP4 export requires WebCodecs API support. Please use a modern browser (Chrome 94+, Edge 94+) or try WebM export instead.");
                 }
-                await exportMp4(canvas, ctx, assets, endingVideoElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title);
+                await exportMp4(canvas, ctx, assets, endingVideoElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title, fps);
             } else {
-                await exportWebM(canvas, ctx, mainAudioCtx, assets, endingVideoElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title);
+                await exportWebM(canvas, ctx, mainAudioCtx, assets, endingVideoElement, totalScenesDuration, totalDuration, renderedAudioBuffer, title, fps);
             }
 
         } catch (err: any) {
@@ -459,7 +460,8 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         totalScenesDuration: number,
         totalDuration: number,
         audioBuffer: AudioBuffer,
-        title?: string
+        title?: string,
+        fps: number = 60
     ) => {
         console.log("Starting MP4 export...");
 
@@ -494,10 +496,10 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             width: 1080,
             height: 1920,
             bitrate: 10_000_000, // 10 Mbps for better quality
-            framerate: 30,
+            framerate: fps,
             hardwareAcceleration: 'prefer-hardware'
         });
-        console.log("VideoEncoder configured");
+        console.log(`VideoEncoder configured with ${fps} FPS`);
 
         const audioEncoder = new AudioEncoder({
             output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
@@ -555,12 +557,11 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         console.log("Audio encoding finished");
 
         // Encode Video
-        const fps = 30;
         const frameDuration = 1 / fps;
         const totalFrames = Math.ceil(totalDuration * fps);
         const subtitleLayouts = precomputeSubtitleLayouts(ctx, assets, canvas.width);
 
-        console.log(`Starting Video Encoding: Total Frames=${totalFrames}, Duration=${totalDuration}s`);
+        console.log(`Starting Video Encoding: Total Frames=${totalFrames}, Duration=${totalDuration}s, FPS=${fps}`);
 
         for (let i = 0; i < totalFrames; i++) {
             if (!isDownloadingRef.current) {
@@ -618,9 +619,10 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         totalScenesDuration: number,
         totalDuration: number,
         audioBuffer: AudioBuffer,
-        title?: string
+        title?: string,
+        fps: number = 60
     ) => {
-        console.log("Starting WebM export...");
+        console.log(`Starting WebM export with ${fps} FPS...`);
 
         // Check MediaRecorder support
         if (typeof MediaRecorder === 'undefined') {
@@ -643,13 +645,18 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
         source.buffer = audioBuffer;
         source.connect(dest);
 
-        const stream = canvas.captureStream(30);
+
+
+        const stream = canvas.captureStream(fps);
         const audioTrack = dest.stream.getAudioTracks()[0];
         if (audioTrack) stream.addTrack(audioTrack);
 
+        // Adjust bitrate based on FPS (higher FPS needs more bitrate)
+        const videoBitrate = fps === 60 ? 8000000 : 6000000;
+
         const recorder = new MediaRecorder(stream, {
             mimeType: mimeType,
-            videoBitsPerSecond: 6000000,
+            videoBitsPerSecond: videoBitrate,
             audioBitsPerSecond: 128000
         });
 

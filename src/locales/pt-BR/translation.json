@@ -215,7 +215,14 @@
         "encoding_audio": "Encoding áudio...",
         "encoding_video": "Encoding video ({{percent}}%)...",
         "warning_tab": "Mantenha esta aba ativa.",
-        "warning_desc": "Trocar de aba pode pausar o renderizador e causar congelamento ou dessincronia."
+        "warning_desc": "Trocar de aba pode pausar o renderizador e causar congelamento ou dessincronia.",
+        "tips_title": "Dicas de Exportação",
+        "tip_performance": "O tempo de renderização varia de acordo com seu computador. PCs mais potentes processam mais rápido.",
+        "tip_quality": "Escolha entre 30 ou 60 FPS. Exportamos em 1080x1920 (Full HD) para máxima compatibilidade.",
+        "tip_format": "MP4 oferece melhor compatibilidade. WebM é mais rápido mas alguns editores não aceitam.",
+        "tip_stay": "Mantenha a aba ativa durante todo o processo para evitar pausas no encoding.",
+        "frame_rate": "Taxa de Quadros (FPS)",
+        "fps_hint": "60 FPS = mais fluido. 30 FPS = arquivo menor."
     },
     "settings": {
         "title": "Configurações do Usuário",

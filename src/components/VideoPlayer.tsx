@@ -64,6 +64,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const [includeEndingVideo, setIncludeEndingVideo] = useState(false);
   const [endingVideoFile, setEndingVideoFile] = useState<File | null>(null);
   const [exportFormat, setExportFormat] = useState<'mp4' | 'webm'>('mp4');
+  const [exportFps, setExportFps] = useState<30 | 60>(60);
   const [isMp4Supported, setIsMp4Supported] = useState(true);
 
   useEffect(() => {
@@ -78,10 +79,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const [volume, setVolume] = useState(0.8);
 
   // Hook for Download Logic
-  // NOTE: useVideoExport might need full media. Since we lazily load in player,
-  // we might need to update useVideoExport to handle lazy fetching too.
-  // Passing activeMedia here won't work for ALL scenes.
-  // We pass original scenes. useVideoExport needs simple fix to fetch logic if missing.
   const {
     startExport,
     cancelExport,
@@ -89,7 +86,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     downloadProgress,
     downloadError,
     eta
-  } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, endingVideoFile, showSubtitles, projectId });
+  } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, endingVideoFile, showSubtitles, fps: exportFps });
 
 
   // Reset state when scenes change
@@ -111,7 +108,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         if (playPromise !== undefined) {
           playPromise.catch(e => {
             console.error("Audio play error:", e);
-            // If autoplay blocked, we might need to mute or show UI
           });
         }
       }
@@ -132,7 +128,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   // Set music volume
   useEffect(() => {
     if (musicRef.current) {
-      musicRef.current.volume = 0.3; // Keep music lower
+      musicRef.current.volume = 0.3;
     }
     if (audioRef.current) {
       audioRef.current.volume = volume;
@@ -142,7 +138,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const handleAudioEnded = () => {
     if (currentSceneIndex < validScenes.length - 1) {
       setCurrentSceneIndex(prev => prev + 1);
-      // Reset progress/time for next scene
       setProgress(0);
       setCurrentTime(0);
     } else {
@@ -210,18 +205,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       {/* Close Button */}
       <button
         onClick={onClose}
-        className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all z-50"
-      >
+        className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all z-50">
         <X className="w-6 h-6" />
       </button>
 
       {/* Main Player Container */}
       <div className="relative h-[80vh] max-w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
 
-        {/* Background Media - Logic:
-            1. If mediaType is 'video' OR (videoUrl exists AND is not empty), show video.
-            2. Else show Image.
-        */}
+        {/* Background Media */}
         {(
           (activeScene.mediaType === 'video' || (activeScene.videoUrl && activeScene.videoStatus === 'completed')) || 
           (activeMedia.videoUrl)
@@ -231,13 +222,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             className="w-full h-full object-cover"
             autoPlay
             loop
-            muted={true} // Always mute video to allow separate audio track logic, OR unmute if it contains the main audio!
-            // NOTE: If native video HAS audio, and we play 'audioUrl' separately, we get double audio.
-            // Since our 'Veo' videos (previously generated) might NOT have audio (or minimal SFX), 
-            // and our 'audioUrl' is the TTS narration, we usually keep them separate.
+            muted={true}
             playsInline
             onPlay={() => {
-              // Ensure audio is synced when video starts
               if (audioRef.current && Math.abs(audioRef.current.currentTime - 0) > 0.5) {
                 audioRef.current.currentTime = 0;
               }
@@ -258,14 +245,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           onEnded={handleAudioEnded}
           onTimeUpdate={handleTimeUpdate}
           autoPlay={isPlaying}
-        // muted={isMuted} -> Removed, handled by volume
         />
         {bgMusicUrl && (
           <audio
             ref={musicRef}
             src={bgMusicUrl}
             loop
-          // muted={isMuted} -> Removed
           />
         )}
 
@@ -297,91 +282,153 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
         {/* EXPORT OPTIONS MODAL */}
         {showExportOptions && !isDownloading && (
-          <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center text-white p-6 text-center animate-fade-in-up">
-            <h3 className="text-xl font-bold mb-2 text-white">{t('video_player.export_options')}</h3>
-            <p className="text-xs text-slate-400 mb-6">{t('video_player.resolution_note')}</p>
+          <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center text-white p-6 animate-fade-in-up">
+            <div className="flex gap-8 max-w-6xl w-full items-start">
+              {/* Main Export Options */}
+              <div className="flex-shrink-0 flex flex-col items-center text-center">
+                <h3 className="text-xl font-bold mb-2 text-white">{t('video_player.export_options')}</h3>
+                <p className="text-xs text-slate-400 mb-6">{t('video_player.resolution_note')}</p>
 
-            <div className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-              <label className="text-sm font-medium text-slate-300 block mb-3 text-left">{t('video_player.format')}</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => isMp4Supported && setExportFormat('mp4')}
-                  disabled={!isMp4Supported}
-                  title={!isMp4Supported ? t('video_player.mp4_not_supported') : ""}
-                  className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all ${exportFormat === 'mp4'
-                    ? 'bg-indigo-600 border-indigo-500 text-white'
-                    : !isMp4Supported
-                      ? 'bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed'
-                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
-                    }`}
-                >
-                  MP4 {!isMp4Supported && '(N/A)'}
-                </button>
-                <button
-                  onClick={() => setExportFormat('webm')}
-                  className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all ${exportFormat === 'webm' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
-                >
-                  WebM
-                </button>
-              </div>
-            </div>
-
-            <div className="w-full max-w-sm mb-8 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-              <div className="flex items-center justify-between mb-4">
-                <label className="text-sm font-medium text-slate-300">{t('video_player.merge_video')}</label>
-                <div
-                  onClick={() => setIncludeEndingVideo(!includeEndingVideo)}
-                  className={`w-10 h-5 rounded-full cursor-pointer transition-colors relative ${includeEndingVideo ? 'bg-indigo-500' : 'bg-slate-700'}`}
-                >
-                  <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${includeEndingVideo ? 'translate-x-5' : 'translate-x-0'}`} />
+                <div className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                  <label className="text-sm font-medium text-slate-300 block mb-3 text-left">{t('video_player.format')}</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => isMp4Supported && setExportFormat('mp4')}
+                      disabled={!isMp4Supported}
+                      title={!isMp4Supported ? t('video_player.mp4_not_supported') : ""}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all ${exportFormat === 'mp4'
+                        ? 'bg-indigo-600 border-indigo-500 text-white'
+                        : !isMp4Supported
+                          ? 'bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed'
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
+                        }`}
+                    >
+                      MP4 {!isMp4Supported && '(N/A)'}
+                    </button>
+                    <button
+                      onClick={() => setExportFormat('webm')}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all ${exportFormat === 'webm' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
+                    >
+                      WebM
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {includeEndingVideo && (
-                <div className="animate-fade-in-up">
-                  <div className="relative group">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => setEndingVideoFile(e.target.files?.[0] || null)}
-                      className="block w-full text-xs text-slate-400
-                                        file:mr-3 file:py-2 file:px-3
-                                        file:rounded-lg file:border-0
-                                        file:text-xs file:font-semibold
-                                        file:bg-indigo-500/10 file:text-indigo-400
-                                        hover:file:bg-indigo-500/20
-                                        cursor-pointer border border-slate-700 rounded-lg bg-slate-800/50 p-1"
-                    />
-                    {endingVideoFile && (
-                      <button
-                        onClick={() => setEndingVideoFile(null)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-red-400 bg-slate-900 rounded-full"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
+                <div className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                  <label className="text-sm font-medium text-slate-300 block mb-3 text-left">{t('video_player.frame_rate')}</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setExportFps(30)}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all ${exportFps === 30
+                        ? 'bg-indigo-600 border-indigo-500 text-white'
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
+                        }`}
+                    >
+                      30 FPS
+                    </button>
+                    <button
+                      onClick={() => setExportFps(60)}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all ${exportFps === 60
+                        ? 'bg-indigo-600 border-indigo-500 text-white'
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
+                        }`}
+                    >
+                      60 FPS
+                    </button>
                   </div>
                   <p className="text-[10px] text-slate-500 mt-2 text-left leading-relaxed">
-                    {t('video_player.upload_placeholder')}
+                    {t('video_player.fps_hint')}
                   </p>
                 </div>
-              )}
-            </div>
 
-            <div className="flex gap-3 w-full max-w-sm">
-              <button
-                onClick={() => setShowExportOptions(false)}
-                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-semibold transition-colors text-sm"
-              >
-                {t('video_player.cancel')}
-              </button>
-              <button
-                onClick={confirmExport}
-                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 whitespace-nowrap"
-              >
-                <Download className="w-4 h-4" />
-                {t('video_player.start_export')}
-              </button>
+                <div className="w-full max-w-sm mb-8 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-sm font-medium text-slate-300">{t('video_player.merge_video')}</label>
+                    <div
+                      onClick={() => setIncludeEndingVideo(!includeEndingVideo)}
+                      className={`w-10 h-5 rounded-full cursor-pointer transition-colors relative ${includeEndingVideo ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${includeEndingVideo ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </div>
+                  </div>
+
+                  {includeEndingVideo && (
+                    <div className="animate-fade-in-up">
+                      <div className="relative group">
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => setEndingVideoFile(e.target.files?.[0] || null)}
+                          className="block w-full text-xs text-slate-400
+                                                file:mr-3 file:py-2 file:px-3
+                                                file:rounded-lg file:border-0
+                                                file:text-xs file:font-semibold
+                                                file:bg-indigo-500/10 file:text-indigo-400
+                                                hover:file:bg-indigo-500/20
+                                                cursor-pointer border border-slate-700 rounded-lg bg-slate-800/50 p-1"
+                        />
+                        {endingVideoFile && (
+                          <button
+                            onClick={() => setEndingVideoFile(null)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-red-400 bg-slate-900 rounded-full"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-2 text-left leading-relaxed">
+                        {t('video_player.upload_placeholder')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3 w-full max-w-sm">
+                  <button
+                    onClick={() => setShowExportOptions(false)}
+                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-semibold transition-colors text-sm"
+                  >
+                    {t('video_player.cancel')}
+                  </button>
+                  <button
+                    onClick={confirmExport}
+                    className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 whitespace-nowrap"
+                  >
+                    <Download className="w-4 h-4" />
+                    {t('video_player.start_export')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Export Tips Sidebar (Desktop Only) */}
+              <div className="hidden lg:flex flex-col gap-4 w-80 flex-shrink-0">
+                <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 p-5 rounded-xl border border-indigo-500/20">
+                  <h4 className="text-base font-bold text-indigo-300 mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {t('video_player.tips_title')}
+                  </h4>
+                  <div className="space-y-3 text-sm text-slate-300 leading-relaxed">
+                    <div className="flex gap-3">
+                      <span className="text-indigo-400 flex-shrink-0">⚡</span>
+                      <p>{t('video_player.tip_performance')}</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="text-indigo-400 flex-shrink-0">🎬</span>
+                      <p>{t('video_player.tip_quality')}</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="text-indigo-400 flex-shrink-0">📁</span>
+                      <p>{t('video_player.tip_format')}</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="text-yellow-400 flex-shrink-0">⚠️</span>
+                      <p className="text-yellow-200/90">{t('video_player.tip_stay')}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -458,7 +505,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           />
         </div>
       </div>
-    </div >
+    </div>
   );
 };
 
