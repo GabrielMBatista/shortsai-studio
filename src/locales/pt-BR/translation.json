@@ -288,9 +288,14 @@
         "preview": {
             "player": "Aqui você assiste ao resultado final. O vídeo é montado em tempo real.",
             "controls": "Controle a reprodução, pause e navegue pelas cenas.",
-            "export_btn": "Gostou? Clique aqui para renderizar e baixar o vídeo final (MP4/WebM).",
+            "export_btn": "Clique aqui para abrir as opções de exportação e download.",
             "subtitles": "Ative ou desative as legendas automáticas.",
-            "resolution": "Escolha entre 1080p (qualidade máxima) ou 720p (arquivo menor)."
+            "resolution": "Escolha entre 1080p (qualidade máxima) ou 720p (arquivo menor).",
+            "export_format_step": "MP4 é mais compatível (Instagram/TikTok). WebM é mais rápido.",
+            "export_resolution_step": "1080p para qualidade máxima ou 720p para arquivos mais leves.",
+            "export_fps_step": "60 FPS para movimentos fluídos. 30 FPS para tamanho menor.",
+            "export_merge_step": "Adicione um vídeo de encerramento (outro) automático ao final.",
+            "export_confirm_step": "Clique aqui para iniciar a renderização no seu navegador."
         }
     },
     "quota": {

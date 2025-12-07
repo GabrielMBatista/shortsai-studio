@@ -155,5 +155,31 @@ export const getPreviewTourSteps = (t: TFunction): Step[] => [
         target: '#btn-video-export',
         content: t('tour.preview.export_btn'),
         placement: 'top',
+        spotlightClicks: true,
+    },
+    {
+        target: '#video-export-format',
+        content: t('tour.preview.export_format_step'),
+        placement: 'right',
+    },
+    {
+        target: '#video-export-resolution',
+        content: t('tour.preview.export_resolution_step'),
+        placement: 'right',
+    },
+    {
+        target: '#video-export-fps',
+        content: t('tour.preview.export_fps_step'),
+        placement: 'right',
+    },
+    {
+        target: '#video-export-merge',
+        content: t('tour.preview.export_merge_step'),
+        placement: 'top',
+    },
+    {
+        target: '#btn-confirm-export',
+        content: t('tour.preview.export_confirm_step'),
+        placement: 'top',
     }
 ].map(step => ({ ...step, disableBeacon: true })) as Step[];

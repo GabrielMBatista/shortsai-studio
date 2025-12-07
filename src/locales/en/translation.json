@@ -276,9 +276,14 @@
         "preview": {
             "player": "Watch the final result here. The video is assembled in real-time.",
             "controls": "Control playback, pause, and navigate through scenes.",
-            "export_btn": "Happy with it? Click here to render and download the final video (MP4/WebM).",
+            "export_btn": "Click here to open export options and download.",
             "subtitles": "Toggle automatic subtitles on or off.",
-            "resolution": "Choose between 1080p (high quality) or 720p (smaller file)."
+            "resolution": "Choose between 1080p (high quality) or 720p (smaller file).",
+            "export_format_step": "MP4 is more compatible (IG/TikTok). WebM is faster.",
+            "export_resolution_step": "1080p for max quality or 720p for lighter files.",
+            "export_fps_step": "60 FPS for smoother motion. 30 FPS for smaller size.",
+            "export_merge_step": "Append an outro video automatically at the end.",
+            "export_confirm_step": "Click here to start rendering in your browser."
         }
     }
 }

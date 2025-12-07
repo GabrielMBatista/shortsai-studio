@@ -329,7 +329,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                 <h3 className="text-xl font-bold mb-2 text-white">{t('video_player.export_options')}</h3>
                 <p className="text-xs text-slate-400 mb-6">{t('video_player.resolution_note')}</p>
 
-                <div className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                <div id="video-export-format" className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                   <label className="text-sm font-medium text-slate-300 block mb-3 text-left">{t('video_player.format')}</label>
                   <div className="flex gap-2">
                     <button
@@ -354,7 +354,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                   </div>
               </div>
 
-              <div className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+              <div id="video-export-resolution" className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                   <label className="text-sm font-medium text-slate-300 block mb-3 text-left">{t('video_player.resolution')}</label>
                   <div className="flex gap-2">
                     <button
@@ -378,7 +378,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                   </div>
                 </div>
 
-                <div className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                <div id="video-export-fps" className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                   <label className="text-sm font-medium text-slate-300 block mb-3 text-left">{t('video_player.frame_rate')}</label>
                   <div className="flex gap-2">
                     <button
@@ -405,7 +405,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                   </p>
                 </div>
 
-                <div className="w-full max-w-sm mb-8 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                <div id="video-export-merge" className="w-full max-w-sm mb-8 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                   <div className="flex items-center justify-between mb-4">
                     <label className="text-sm font-medium text-slate-300">{t('video_player.merge_video')}</label>
                     <div
@@ -455,6 +455,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                     {t('video_player.cancel')}
                   </button>
                   <button
+                    id="btn-confirm-export"
                     onClick={confirmExport}
                     className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 whitespace-nowrap"
                   >

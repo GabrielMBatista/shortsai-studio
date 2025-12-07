@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, VideoProject, Folder as FolderType } from '../types';
-import { Plus, Clock, Film, Play, Trash2, Zap, Sparkles, ArrowRight, Archive, Download, Filter, MoreVertical, FolderInput, Folder, Menu, X, Loader2 } from 'lucide-react';
+import { Plus, Clock, Film, Play, Trash2, Zap, Sparkles, ArrowRight, Archive, Download, Filter, MoreVertical, FolderInput, Folder, Menu, X, Loader2, HelpCircle, Settings, PlayCircle, FileText, Video } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import FolderList from './FolderList';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, PointerSensor, pointerWithin } from '@dnd-kit/core';
@@ -64,6 +64,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     const isMobile = useIsMobile();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isMobileTourMenuOpen, setIsMobileTourMenuOpen] = useState(false);
 
     const handleCreateFolder = async (name: string) => {
         await createFolder(name);
@@ -343,6 +344,46 @@ const Dashboard: React.FC<DashboardProps> = ({
                             <Menu className="w-6 h-6" />
                         </button>
                         <span className="ml-2 font-bold text-white">ShortsAI</span>
+                        <div className="ml-auto relative">
+                             <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsMobileTourMenuOpen(!isMobileTourMenuOpen);
+                                }}
+                                className="p-2 text-indigo-400 hover:text-white bg-indigo-500/10 rounded-full animate-pulse transition-all relative z-50"
+                            >
+                                <HelpCircle className="w-6 h-6" />
+                            </button>
+
+                            {isMobileTourMenuOpen && (
+                                <div className="absolute right-0 top-12 w-56 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-fade-in-up">
+                                    <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-slate-700">{t('nav.tours_title')}</h3>
+                                    <div className="flex flex-col p-1">
+                                        <button onClick={() => { onStartTour('settings'); setIsMobileTourMenuOpen(false); }} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-left">
+                                            <Settings className="w-4 h-4 text-indigo-400" />
+                                            {t('nav.settings_tour')}
+                                        </button>
+                                        <button onClick={() => { onStartTour('creation'); setIsMobileTourMenuOpen(false); }} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-left">
+                                            <PlayCircle className="w-4 h-4 text-purple-400" />
+                                            {t('nav.creation_tour')}
+                                        </button>
+                                        <button onClick={() => { onStartTour('script'); setIsMobileTourMenuOpen(false); }} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-left">
+                                            <FileText className="w-4 h-4 text-emerald-400" />
+                                            {t('nav.script_tour')}
+                                        </button>
+                                        <button onClick={() => { onStartTour('preview'); setIsMobileTourMenuOpen(false); }} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-left">
+                                            <Video className="w-4 h-4 text-pink-400" />
+                                            Preview & Export
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                             {/* Close overlay if open */}
+                            {isMobileTourMenuOpen && (
+                                <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsMobileTourMenuOpen(false)} />
+                            )}
+                        </div>
                     </div>
                     {/* Context Menu */}
                     {contextMenu && (
