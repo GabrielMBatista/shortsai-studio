@@ -65,7 +65,13 @@
         "filters": "Filtros:",
         "filter_placeholder": "Filtrar por tag...",
         "showing_archived": "Exibindo Arquivados",
-        "show_archived": "Exibir Arquivados"
+        "show_archived": "Exibir Arquivados",
+        "delete_permanently": "Excluir Permanentemente",
+        "delete_permanently_title": "Excluir Projeto Permanentemente",
+        "irreversible_action": "Esta ação não pode ser desfeita",
+        "delete_permanently_warning": "Você está prestes a excluir permanentemente este projeto:",
+        "assets_will_be_deleted": "Todos os assets serão removidos",
+        "assets_deleted_description": "Imagens, áudios e vídeos armazenados no R2 serão excluídos permanentemente."
     },
     "input": {
         "title": "Crie Sua História",

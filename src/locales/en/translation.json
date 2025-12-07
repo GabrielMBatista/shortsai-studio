@@ -64,7 +64,13 @@
         "filters": "Filters:",
         "filter_placeholder": "Filter by tag...",
         "showing_archived": "Showing Archived",
-        "show_archived": "Show Archived"
+        "show_archived": "Show Archived",
+        "delete_permanently": "Delete Permanently",
+        "delete_permanently_title": "Delete Project Permanently",
+        "irreversible_action": "This action cannot be undone",
+        "delete_permanently_warning": "You are about to permanently delete this project:",
+        "assets_will_be_deleted": "All assets will be removed",
+        "assets_deleted_description": "Images, audio, and videos stored in R2 will be permanently deleted."
     },
     "input": {
         "title": "Create Your Story",
