@@ -42,25 +42,28 @@ export const saveProject = async (project: VideoProject): Promise<VideoProject> 
         });
         apiSuccess = true;
     } catch (e: any) {
-        // If 404, try Create
+        // Typical behavior: We try to UPDATE first. If it fails with 404, it means the ID is new or deleted on backend.
+        // So we proceed to CREATE.
         if (e.status === 404 || e.message?.includes('404')) {
-            try {
-                const res = await apiFetch('/projects', {
-                    method: 'POST',
-                    body: JSON.stringify(apiPayload)
-                });
-                backendProjectId = res.id || res._id;
-                savedProject.id = backendProjectId;
-                if (res.status) savedProject.status = res.status;
-                if (res.bg_music_status) savedProject.bgMusicStatus = res.bg_music_status;
-                apiSuccess = true;
-            } catch (createErr) {
-                console.warn("Create project failed", createErr);
-                throw createErr;
-            }
+            // This is expected for new projects.
         } else {
-            console.warn("Update project failed", e);
-            throw e;
+            console.warn("Update project failed with non-404 error:", e);
+            throw e; // Rethrow real errors
+        }
+
+        try {
+            const res = await apiFetch('/projects', {
+                method: 'POST',
+                body: JSON.stringify(apiPayload)
+            });
+            backendProjectId = res.id || res._id;
+            savedProject.id = backendProjectId;
+            if (res.status) savedProject.status = res.status;
+            if (res.bg_music_status) savedProject.bgMusicStatus = res.bg_music_status;
+            apiSuccess = true;
+        } catch (createErr) {
+            console.warn("Create project failed", createErr);
+            throw createErr;
         }
     }
 

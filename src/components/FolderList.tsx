@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { Folder, Plus, MoreVertical, Edit2, Trash2, FolderOpen, Loader2, HelpCircle, PlayCircle, Settings, FileText, Video, Download, PanelLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Folder, Plus, MoreVertical, Edit2, Trash2, FolderOpen, Loader2, HelpCircle, PlayCircle, Settings, FileText, Video, Download, PanelLeft, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { Folder as FolderType } from '../types';
 import { useTranslation } from 'react-i18next';
 
@@ -41,6 +41,42 @@ const FolderList: React.FC<FolderListProps> = ({
     const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+    const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+
+    const toggleFolder = (folderId: string) => {
+        setExpandedFolders(prev => {
+            const next = new Set(prev);
+            const folder = folders.find(f => f.id === folderId);
+
+            if (next.has(folderId)) {
+                // Collapse
+                next.delete(folderId);
+            } else {
+                // Expand (and implement Accordion: Collapse siblings)
+                if (folder) {
+                    const siblings = folders.filter(f => f.parent_id === folder.parent_id && f.id !== folderId);
+                    siblings.forEach(s => next.delete(s.id));
+                }
+                next.add(folderId);
+            }
+            return next;
+        });
+    };
+
+    // Auto-expand parent of selected folder on mount/change, but avoid infinite loops or fighting user interaction
+    React.useEffect(() => {
+        if (selectedFolderId) {
+            const selected = folders.find(f => f.id === selectedFolderId);
+            if (selected && selected.parent_id) {
+                // Ensure parent is open
+                setExpandedFolders(prev => {
+                    const next = new Set(prev);
+                    next.add(selected.parent_id!);
+                    return next;
+                });
+            }
+        }
+    }, [selectedFolderId, folders]);
 
     const handleCreate = async () => {
         if (!newFolderName.trim()) return;
@@ -161,121 +197,124 @@ const FolderList: React.FC<FolderListProps> = ({
 
                             if (currentLevelFolders.length === 0) return null;
 
-                            return currentLevelFolders.map(folder => (
-                                <React.Fragment key={folder.id}>
-                                    <DroppableFolder
-                                        id={folder.id}
-                                        className={`rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
-                                    >
-                                        <div
-                                            className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm font-medium cursor-pointer ${selectedFolderId === folder.id
-                                                ? 'bg-indigo-500/20 text-indigo-400'
-                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                                                } ${isCollapsed ? 'justify-center flex-col gap-1 py-3' : ''}`}
-                                            style={{ marginLeft: !isCollapsed ? `${depth * 12}px` : 0 }}
-                                            onClick={() => onSelectFolder(folder.id)}
-                                            title={isCollapsed ? folder.name : undefined}
+
+                            return currentLevelFolders.map(folder => {
+                                const isExpanded = expandedFolders.has(folder.id);
+                                const hasChildren = folderList.some(f => f.parent_id === folder.id);
+
+                                return (
+                                    <React.Fragment key={folder.id}>
+                                        <DroppableFolder
+                                            id={folder.id}
+                                            className={`rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
                                         >
-                                            {!isCollapsed && editingFolderId === folder.id ? (
-                                                <input
-                                                    autoFocus
-                                                    type="text"
-                                                    value={editName}
-                                                    onChange={(e) => setEditName(e.target.value)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleUpdate(folder.id)}
-                                                    onBlur={() => setEditingFolderId(null)}
-                                                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-indigo-500"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                />
-                                            ) : (
-                                                <>
-                                                    <div className={`flex items-center gap-3 truncate ${isCollapsed ? 'justify-center w-full flex-col gap-1' : ''}`}>
-                                                        {selectedFolderId === folder.id ? (
-                                                            <FolderOpen className="w-4 h-4 flex-shrink-0" />
-                                                        ) : (
-                                                            <Folder className="w-4 h-4 flex-shrink-0" />
-                                                        )}
-                                                        {!isCollapsed ? (
-                                                            <>
-                                                                <span className="truncate">{folder.name}</span>
-                                                                {updatingFolderId === folder.id ? (
-                                                                    <Loader2 className="w-3 h-3 animate-spin text-indigo-500" />
-                                                                ) : folder._count?.projects ? (
-                                                                    <span className="text-xs text-slate-500">({folder._count.projects})</span>
-                                                                ) : null}
-                                                            </>
-                                                        ) : (
-                                                            <span className="text-[10px] font-bold">{getInitials(folder.name)}</span>
-                                                        )}
-                                                    </div>
+                                            <div
+                                                className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm font-medium cursor-pointer ${selectedFolderId === folder.id
+                                                    ? 'bg-indigo-500/20 text-indigo-400'
+                                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                                    } ${isCollapsed ? 'justify-center flex-col gap-1 py-3' : ''}`}
+                                                style={{ marginLeft: !isCollapsed ? `${depth * 12}px` : 0 }}
+                                                onClick={(e) => {
+                                                    onSelectFolder(folder.id);
+                                                    // Auto expand if selecting
+                                                    if (!expandedFolders.has(folder.id)) toggleFolder(folder.id);
+                                                }}
+                                                title={isCollapsed ? folder.name : undefined}
+                                            >
+                                                {!isCollapsed && editingFolderId === folder.id ? (
+                                                    <input
+                                                        autoFocus
+                                                        type="text"
+                                                        value={editName}
+                                                        onChange={(e) => setEditName(e.target.value)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleUpdate(folder.id)}
+                                                        onBlur={() => setEditingFolderId(null)}
+                                                        className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-indigo-500"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <div className={`flex items-center gap-2 truncate ${isCollapsed ? 'justify-center w-full flex-col gap-1' : ''}`}>
+                                                            {/* Expand/Collapse Chevron */}
+                                                            {!isCollapsed && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        toggleFolder(folder.id);
+                                                                    }}
+                                                                    className={`p-0.5 rounded-sm hover:bg-slate-700 transition-colors ${hasChildren ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                                                                >
+                                                                    {isExpanded ? <ChevronDown className="w-3 h-3 text-slate-500" /> : <ChevronRight className="w-3 h-3 text-slate-500" />}
+                                                                </button>
+                                                            )}
 
-                                                    {!isCollapsed && (
-                                                        <div className="relative">
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setMenuOpenId(menuOpenId === folder.id ? null : folder.id);
-                                                                }}
-                                                                className={`p-1 rounded hover:bg-slate-700 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity ${menuOpenId === folder.id ? 'opacity-100 bg-slate-700' : ''}`}
-                                                            >
-                                                                <MoreVertical className="w-3 h-3" />
-                                                            </button>
-
-                                                            {menuOpenId === folder.id && (
-                                                                <div className="absolute right-0 top-6 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 py-1">
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setEditingFolderId(folder.id);
-                                                                            setEditName(folder.name);
-                                                                            setMenuOpenId(null);
-                                                                        }}
-                                                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white"
-                                                                    >
-                                                                        <Edit2 className="w-3 h-3" /> {t('folders.rename')}
-                                                                    </button>
-                                                                    {/* Add Subfolder Action */}
-                                                                    {depth === 0 && ( // Limit depth to 1 level for now if desired, or allow deep nesting
-                                                                        <button
-                                                                            onClick={async (e) => {
-                                                                                e.stopPropagation();
-                                                                                setMenuOpenId(null);
-                                                                                const name = prompt(t('folders.new_subfolder_placeholder') || "New Subfolder");
-                                                                                if (name) {
-                                                                                    // We need to support creating subfolder here. 
-                                                                                    // onCreateFolder currently just takes name. 
-                                                                                    // We might need to update the prop or handle it differently.
-                                                                                    // But for now, user asked for import logic. 
-                                                                                    // The UI creation of subfolder is a nice to have.
-                                                                                    // Let's stick to just showing them.
-                                                                                }
-                                                                            }}
-                                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white hidden"
-                                                                        >
-                                                                            <Plus className="w-3 h-3" /> Subfolder
-                                                                        </button>
-                                                                    )}
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleDelete(folder.id);
-                                                                        }}
-                                                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-slate-700 hover:text-red-300"
-                                                                    >
-                                                                        <Trash2 className="w-3 h-3" /> {t('folders.delete')}
-                                                                    </button>
-                                                                </div>
+                                                            {selectedFolderId === folder.id ? (
+                                                                <FolderOpen className="w-4 h-4 flex-shrink-0" />
+                                                            ) : (
+                                                                <Folder className="w-4 h-4 flex-shrink-0" />
+                                                            )}
+                                                            {!isCollapsed ? (
+                                                                <>
+                                                                    <span className="truncate">{folder.name}</span>
+                                                                    {updatingFolderId === folder.id ? (
+                                                                        <Loader2 className="w-3 h-3 animate-spin text-indigo-500" />
+                                                                    ) : folder._count?.projects ? (
+                                                                        <span className="text-xs text-slate-500">({folder._count.projects})</span>
+                                                                    ) : null}
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-[10px] font-bold">{getInitials(folder.name)}</span>
                                                             )}
                                                         </div>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    </DroppableFolder>
-                                    {/* Render Children */}
-                                    {renderFolders(folderList, folder.id, depth + 1)}
-                                </React.Fragment>
-                            ));
+
+                                                        {!isCollapsed && (
+                                                            <div className="relative">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setMenuOpenId(menuOpenId === folder.id ? null : folder.id);
+                                                                    }}
+                                                                    className={`p-1 rounded hover:bg-slate-700 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity ${menuOpenId === folder.id ? 'opacity-100 bg-slate-700' : ''}`}
+                                                                >
+                                                                    <MoreVertical className="w-3 h-3" />
+                                                                </button>
+
+                                                                {menuOpenId === folder.id && (
+                                                                    <div className="absolute right-0 top-6 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 py-1">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setEditingFolderId(folder.id);
+                                                                                setEditName(folder.name);
+                                                                                setMenuOpenId(null);
+                                                                            }}
+                                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white"
+                                                                        >
+                                                                            <Edit2 className="w-3 h-3" /> {t('folders.rename')}
+                                                                        </button>
+
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleDelete(folder.id);
+                                                                            }}
+                                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-slate-700 hover:text-red-300"
+                                                                        >
+                                                                            <Trash2 className="w-3 h-3" /> {t('folders.delete')}
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </DroppableFolder>
+                                        {/* Render Children Only if Expanded */}
+                                        {isExpanded && renderFolders(folderList, folder.id, depth + 1)}
+                                    </React.Fragment>
+                                );
+                            });
                         })(folders)
                     )}
                 </div>

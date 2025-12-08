@@ -184,12 +184,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         return projectsSource.map(p => ({ ...p, ...optimisticUpdates[p.id] })).filter(p => {
             // Optimistic filtering
             if (showArchived) {
-                // If we are in archived view, we expect isArchived to be true.
-                // If optimistic update says false (unarchived), hide it.
-                // If optimistic update says true (archived), show it.
-                // Note: backend already filtered by isArchived=true.
-                // So p.isArchived is true.
-                // If optimistic update changes it to false, we hide it.
                 return p.isArchived;
             }
 
@@ -197,10 +191,11 @@ const Dashboard: React.FC<DashboardProps> = ({
             if (p.isArchived) return false;
 
             if (selectedFolderId) {
-                if (p.folderId !== selectedFolderId) return false;
+                // Showing a specific folder
+                return p.folderId === selectedFolderId;
             } else {
-                // Home/Root view
-                if (p.folderId) return false;
+                // Home/Root view: Show projects with NO folderId (null or undefined)
+                return !p.folderId;
             }
 
             return true;
