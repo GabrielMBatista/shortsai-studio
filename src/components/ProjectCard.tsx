@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useDraggable } from '@dnd-kit/core';
 
 import { getSceneMedia } from '../services/scenes';
+import { SafeImage } from './common/SafeImage';
 
 interface ProjectCardProps {
     project: VideoProject;
@@ -76,16 +77,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenProject, onCon
             <div className="aspect-video bg-slate-900 relative overflow-hidden">
                 {thumbnailUrl ? (
                     <>
-                        {!imageLoaded && (
-                            <div className="absolute inset-0 bg-slate-700 animate-pulse flex items-center justify-center">
-                                <Zap className="w-8 h-8 text-slate-500 opacity-50" />
-                            </div>
-                        )}
-                        <img
+                        <SafeImage
                             src={thumbnailUrl}
-                            onLoad={() => setImageLoaded(true)}
-                            onError={() => setImageLoaded(true)}
-                            className={`w-full h-full object-cover transition-all duration-700 ${imageLoaded ? 'opacity-80 group-hover:opacity-100 group-hover:scale-105' : 'opacity-0'}`}
+                            className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105`}
                         />
                     </>
                 ) : (

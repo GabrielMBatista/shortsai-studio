@@ -85,50 +85,53 @@ export const SafeVideo: React.FC<SafeVideoProps> = ({
     const handlePlaying = () => setIsLoading(false);
 
     return (
-        <div ref={containerRef} className={`relative overflow-hidden bg-black ${className}`}>
-            {/* Skeleton Background if no poster and not loaded */}
-            {!poster && isLoading && (
-                <div className="absolute inset-0 bg-slate-800 animate-pulse z-0" />
+        <div ref={containerRef} className={`relative overflow-hidden bg-slate-900 ${className}`}>
+
+            {/* LOADING STATE - Unified Overlay */}
+            {/* Shows when: 1. Loading (buffering/fetching) OR 2. Not Visible yet (and no poster to show) */}
+            {(isLoading || (!isVisible && !poster)) && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                    {/* Background: If we have a poster, we want it transparent-ish. If no poster, opaque skeleton. */}
+                    {!poster ? (
+                        <div className="absolute inset-0 bg-slate-800">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+                        </div>
+                    ) : (
+                        <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" />
+                    )}
+
+                    {/* Spinner */}
+                    <div className="relative z-30 p-3 bg-slate-900/80 rounded-full shadow-lg border border-white/10 backdrop-blur-sm">
+                        <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+                    </div>
+                </div>
             )}
 
             {isVisible && videoSrc ? (
-                <>
-                    <video
-                        ref={videoRef}
-                        src={videoSrc}
-                        poster={poster}
-                        className={`w-full h-full object-cover transition-opacity duration-300 ${isLoading && !poster ? 'opacity-0' : 'opacity-100'}`}
-                        onError={handleError}
-                        onLoadedData={handleLoadedData}
-                        onWaiting={handleWaiting}
-                        onPlaying={handlePlaying}
-                        onCanPlay={handleLoadedData}
-                        autoPlay={autoPlay}
-                        playsInline
-                        loop
-                        muted
-                        {...props}
-                    />
-                    {isLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                            <div className="bg-slate-900/50 backdrop-blur-sm p-3 rounded-full shadow-lg border border-white/10">
-                                <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
-                            </div>
-                        </div>
-                    )}
-                </>
+                <video
+                    ref={videoRef}
+                    src={videoSrc}
+                    poster={poster}
+                    className={`w-full h-full object-cover transition-opacity duration-500 ${isLoading && !poster ? 'opacity-0' : 'opacity-100'}`}
+                    onError={handleError}
+                    onLoadedData={handleLoadedData}
+                    onWaiting={handleWaiting}
+                    onPlaying={handlePlaying}
+                    onCanPlay={handleLoadedData}
+                    autoPlay={autoPlay}
+                    playsInline
+                    loop
+                    muted
+                    {...props}
+                />
             ) : (
-                // Placeholder when not visible or no src
-                poster ? (
+                /* Static Poster Placeholder (when not visible yet or src failed/empty) */
+                poster && (
                     <img
                         src={poster}
-                        className="w-full h-full object-cover opacity-50 blur-sm scale-105"
+                        className="w-full h-full object-cover opacity-60 blur-sm scale-105 transition-transform duration-700"
                         alt="Video placeholder"
                     />
-                ) : (
-                    <div className="absolute inset-0 bg-slate-800 animate-pulse flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 text-slate-600 animate-spin" />
-                    </div>
                 )
             )}
         </div>

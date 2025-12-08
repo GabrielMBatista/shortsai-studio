@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getProxyUrl } from '../../utils/urlUtils';
+import { Loader2 } from 'lucide-react';
 
 interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     src?: string | null;
@@ -18,8 +19,30 @@ export const SafeImage: React.FC<SafeImageProps> = ({
     const [imgSrc, setImgSrc] = useState<string | undefined>(undefined);
     const [hasError, setHasError] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isVisible, setIsVisible] = useState(false);
+    const imgRef = React.useRef<HTMLImageElement>(null);
 
     useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (imgRef.current) {
+            observer.observe(imgRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        if (!isVisible) return;
+
         if (!src) {
             setImgSrc(fallbackSrc);
             setIsLoading(false);
@@ -29,7 +52,7 @@ export const SafeImage: React.FC<SafeImageProps> = ({
         setImgSrc(src);
         setHasError(false);
         setIsLoading(true);
-    }, [src, fallbackSrc]);
+    }, [src, fallbackSrc, isVisible]);
 
     const handleError = () => {
         if (hasError) return; // Already tried fallback
@@ -52,13 +75,27 @@ export const SafeImage: React.FC<SafeImageProps> = ({
     };
 
     return (
-        <img
-            src={imgSrc}
-            alt={alt}
-            onError={handleError}
-            onLoad={handleLoad}
-            className={`${className} ${isLoading ? 'opacity-50 blur-sm' : 'opacity-100 blur-0'} transition-all duration-300`}
-            {...props}
-        />
+        <div className={`relative overflow-hidden bg-slate-900 ${className}`}>  {/* Wrapper consumes external className */}
+
+            {/* Skeleton / Loading State */}
+            {(isLoading || !isVisible) && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-800">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+                    <div className="relative z-20 p-3 bg-slate-800/50 rounded-full">
+                        <Loader2 className="w-6 h-6 text-slate-600 animate-spin" />
+                    </div>
+                </div>
+            )}
+
+            <img
+                ref={imgRef}
+                src={isVisible ? imgSrc : undefined}
+                alt={alt}
+                onError={handleError}
+                onLoad={handleLoad}
+                className={`w-full h-full object-cover transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`} // Internal img fills wrapper
+                {...props}
+            />
+        </div>
     );
 };
