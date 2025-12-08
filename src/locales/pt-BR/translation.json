@@ -160,7 +160,9 @@
         "veo_fast": "Veo 3.0 (Rápido)",
         "regenerating_audio": "Recriando áudio...",
         "generation_cancelled": "Geração cancelada.",
-        "preview_failed": "Falha ao gerar áudio de prévia."
+        "preview_failed": "Falha ao gerar áudio de prévia.",
+        "regenerate_script": "Recriar Roteiro",
+        "confirm_regenerate_script": "Recriar o roteiro? Isso substituirá todas as cenas atuais."
     },
     "scene": {
         "regenerate_title": "Recriar {{type}}?",

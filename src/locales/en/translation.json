@@ -159,7 +159,9 @@
         "veo_fast": "Veo 3.0 (Fast)",
         "regenerating_audio": "Regenerating audio...",
         "generation_cancelled": "Generation cancelled.",
-        "preview_failed": "Failed to generate preview audio."
+        "preview_failed": "Failed to generate preview audio.",
+        "regenerate_script": "Regenerate Script",
+        "confirm_regenerate_script": "Regenerate script? This will replace current scenes."
     },
     "scene": {
         "regenerate_title": "Regenerate {{type}}?",
