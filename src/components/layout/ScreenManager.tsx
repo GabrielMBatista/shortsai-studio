@@ -50,7 +50,8 @@ interface ScreenManagerProps {
         references: ReferenceCharacter[],
         includeMusic: boolean,
         durationConfig?: { min: number; max: number; targetScenes?: number },
-        audioModel?: string
+        audioModel?: string,
+        skipNavigation?: boolean
     ) => Promise<void>;
     generateAssets: () => Promise<void>;
     generateImagesOnly: () => Promise<void>;

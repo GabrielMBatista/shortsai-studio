@@ -1,85 +1,17 @@
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Sparkles, ArrowRight } from 'lucide-react';
+import JSON5 from 'json5';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { VIDEO_STYLES, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, TTSProvider, Voice, IS_SUNO_ENABLED, User } from '../types';
-import { Sparkles, ArrowRight, Mic, Play, Square, Loader2, ChevronDown, Music, Zap, Image as ImageIcon, LayoutTemplate, Plus, User as UserIcon, Trash2, CheckCircle2, X, Upload, Wand2, Clock, Layers, Palette, Film, Paintbrush, Box, MonitorPlay } from 'lucide-react';
-import { generatePreviewAudio, analyzeCharacterFeatures, getVoices } from '../services/geminiService';
+import { VIDEO_STYLES, AVAILABLE_LANGUAGES, TTSProvider, User, AVAILABLE_VOICES, IS_SUNO_ENABLED } from '../types';
 import { useCharacterLibrary } from '../hooks/useCharacterLibrary';
 import Loader from './Loader';
 import { ToastType } from './Toast';
-import ConfirmModal from './ConfirmModal';
-import { useTranslation } from 'react-i18next';
-import JSON5 from 'json5';
 
-const VoicePreviewButton = ({ voice, provider, voices }: { voice: string, provider: TTSProvider, voices: Voice[] }) => {
-    const { t } = useTranslation();
-    const [status, setStatus] = useState<'idle' | 'loading' | 'playing'>('idle');
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-
-    const handlePlay = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (status === 'playing') {
-            audioRef.current?.pause();
-            setStatus('idle');
-            return;
-        }
-
-        setStatus('loading');
-        try {
-            const vObj = voices.find(v => v.name === voice);
-            if (!vObj) throw new Error(t('input.voice_not_found'));
-
-            let url = vObj.previewUrl;
-            if (!url) {
-                // Use backend to generate preview if no static preview url
-                url = await generatePreviewAudio(`Hello! I am ${vObj.label}.`, vObj.name, provider);
-            }
-
-            if (!url) throw new Error(t('input.no_preview'));
-
-            const audio = new Audio(url);
-            audioRef.current = audio;
-            audio.onended = () => setStatus('idle');
-            await audio.play();
-            setStatus('playing');
-        } catch (e) {
-            console.error(e);
-            setStatus('idle');
-        }
-    };
-
-    return (
-        <button type="button" onClick={handlePlay} className="w-12 h-12 rounded-xl flex items-center justify-center bg-slate-700/50 hover:bg-indigo-600 text-indigo-300 hover:text-white transition-all border border-slate-600 hover:border-indigo-500">
-            {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : status === 'playing' ? <Square className="w-4 h-4 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
-        </button>
-    );
-};
-
-// Icon map for styles
-const getStyleIcon = (style: string) => {
-    const s = style.toLowerCase();
-    if (s.includes('cinematic')) return Film;
-    if (s.includes('3d')) return Box;
-    if (s.includes('painting') || s.includes('watercolor')) return Palette;
-    if (s.includes('anime')) return Sparkles;
-    if (s.includes('vector') || s.includes('minimalist')) return Paintbrush;
-    if (s.includes('cyberpunk')) return Zap;
-    return MonitorPlay;
-};
-
-// Moved outside to prevent re-creation on render
-const SectionTitle = ({ icon: Icon, title, subtitle }: any) => (
-    <div className="mb-6">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <div className="p-1.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                <Icon className="w-4 h-4 text-indigo-400" />
-            </div>
-            {title}
-        </h3>
-        {subtitle && <p className="text-sm text-slate-500 ml-9">{subtitle}</p>}
-    </div>
-);
+import { ScriptConfig } from './CreateProject/ScriptConfig';
+import { StyleSelector } from './CreateProject/StyleSelector';
+import { CharacterManager } from './CreateProject/CharacterManager';
+import { AudioStudio } from './CreateProject/AudioStudio';
 
 interface InputSectionProps {
     user: User | null;
@@ -92,8 +24,9 @@ interface InputSectionProps {
         refs: any[],
         includeMusic: boolean,
         durationConfig: { min: number, max: number, targetScenes?: number },
-        audioModel?: string
-    ) => Promise<void>; // Make this return a Promise
+        audioModel?: string,
+        skipNavigation?: boolean
+    ) => Promise<void>;
     isLoading: boolean;
     loadingMessage?: string;
     showToast: (message: string, type: ToastType) => void;
@@ -103,72 +36,117 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
     const { t } = useTranslation();
     const { characters, addCharacter, removeCharacter, isLoading: isCharLoading } = useCharacterLibrary(user);
 
-    // Local Loading State for "Create Project" button
+    // --- State Management ---
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Form State
+    // Script & Config
     const [topic, setTopic] = useState('');
-    const [style, setStyle] = useState(VIDEO_STYLES[0]);
     const [language, setLanguage] = useState(() => localStorage.getItem('shortsai_pref_language') || AVAILABLE_LANGUAGES[0].label);
-
-    // Persist Language
-    useEffect(() => {
-        localStorage.setItem('shortsai_pref_language', language);
-    }, [language]);
-
-    // Duration & Scene Config
     const [minDuration, setMinDuration] = useState<number | ''>(60);
     const [maxDuration, setMaxDuration] = useState<number | ''>(70);
     const [targetScenes, setTargetScenes] = useState<string>("");
+    const [bulkProjects, setBulkProjects] = useState<any[]>([]);
 
-    // Auto-detect JSON and configure settings
+    // Style & Characters
+    const [style, setStyle] = useState(VIDEO_STYLES[0]);
+    const [selectedCharIds, setSelectedCharIds] = useState<string[]>([]);
+
+    // Audio
+    const [ttsProvider, setTtsProvider] = useState<TTSProvider>(() => (localStorage.getItem('shortsai_pref_provider') as TTSProvider) || 'gemini');
+    const [voice, setVoice] = useState(() => localStorage.getItem('shortsai_pref_voice') || '');
+    const [audioModel, setAudioModel] = useState<string>(() => localStorage.getItem('shortsai_pref_audio_model') || 'eleven_multilingual_v2');
+    const [includeMusic, setIncludeMusic] = useState(false);
+
+    // --- Persistence ---
+    useEffect(() => { localStorage.setItem('shortsai_pref_language', language); }, [language]);
+    useEffect(() => { localStorage.setItem('shortsai_pref_provider', ttsProvider); }, [ttsProvider]);
+    useEffect(() => { if (voice) localStorage.setItem('shortsai_pref_voice', voice); }, [voice]);
+    useEffect(() => { localStorage.setItem('shortsai_pref_audio_model', audioModel); }, [audioModel]);
+
+    // --- JSON & Duration Logic ---
+    const normalizeProject = (p: any) => {
+        const scenes = (p.scenes || p.script || []).map((s: any, idx: number) => ({
+            ...s,
+            visualDescription: s.visualDescription || s.visual || s.imagePrompt || s.desc || "Scene visual",
+            narration: s.narration || s.audio || s.text || s.speech || "",
+            sceneNumber: s.sceneNumber || s.scene || (idx + 1)
+        }));
+        return {
+            ...p,
+            topic: p.topic || p.title || p.projectTitle || p.titulo || p.tema_dia || "Untitled Project",
+            scenes
+        };
+    };
+
+    const extractProjects = (data: any, projects: any[] = []) => {
+        if (!data || typeof data !== 'object') return projects;
+        if ((data.scenes && Array.isArray(data.scenes)) || (data.script && Array.isArray(data.script))) {
+            projects.push(normalizeProject(data));
+            return projects;
+        }
+        if (Array.isArray(data)) {
+            data.forEach(item => extractProjects(item, projects));
+        } else {
+            Object.values(data).forEach(val => extractProjects(val, projects));
+        }
+        return projects;
+    };
+
     useEffect(() => {
         const trimmed = topic.trim();
-        if (!trimmed) return;
+        if (!trimmed) {
+            if (bulkProjects.length > 0) setBulkProjects([]);
+            return;
+        }
 
-        // Helper to try parsing with JSON5 (handles trailing commas, comments, etc.)
         const tryParse = (str: string) => {
-            try {
-                return JSON5.parse(str);
-            } catch (e) { return null; }
+            try { return JSON5.parse(str); } catch (e) { return null; }
         };
 
-        // Attempt to find JSON object or array block
+        let json = null;
+        let foundProjects: any[] = [];
+
         const firstBrace = trimmed.indexOf('{');
         const lastBrace = trimmed.lastIndexOf('}');
         const firstBracket = trimmed.indexOf('[');
         const lastBracket = trimmed.lastIndexOf(']');
 
-        let json = null;
-
-        // Strategy 1: Try object block {...}
         if (firstBrace !== -1 && lastBrace > firstBrace) {
             json = tryParse(trimmed.substring(firstBrace, lastBrace + 1));
         }
 
-        // Strategy 2: If object failed or not found, try array block [...]
         if ((!json || (!json.scenes && !Array.isArray(json))) && firstBracket !== -1 && lastBracket > firstBracket) {
             const arrayJson = tryParse(trimmed.substring(firstBracket, lastBracket + 1));
             if (Array.isArray(arrayJson)) {
-                json = { scenes: arrayJson };
+                json = arrayJson;
             }
         }
 
         if (json) {
-            const scenes = Array.isArray(json) ? json : (json.scenes || json.script); // Handle 'script' key too
+            foundProjects = extractProjects(json);
+        }
 
+        if (foundProjects.length > 1) {
+            setBulkProjects(foundProjects);
+            showToast(`🚀 Detected ${foundProjects.length} projects from JSON!`, 'success');
+        } else if (foundProjects.length === 1) {
+            setBulkProjects([]);
+        } else {
+            setBulkProjects([]);
+        }
+
+        // Auto-duration logic
+        const projectData = foundProjects.length === 1 ? foundProjects[0] : (json && (json.scenes || json.script) ? normalizeProject(json) : null);
+        if (projectData) {
+            const scenes = projectData.scenes;
             if (Array.isArray(scenes) && scenes.length > 0) {
                 const count = scenes.length;
                 const totalDuration = scenes.reduce((acc: number, s: any) => {
-                    // Handle various key formats and "5s" strings
                     const d = s.duration || s.durationSeconds || s.duration_seconds || s.estimated_duration;
-
-                    // If no duration, estimate based on narration words (avg 2.5 words/sec)
                     if (!d && s.narration) {
                         const words = s.narration.split(/\s+/).length;
                         return acc + Math.max(3, words / 2.5);
                     }
-
                     const val = typeof d === 'string' ? parseFloat(d) : Number(d);
                     return acc + (isNaN(val) ? 5 : val);
                 }, 0);
@@ -176,165 +154,23 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
                 if (totalDuration > 0) {
                     const newMin = Math.round(Math.max(5, totalDuration - 5));
                     const newMax = Math.round(totalDuration + 5);
-
-                    // Only update if significantly different to prevent jitter
                     setMinDuration((prev) => (Math.abs((typeof prev === 'number' ? prev : 0) - newMin) > 2 ? newMin : prev));
                     setMaxDuration((prev) => (Math.abs((typeof prev === 'number' ? prev : 0) - newMax) > 2 ? newMax : prev));
 
-                    showToast(`Duration adjusted to ~${Math.round(totalDuration)}s from script`, 'success');
+                    if (!bulkProjects.length) {
+                        showToast(`Duration adjusted to ~${Math.round(totalDuration)}s from script`, 'success');
+                    }
                 }
-
                 if (count > 0) {
                     setTargetScenes(count.toString());
                 }
             }
         }
-    }, [topic]);
+    }, [topic]); // We suppress dependency warning for showToast/setters to avoid loops, ideally stable
 
-    // TTS State
-    const [ttsProvider, setTtsProvider] = useState<TTSProvider>(() => (localStorage.getItem('shortsai_pref_provider') as TTSProvider) || 'gemini');
-    const [voice, setVoice] = useState(() => localStorage.getItem('shortsai_pref_voice') || '');
-    const [audioModel, setAudioModel] = useState<string>(() => localStorage.getItem('shortsai_pref_audio_model') || 'eleven_multilingual_v2');
-
-    // Persist Provider & Voice
-    useEffect(() => {
-        localStorage.setItem('shortsai_pref_provider', ttsProvider);
-    }, [ttsProvider]);
-
-    useEffect(() => {
-        if (voice) localStorage.setItem('shortsai_pref_voice', voice);
-    }, [voice]);
-
-    useEffect(() => {
-        localStorage.setItem('shortsai_pref_audio_model', audioModel);
-    }, [audioModel]);
-
-    const [dynamicVoices, setDynamicVoices] = useState<Voice[]>(AVAILABLE_VOICES);
-
-    const [isLoadingVoices, setIsLoadingVoices] = useState(false);
-
-    useEffect(() => {
-        // Load Voices logic
-        const fetchVoices = async () => {
-            setIsLoadingVoices(true);
-            if (ttsProvider === 'elevenlabs') {
-                try {
-                    const v = await getVoices();
-                    setDynamicVoices(v);
-                } catch (e) {
-                    console.error("Failed to load voices", e);
-                }
-            } else if (ttsProvider === 'groq') {
-                const { GROQ_VOICES } = await import('../types');
-                setDynamicVoices(GROQ_VOICES);
-            } else {
-                setDynamicVoices(AVAILABLE_VOICES);
-            }
-            setIsLoadingVoices(false);
-        };
-        fetchVoices();
-    }, [ttsProvider]);
-
-
-
-    // Filter voices based on language
-    const filteredVoices = dynamicVoices.filter(v => {
-        if (!language) return true;
-        const langObj = AVAILABLE_LANGUAGES.find(l => l.label === language);
-        if (!langObj) return true;
-
-        if (v.supportedLanguages && v.supportedLanguages.length > 0) {
-            return v.supportedLanguages.includes(langObj.code) || v.supportedLanguages.includes('multilingual');
-        }
-        return true;
-    });
-
-    // Ensure selected voice is valid when language/provider changes
-    useEffect(() => {
-        if (isLoadingVoices) return; // Don't validate while loading
-
-        if (filteredVoices.length > 0) {
-            if (!filteredVoices.find(v => v.name === voice)) {
-                setVoice(filteredVoices[0].name);
-            }
-        } else {
-            // Only reset if we are not loading and truly have no voices
-            if (!isLoadingVoices && dynamicVoices.length > 0) {
-                setVoice('');
-            }
-        }
-    }, [language, ttsProvider, filteredVoices, isLoadingVoices, dynamicVoices.length]);
-
-    // Selection State
-    const [selectedCharIds, setSelectedCharIds] = useState<string[]>([]);
-    const [optimizeRef, setOptimizeRef] = useState(false);
-    const [includeMusic, setIncludeMusic] = useState(false);
-
-    // Add Character Modal State
-    const [isAddingChar, setIsAddingChar] = useState(false);
-    const [newCharName, setNewCharName] = useState('');
-    const [newCharDesc, setNewCharDesc] = useState('');
-    const [newCharImages, setNewCharImages] = useState<string[]>([]);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // Confirm Delete Modal
-    const [deleteCharModal, setDeleteCharModal] = useState<{ isOpen: boolean; charId: string | null }>({ isOpen: false, charId: null });
-
-    const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            Array.from(e.target.files).forEach((file: File) => {
-                const reader = new FileReader();
-                reader.onload = () => setNewCharImages(prev => [...prev, reader.result as string]);
-                reader.readAsDataURL(file);
-            });
-        }
-    };
-
-    const handleAutoDescription = async () => {
-        if (newCharImages.length === 0) return;
-        setIsAnalyzing(true);
-        try {
-            const desc = await analyzeCharacterFeatures(newCharImages[0]);
-            setNewCharDesc(prev => (prev ? prev + ", " + desc : desc));
-            showToast(t('input.char_described'), 'success');
-        } catch (e) {
-            console.error("Analysis failed", e);
-            showToast(t('input.analysis_failed'), 'error');
-        } finally {
-            setIsAnalyzing(false);
-        }
-    };
-
-    const handleSaveChar = async () => {
-        try {
-            const char = await addCharacter(newCharName, newCharDesc, newCharImages, optimizeRef);
-            if (char) {
-                setSelectedCharIds(prev => [...prev, char.id]);
-                setIsAddingChar(false);
-                setNewCharName(''); setNewCharDesc(''); setNewCharImages([]);
-                showToast(t('input.char_saved'), 'success');
-            }
-        } catch (e) {
-            showToast(t('input.char_save_failed'), 'error');
-        }
-    };
-
-    const confirmDeleteCharacter = async () => {
-        if (deleteCharModal.charId) {
-            await removeCharacter(deleteCharModal.charId);
-            if (selectedCharIds.includes(deleteCharModal.charId)) {
-                setSelectedCharIds(prev => prev.filter(id => id !== deleteCharModal.charId));
-            }
-            setDeleteCharModal({ isOpen: false, charId: null });
-            showToast(t('input.char_deleted'), 'success');
-        }
-    };
-
+    // --- Handlers ---
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Local Submission State (Lock Button)
         setIsSubmitting(true);
 
         const selectedRefs = characters
@@ -351,29 +187,31 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
         };
 
         try {
-            await onGenerate(topic, style, voice, ttsProvider, language, selectedRefs, includeMusic && IS_SUNO_ENABLED, config, audioModel);
+            if (bulkProjects.length > 0) {
+                let processed = 0;
+                for (let i = 0; i < bulkProjects.length; i++) {
+                    const p = bulkProjects[i];
+                    const pTopic = JSON.stringify(p);
+                    const pStyle = p.style || style;
+                    const pVoice = p.voice || voice;
+                    const isLast = i === bulkProjects.length - 1;
+
+                    await onGenerate(pTopic, pStyle, pVoice, ttsProvider, language, selectedRefs, includeMusic && IS_SUNO_ENABLED, config, audioModel, !isLast);
+                    processed++;
+                }
+                showToast(`Successfully queued ${processed} projects!`, 'success');
+            } else {
+                await onGenerate(topic, style, voice, ttsProvider, language, selectedRefs, includeMusic && IS_SUNO_ENABLED, config, audioModel, false);
+            }
         } catch (e) {
-            // If error, unlock button. If success, component unmounts anyway.
             setIsSubmitting(false);
         }
     };
 
-    // Combined Loading State: Global or Local Submission
     const isBusy = isLoading || isSubmitting;
 
     return (
         <div className="max-w-6xl mx-auto w-full px-6 py-8 flex flex-col items-center">
-
-            <ConfirmModal
-                isOpen={deleteCharModal.isOpen}
-                title={t('input.delete_char_title')}
-                message={t('input.delete_char_message')}
-                onConfirm={confirmDeleteCharacter}
-                onCancel={() => setDeleteCharModal({ isOpen: false, charId: null })}
-                isDestructive={true}
-                confirmText={t('input.delete_char_confirm')}
-            />
-
             <div className="text-center mb-12 animate-fade-in-up">
                 <h1 className="text-4xl md:text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mb-4 tracking-tight pb-2">
                     {t('input.title')}
@@ -384,340 +222,51 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
             </div>
 
             <form onSubmit={handleSubmit} className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
-
                 {/* LEFT COLUMN */}
                 <div className="lg:col-span-7 space-y-8">
-                    {/* SCRIPT INPUT */}
-                    <div className="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl hover:border-slate-600 transition-colors">
-                        <SectionTitle icon={LayoutTemplate} title={t('input.concept_title')} subtitle={t('input.concept_subtitle')} />
-                        <div className="space-y-4">
-                            <div className="relative group">
-                                <label htmlFor="topic" className="sr-only">Topic</label>
-                                <textarea
-                                    id="topic"
-                                    name="topic"
-                                    value={topic}
-                                    onChange={(e) => setTopic(e.target.value)}
-                                    placeholder={t('input.topic_placeholder')}
-                                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-4 text-white text-lg placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none h-32 resize-none transition-all group-hover:bg-slate-900"
-                                    disabled={isBusy}
-                                />
-                                <div className="absolute bottom-3 right-3 text-xs text-slate-600 font-mono">
-                                    {t('input.chars_count', { count: topic.length })}
-                                </div>
-                            </div>
+                    <ScriptConfig
+                        topic={topic} setTopic={setTopic}
+                        language={language} setLanguage={setLanguage}
+                        minDuration={minDuration} setMinDuration={setMinDuration}
+                        maxDuration={maxDuration} setMaxDuration={setMaxDuration}
+                        targetScenes={targetScenes} setTargetScenes={setTargetScenes}
+                        isBusy={isBusy}
+                        bulkProjectsCount={bulkProjects.length}
+                    />
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="language" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t('input.output_language')}</label>
-                                    <div className="relative">
-                                        <select
-                                            id="language"
-                                            name="language"
-                                            value={language}
-                                            onChange={(e) => setLanguage(e.target.value)}
-                                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer hover:border-slate-600 transition-colors"
-                                            disabled={isBusy}
-                                        >
-                                            {AVAILABLE_LANGUAGES.map((l) => <option key={l.code} value={l.label}>{l.label}</option>)}
-                                        </select>
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 pointer-events-none" />
-                                    </div>
-                                </div>
+                    <div className="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl">
+                        <StyleSelector
+                            style={style}
+                            setStyle={setStyle}
+                            isBusy={isBusy}
+                        />
 
-                                {/* DURATION CONFIG */}
-                                <div className="flex flex-col">
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1 flex items-center gap-1">
-                                        <Clock className="w-3 h-3" /> {t('input.target_duration')}
-                                    </label>
-                                    <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-3">
-                                        <label htmlFor="minDuration" className="sr-only">Min Duration</label>
-                                        <input
-                                            id="minDuration"
-                                            name="minDuration"
-                                            type="number" min="5" max="300"
-                                            value={minDuration}
-                                            onChange={(e) => {
-                                                const v = e.target.value;
-                                                setMinDuration(v === '' ? '' : parseInt(v));
-                                            }}
-                                            className="w-16 bg-transparent text-white text-center outline-none border-b border-transparent focus:border-indigo-500 transition-colors"
-                                            placeholder="Min"
-                                            disabled={isBusy}
-                                        />
-                                        <span className="text-slate-500 text-xs">{t('input.to')}</span>
-                                        <label htmlFor="maxDuration" className="sr-only">Max Duration</label>
-                                        <input
-                                            id="maxDuration"
-                                            name="maxDuration"
-                                            type="number" min="5" max="300"
-                                            value={maxDuration}
-                                            onChange={(e) => {
-                                                const v = e.target.value;
-                                                setMaxDuration(v === '' ? '' : parseInt(v));
-                                            }}
-                                            className="w-16 bg-transparent text-white text-center outline-none border-b border-transparent focus:border-indigo-500 transition-colors"
-                                            placeholder="Max"
-                                            disabled={isBusy}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* SCENE COUNT CONFIG */}
-                            <div className="bg-indigo-500/5 rounded-xl p-3 border border-indigo-500/10 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Layers className="w-4 h-4 text-indigo-400" />
-                                    <label htmlFor="targetScenes" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('input.scene_count')}</label>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        id="targetScenes"
-                                        name="targetScenes"
-                                        type="number" min="0" max="50"
-                                        value={targetScenes}
-                                        onChange={(e) => setTargetScenes(e.target.value)}
-                                        className="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-center text-sm outline-none focus:border-indigo-500"
-                                        placeholder={t('input.auto')}
-                                        disabled={isBusy}
-                                    />
-                                    <span className="text-[10px] text-slate-500">{t('input.leave_empty_auto')}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* STYLE & CHARACTERS */}
-                    <div id="style-section" className="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl">
-                        <SectionTitle icon={ImageIcon} title={t('input.visual_style')} subtitle={t('input.visual_style_subtitle')} />
-
-                        <div id="style-grid" className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-                            {VIDEO_STYLES.map((s) => {
-                                const Icon = getStyleIcon(s);
-                                const isSelected = style === s;
-                                return (
-                                    <button
-                                        key={s}
-                                        type="button"
-                                        onClick={() => setStyle(s)}
-                                        disabled={isBusy}
-                                        className={`relative group p-3 rounded-xl border text-left transition-all duration-200 h-20 flex flex-col justify-between ${isSelected
-                                            ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-900/50'
-                                            : 'bg-slate-900/50 border-slate-700 hover:border-indigo-500/50 hover:bg-slate-800'
-                                            }`}
-                                    >
-                                        <Icon className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-slate-500 group-hover:text-indigo-400'}`} />
-                                        <span className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>{s}</span>
-                                        {isSelected && <div className="absolute inset-0 border-2 border-white/20 rounded-xl" />}
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Character Manager Section */}
-                        <div id="character-section" className="mt-8 border-t border-slate-700/50 pt-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <label className="text-sm font-bold text-slate-300 flex items-center gap-2">
-                                    <UserIcon className="w-4 h-4 text-indigo-400" /> {t('input.character_consistency')}
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsAddingChar(true)}
-                                    disabled={isBusy}
-                                    className="text-xs font-bold bg-indigo-500/10 text-indigo-400 px-3 py-1.5 rounded-lg border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors flex items-center gap-1"
-                                >
-                                    <Plus className="w-3 h-3" /> {t('input.new_character')}
-                                </button>
-                            </div>
-
-                            {isAddingChar && (
-                                <div className="bg-slate-800 rounded-xl p-4 mb-4 border border-indigo-500/50 shadow-2xl animate-fade-in-up">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h4 className="text-xs font-bold text-white uppercase">{t('input.add_char_title')}</h4>
-                                        <button type="button" onClick={() => setIsAddingChar(false)} className="text-slate-500 hover:text-white"><X className="w-4 h-4" /></button>
-                                    </div>
-                                    <input
-                                        id="charName"
-                                        name="charName"
-                                        type="text" placeholder={t('input.char_name_placeholder')} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-2 focus:border-indigo-500 outline-none"
-                                        value={newCharName} onChange={e => setNewCharName(e.target.value)}
-                                    />
-
-                                    <div className="relative">
-                                        <textarea
-                                            id="charDesc"
-                                            name="charDesc"
-                                            placeholder={t('input.char_desc_placeholder')} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-2 h-20 focus:border-indigo-500 outline-none resize-none pr-10"
-                                            value={newCharDesc} onChange={e => setNewCharDesc(e.target.value)}
-                                        />
-                                        {newCharImages.length > 0 && (
-                                            <button
-                                                type="button"
-                                                onClick={handleAutoDescription}
-                                                disabled={isAnalyzing}
-                                                className="absolute bottom-4 right-2 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors shadow-lg"
-                                                title={t('input.auto_describe_title')}
-                                            >
-                                                {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="flex gap-2 mb-3 overflow-x-auto p-1">
-                                        <div onClick={() => fileInputRef.current?.click()} className="w-14 h-14 flex-shrink-0 bg-slate-900 border-dashed border-2 border-slate-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-indigo-400 hover:text-indigo-400 transition-colors text-slate-500">
-                                            <Upload className="w-5 h-5" />
-                                        </div>
-                                        <input id="charImages" name="charImages" ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
-                                        {newCharImages.map((img, i) => (
-                                            <img key={i} src={img} className="w-14 h-14 rounded-lg object-cover border border-slate-700 shadow-md" />
-                                        ))}
-                                    </div>
-                                    <button type="button" onClick={handleSaveChar} disabled={isCharLoading || !newCharName} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs py-2 rounded-lg transition-colors">{t('input.save_character')}</button>
-                                </div>
-                            )}
-
-                            {/* Character List */}
-                            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide min-h-[90px]">
-                                <div
-                                    onClick={() => setSelectedCharIds([])}
-                                    className={`flex-shrink-0 w-20 flex flex-col items-center gap-2 cursor-pointer p-2 rounded-xl border transition-all ${selectedCharIds.length === 0 ? 'bg-indigo-500/10 border-indigo-500/50' : 'border-transparent hover:bg-slate-800'}`}
-                                >
-                                    <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center bg-slate-900 ${selectedCharIds.length === 0 ? 'border-indigo-500 text-indigo-400' : 'border-slate-700 text-slate-600'}`}>
-                                        <X className="w-5 h-5" />
-                                    </div>
-                                    <span className={`text-[10px] font-bold uppercase ${selectedCharIds.length === 0 ? 'text-indigo-300' : 'text-slate-500'}`}>{t('input.no_char')}</span>
-                                </div>
-
-                                {isCharLoading ? (
-                                    <div className="flex items-center px-4 h-20 justify-center">
-                                        <Loader size="sm" />
-                                    </div>
-                                ) : (
-                                    characters.map(c => {
-                                        const isSelected = selectedCharIds.includes(c.id);
-                                        return (
-                                            <div key={c.id} onClick={() => {
-                                                setSelectedCharIds(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
-                                            }} className={`flex-shrink-0 w-20 flex flex-col items-center gap-2 cursor-pointer group relative p-2 rounded-xl border transition-all ${isSelected ? 'bg-indigo-500/10 border-indigo-500/50' : 'border-transparent hover:bg-slate-800'}`}>
-                                                <div className={`w-12 h-12 rounded-full border-2 overflow-hidden relative shadow-md ${isSelected ? 'border-indigo-500' : 'border-slate-700'}`}>
-                                                    <img src={c.images[0] || c.imageUrl} className="w-full h-full object-cover" />
-                                                    {isSelected && <div className="absolute inset-0 bg-indigo-500/40 flex items-center justify-center"><CheckCircle2 className="w-5 h-5 text-white" /></div>}
-                                                </div>
-                                                <span className={`text-[10px] font-medium truncate w-full text-center ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>{c.name}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => { e.stopPropagation(); setDeleteCharModal({ isOpen: true, charId: c.id }); }}
-                                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
-                                                    title={t('input.delete_char_tooltip')}
-                                                >
-                                                    <Trash2 className="w-2.5 h-2.5" />
-                                                </button>
-                                            </div>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        </div>
+                        <CharacterManager
+                            characters={characters}
+                            selectedCharIds={selectedCharIds}
+                            setSelectedCharIds={setSelectedCharIds}
+                            onAddCharacter={addCharacter}
+                            onRemoveCharacter={removeCharacter}
+                            isBusy={isBusy}
+                            isCharLoading={isCharLoading}
+                            showToast={showToast}
+                        />
                     </div>
                 </div>
 
                 {/* RIGHT COLUMN */}
                 <div className="lg:col-span-5 space-y-8">
-                    <div id="audio-section" className="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl h-full flex flex-col">
-                        <div id="audio-controls-group">
-                            <SectionTitle icon={Mic} title={t('input.audio_studio')} subtitle={t('input.audio_subtitle')} />
-
-                            {/* Provider Selector */}
-                            <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1.5 rounded-xl mb-6">
-                                <button type="button" onClick={() => setTtsProvider('gemini')} disabled={isBusy} className={`py-2.5 rounded-lg text-xs font-bold transition-all ${ttsProvider === 'gemini' ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Google Gemini</button>
-                                <button type="button" onClick={() => setTtsProvider('elevenlabs')} disabled={isBusy} className={`py-2.5 rounded-lg text-xs font-bold transition-all ${ttsProvider === 'elevenlabs' ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>ElevenLabs</button>
-                                <button type="button" onClick={() => setTtsProvider('groq')} disabled={isBusy} className={`py-2.5 rounded-lg text-xs font-bold transition-all ${ttsProvider === 'groq' ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>Groq (PlayAI)</button>
-                            </div>
-
-                            {/* ElevenLabs Model Selector */}
-                            {ttsProvider === 'elevenlabs' && (
-                                <div className="mb-6 animate-fade-in-up">
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('input.model_label')}</label>
-                                    <div className="grid grid-cols-1 gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setAudioModel('eleven_turbo_v2_5')}
-                                            disabled={isBusy}
-                                            className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${audioModel === 'eleven_turbo_v2_5' ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'}`}
-                                        >
-                                            <div>
-                                                <div className="font-bold text-sm mb-0.5">Turbo v2.5</div>
-                                                <div className="text-[10px] opacity-70">{t('input.model_turbo_desc')}</div>
-                                            </div>
-                                            {audioModel === 'eleven_turbo_v2_5' && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setAudioModel('eleven_multilingual_v2')}
-                                            disabled={isBusy}
-                                            className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${audioModel === 'eleven_multilingual_v2' ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'}`}
-                                        >
-                                            <div>
-                                                <div className="font-bold text-sm mb-0.5">Multilingual v2</div>
-                                                <div className="text-[10px] opacity-70">{t('input.model_multilingual_desc')}</div>
-                                            </div>
-                                            {audioModel === 'eleven_multilingual_v2' && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setAudioModel('eleven_flash_v2_5')}
-                                            disabled={isBusy}
-                                            className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${audioModel === 'eleven_flash_v2_5' ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'}`}
-                                        >
-                                            <div>
-                                                <div className="font-bold text-sm mb-0.5">Flash v2.5</div>
-                                                <div className="text-[10px] opacity-70">{t('input.model_flash_desc')}</div>
-                                            </div>
-                                            {audioModel === 'eleven_flash_v2_5' && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            <label htmlFor="voice" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('input.voice_model')}</label>
-                            <div className="flex gap-3 mb-8">
-                                <div className="relative flex-1">
-                                    <select id="voice" name="voice" value={voice} onChange={(e) => setVoice(e.target.value)} disabled={isBusy || filteredVoices.length === 0} className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-10 py-3 text-white appearance-none cursor-pointer hover:border-slate-500 transition-colors h-12">
-                                        {filteredVoices.length > 0 ? (
-                                            filteredVoices.map(v => <option key={v.name} value={v.name}>{v.label} ({v.gender})</option>)
-                                        ) : (
-                                            <option value="" disabled>{t('input.no_voices')}</option>
-                                        )}
-                                    </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 pointer-events-none" />
-                                </div>
-                                <VoicePreviewButton voice={voice} provider={ttsProvider} voices={filteredVoices} />
-                            </div>
-                        </div>
-
-                        {IS_SUNO_ENABLED && (
-                            <div
-                                onClick={() => !isBusy && setIncludeMusic(!includeMusic)}
-                                className={`mt-auto relative overflow-hidden p-5 rounded-2xl border cursor-pointer flex items-center gap-4 transition-all duration-300 group ${includeMusic ? 'bg-gradient-to-br from-pink-500/20 to-purple-600/20 border-pink-500/50' : 'bg-slate-900 border-slate-700 hover:border-pink-500/30'
-                                    } ${isBusy ? 'opacity-50 pointer-events-none' : ''}`}
-                            >
-                                <div className={`p-3 rounded-full transition-colors ${includeMusic ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/40' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700 group-hover:text-pink-400'}`}>
-                                    <Music className="w-6 h-6" />
-                                </div>
-                                <div className="flex-1 z-10">
-                                    <h4 className={`font-bold text-base ${includeMusic ? 'text-pink-100' : 'text-slate-300'}`}>{t('input.background_music')}</h4>
-                                    <p className="text-xs text-slate-500 mt-1">{t('input.music_subtitle')}</p>
-                                </div>
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${includeMusic ? 'bg-pink-500 border-pink-500' : 'border-slate-600'}`}>
-                                    {includeMusic && <Zap className="w-3 h-3 text-white" />}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <AudioStudio
+                        ttsProvider={ttsProvider} setTtsProvider={setTtsProvider}
+                        voice={voice} setVoice={setVoice}
+                        audioModel={audioModel} setAudioModel={setAudioModel}
+                        language={language}
+                        includeMusic={includeMusic} setIncludeMusic={setIncludeMusic}
+                        isBusy={isBusy}
+                    />
                 </div>
 
+                {/* FOOTER ACTION */}
                 <div className="lg:col-span-12 mt-4 pb-12">
                     <button
                         id="btn-generate"
@@ -734,7 +283,7 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
                         ) : (
                             <>
                                 <Sparkles className="w-7 h-7 text-indigo-200 group-hover:text-white transition-colors" />
-                                <span>{t('input.generate_button')}</span>
+                                <span>{bulkProjects.length > 0 ? `Generate ${bulkProjects.length} Projects` : t('input.generate_button')}</span>
                                 <ArrowRight className="w-7 h-7 opacity-60 group-hover:translate-x-1 transition-transform" />
                             </>
                         )}
