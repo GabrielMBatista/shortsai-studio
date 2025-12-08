@@ -104,12 +104,35 @@ CREATE TABLE folders (
     id TEXT PRIMARY KEY, -- UUID
     name TEXT,
     user_id TEXT NOT NULL,
+    parent_id TEXT, -- Relation to Folder (Self-relation)
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
 );
 ```
 
-### 3.2. `shows`
+### 3.2. `social_posts`
+Postagens para redes sociais.
+
+```sql
+CREATE TABLE social_posts (
+    id TEXT PRIMARY KEY, -- UUID
+    user_id TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    platform TEXT NOT NULL, -- Enum: SocialPlatform
+    title TEXT,
+    description TEXT,
+    privacy_status TEXT NOT NULL, -- Enum: PrivacyStatus
+    status TEXT NOT NULL, -- Enum: PostStatus
+    scheduled_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (project_id) REFERENCES projects(id)
+);
+```
+
+### 3.3. `shows`
 Séries ou programas.
 
 ```sql

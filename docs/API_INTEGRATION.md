@@ -34,6 +34,12 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
 ### Cenas
 - `PATCH /api/scenes/:id`: Atualiza cena
 
+### Social Media
+- `POST /api/social/posts`: Cria agendamento de post
+- `GET /api/social/posts`: Lista posts (filtros: projectId, userId)
+- `PATCH /api/social/posts/:id`: Atualiza agendamento
+- `DELETE /api/social/posts/:id`: Cancela agendamento
+
 O processo de exportação utiliza o proxy de assets para evitar problemas de CORS:
 
 ### Fluxo de Exportação

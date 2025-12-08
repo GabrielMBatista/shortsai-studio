@@ -105,7 +105,14 @@ O frontend é servido via **Nginx**, que atua como um proxy reverso para o backe
 
 ### Backend (shortsai-api)
 
-Para documentação do backend, veja: [`../shortsai-api/README.md`](../shortsai-api/README.md)
+Para que o frontend funcione, você precisa do backend rodando.
+Clone e execute o repositório da API:
+
+```bash
+git clone https://github.com/seu-usuario/shortsai-api.git
+cd shortsai-api
+# Siga as instruções no README da API
+```
 
 ---
 

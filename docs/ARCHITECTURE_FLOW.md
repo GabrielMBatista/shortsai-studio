@@ -66,6 +66,26 @@ sequenceDiagram
     end
 ```
 
+### 3. Agendamento de Postagens (Social Media)
+Orquestração via Fila de Mensagens (BullMQ).
+
+```mermaid
+sequenceDiagram
+    participant F as Frontend
+    participant A as API (Node.js)
+    participant Q as Redis (BullMQ)
+    participant W as Worker (Queue Processor)
+    
+    F->>A: POST /api/social/posts (scheduledAt)
+    A->>D: Cria Post (status: scheduled)
+    A->>Q: Adiciona Job (delay)
+    
+    Note over Q,W: Aguarda Scheduled Time
+    
+    Q->>W: Processa Job (publish-video)
+    W->>D: Atualiza Status (published)
+```
+
 ---
 
 ## 🧩 Componentes
