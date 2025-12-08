@@ -1,6 +1,6 @@
 # 🏗️ Arquitetura do Sistema ShortsAI
 
-Este documento descreve a arquitetura híbrida em produção.
+Este documento descreve a arquitetura de serviços distribuídos em produção.
 
 ## 🏢 Visão Geral (High Level)
 
@@ -46,7 +46,7 @@ sequenceDiagram
     participant F as Frontend
     participant A as API
     participant D as Banco
-    participant W as Worker (Python/Cloud Run)
+    participant W as Worker (Python/VPS)
     participant R as R2 Storage
 
     F->>A: POST /api/render {projectId}
@@ -105,8 +105,8 @@ sequenceDiagram
 ### Worker (`shortsai-api/worker`)
 - **Tech**: Python 3.11, FastAPI, MoviePy.
 - **Responsabilidade**: Renderização de vídeo intensiva (CPU Bound).
-- **Hospedagem**: Google Cloud Run (Serverless) ou VPS.
-- **Escalabilidade**: Horizontal automática no Cloud Run.
+- **Hospedagem**: VPS (Docker Compose).
+- **Nota**: Código compatível com Cloud Run (Serverless) para escala futura, mas rodando localmente por questões de performance/custo.
 
 ### Armazenamento
 - **Banco**: PostgreSQL (Dados relacionais).

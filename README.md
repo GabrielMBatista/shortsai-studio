@@ -1,8 +1,8 @@
 # 🎬 ShortsAI Studio
 
-> **Plataforma de Criação de Vídeos Curtos com Google Gemini 2.5 & Arquitetura Híbrida**
+> **Plataforma de Criação de Vídeos Curtos com Google Gemini 2.5**
 
-O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em vídeos verticais prontos para publicação. Diferente de geradores comuns, ele utiliza uma **Arquitetura Híbrida (Sync Engine)**: funciona offline usando IndexedDB e sincroniza automaticamente com um backend REST quando online.
+O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em vídeos verticais prontos para publicação. Ele atua como um editor inteligente assistido por IA, integrando roteirização, geração de media e renderização na nuvem.
 
 ## ✨ Funcionalidades Principais
 
@@ -13,14 +13,11 @@ O **ShortsAI Studio** é uma aplicação web moderna que transforma ideias em v�
 - **Geração de Imagens**: Criação de storyboards 9:16 (`gemini-2.5-flash-image`).
 - **Narração Neural (TTS)**: Vozes ultra-realistas via Gemini, ElevenLabs ou Groq (Llama 3).
 
-### 🎥 Exportação de Vídeo (Server-Side Rendering)
-- **Renderização na Nuvem**: Processamento pesado movido para **Google Cloud Run** (Python Worker).
-- **Alta Performance**: Evita travamentos no navegador delegando a renderização para workers escaláveis.
-- **Pipeline Automatizado**: O frontend solicita a geração e recebe o vídeo pronto via polling.
+### 🎥 Exportação de Vídeo
+- **Renderização Server-Side**: Processamento pesado movido para o **Backend Worker** (VPS), garantindo alta qualidade com efeitos visuais (Zoom/Pan).
+- **Preview Local**: Visualização rápida do videoclipe no navegador antes da exportação final.
 - **Formatos**: Vídeos MP4 otimizados para Shorts/Reels/TikTok.
 - **R2 Storage**: Assets e vídeos finais hospedados globalmente com Cloudflare R2.
-
-### 🏗️ Arquitetura & Engenharia
 
 ### Pré-requisitos
 *   **Node.js** (v18+)
