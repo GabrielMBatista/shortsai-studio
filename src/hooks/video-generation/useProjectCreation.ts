@@ -189,7 +189,26 @@ export const useProjectCreation = (
                     targetScenes: durationConfig.targetScenes
                 });
                 scenes = result.scenes;
-                metadata = result.metadata;
+
+                // Combine SEO metadata into the description field for storage
+                const shortsTags = (result.metadata.shortsHashtags || []).join(' ');
+                const tiktokTags = (result.metadata.tiktokHashtags || []).join(' ');
+                const tiktokText = result.metadata.tiktokText || ""; // User requested "Texto para TikTok"
+
+                const richDescription = [
+                    result.metadata.description,
+                    "",
+                    shortsTags,
+                    "",
+                    "--- TikTok Strategy ---",
+                    tiktokText,
+                    tiktokTags
+                ].filter(Boolean).join('\n');
+
+                metadata = {
+                    title: result.metadata.title,
+                    description: richDescription
+                };
             }
 
             let bgMusicPrompt = "";
