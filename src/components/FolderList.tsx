@@ -18,7 +18,7 @@ interface FolderListProps {
     className?: string;
     isLoading?: boolean;
     updatingFolderId?: string | null;
-    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export') => void;
+    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | 'folders') => void;
 }
 
 const FolderList: React.FC<FolderListProps> = ({
@@ -211,6 +211,7 @@ const FolderList: React.FC<FolderListProps> = ({
                 <div className="flex gap-1">
                     {!isCollapsed && (
                         <button
+                            id="btn-create-root-folder"
                             onClick={() => setIsCreatingRoot(true)}
                             className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
                         >
@@ -233,6 +234,7 @@ const FolderList: React.FC<FolderListProps> = ({
             <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
                 <DroppableFolder id="root" className={`rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}>
                     <button
+                        id="folder-list-root-item"
                         onClick={() => {
                             onSelectFolder(null);
                             setExpandedFolders(new Set());
@@ -275,7 +277,7 @@ const FolderList: React.FC<FolderListProps> = ({
                     </div>
                 )}
 
-                <div className="space-y-1 pt-1">
+                <div className="space-y-1 pt-1" id="folder-tree-container">
                     {isLoading ? (
                         Array.from({ length: 5 }).map((_, i) => (
                             <div key={i} className={`h-9 rounded-lg bg-slate-800/50 animate-pulse ${isCollapsed ? 'mx-1' : ''}`} />
@@ -289,7 +291,7 @@ const FolderList: React.FC<FolderListProps> = ({
                 <div className={`mt-4 border-t border-slate-800 pt-2 flex-col gap-1 pb-4 flex`}>
                     {!isCollapsed && <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-2 mb-1">{t('nav.tours_title')}</h3>}
                     {/* ...Tours buttons kept same as original, just re-rendering to ensure structure ... */}
-                    {['settings', 'creation', 'script', 'preview', 'export'].map(tour => (
+                    {['settings', 'creation', 'script', 'preview', 'export', 'folders'].map(tour => (
                         <button
                             key={tour}
                             onClick={() => onStartTour(tour as any)}
@@ -301,6 +303,7 @@ const FolderList: React.FC<FolderListProps> = ({
                             {tour === 'script' && <FileText className="w-4 h-4 flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite_1.2s] text-purple-400/70" />}
                             {tour === 'preview' && <Video className="w-4 h-4 flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite_1.8s] text-orange-400/70" />}
                             {tour === 'export' && <Download className="w-4 h-4 flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite_2.4s] text-pink-400/70" />}
+                            {tour === 'folders' && <Folder className="w-4 h-4 flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite_3.0s] text-yellow-400/70" />}
                             {!isCollapsed && <span className="text-sm truncate">{t(`nav.${tour}_tour`)}</span>}
                         </button>
                     ))}
@@ -322,6 +325,7 @@ const DroppableFolder: React.FC<DroppableFolderProps> = ({ id, children, classNa
         <div
             ref={setNodeRef}
             className={`${className || ''} transition-all duration-200 ${isOver ? 'bg-indigo-500/40 ring-2 ring-indigo-400 ring-inset scale-[1.02] shadow-lg shadow-indigo-500/20 z-10' : ''}`}
+            id={id === 'root' ? 'root-folder-droppable' : undefined}
         >
             {children}
         </div>
@@ -373,6 +377,7 @@ const DraggableDroppableFolder: React.FC<{
 
         return (
             <div
+                id={`folder-item-${folder.id}`}
                 ref={(node) => {
                     setDropRef(node);
                     // We don't necessarily want the WHOLE drop area to be the drag handle, but consistent with request.
@@ -450,6 +455,7 @@ const DraggableDroppableFolder: React.FC<{
                             {!isCollapsed && (
                                 <div className="relative">
                                     <button
+                                        id={`folder-menu-btn-${folder.id}`}
                                         onPointerDown={(e) => e.stopPropagation()} // Prevent drag start when clicking menu
                                         onClick={(e) => onMenuToggle(e)}
                                         className={`p-1 rounded hover:bg-slate-700 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity ${menuOpenId === folder.id ? 'opacity-100 bg-slate-700' : ''}`}

@@ -43,9 +43,9 @@ export const ScriptConfig: React.FC<ScriptConfigProps> = ({
 
             <div className="space-y-4">
                 <div className="relative group">
-                    <label htmlFor="topic" className="sr-only">Topic</label>
+                    <label htmlFor="input-topic" className="sr-only">Topic</label>
                     <textarea
-                        id="topic"
+                        id="input-topic"
                         name="topic"
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
@@ -64,10 +64,10 @@ export const ScriptConfig: React.FC<ScriptConfigProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="language" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t('input.output_language')}</label>
+                        <label htmlFor="input-language" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{t('input.output_language')}</label>
                         <div className="relative">
                             <select
-                                id="language"
+                                id="input-language"
                                 name="language"
                                 value={language}
                                 onChange={(e) => setLanguage(e.target.value)}
@@ -85,7 +85,7 @@ export const ScriptConfig: React.FC<ScriptConfigProps> = ({
                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1 flex items-center gap-1">
                             <Clock className="w-3 h-3" /> {t('input.target_duration')}
                         </label>
-                        <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-3">
+                        <div id="input-duration" className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-3">
                             <label htmlFor="minDuration" className="sr-only">Min Duration</label>
                             <input
                                 id="minDuration"

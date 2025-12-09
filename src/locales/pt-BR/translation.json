@@ -24,6 +24,7 @@
         "script_tour": "Tour do Roteiro",
         "preview_tour": "Tour de Preview",
         "export_tour": "Tour de Exportação",
+        "folders_tour": "Tour de Pastas",
         "guides": "Guias e Modelos"
     },
     "guides": {
@@ -344,6 +345,12 @@
             "fps_step": "60 FPS para movimentos fluídos. 30 FPS para tamanho menor.",
             "merge_step": "Adicione um vídeo de encerramento (outro) automático ao final.",
             "confirm_step": "Clique aqui para solicitar a renderização do vídeo no servidor."
+        },
+        "folders": {
+            "welcome": "Organize seu trabalho com Pastas. Arraste e solte projetos!",
+            "create": "Crie uma nova pasta.",
+            "root": "Visualize todos os projetos aqui.",
+            "drag": "Arraste pastas para dentro de outras pastas para organizar."
         }
     },
     "quota": {

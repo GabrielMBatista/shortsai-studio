@@ -14,7 +14,7 @@ interface VideoPlayerProps {
   title?: string;
   projectId?: string;
   onStartTour: (tour: 'preview' | 'export') => void;
-  activeTour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | null;
+  activeTour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | 'folders' | null;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, title = "shorts-ai-video", projectId, onStartTour, activeTour }) => {

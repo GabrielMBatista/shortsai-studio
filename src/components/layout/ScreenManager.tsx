@@ -82,8 +82,8 @@ interface ScreenManagerProps {
     regenerateScript: () => Promise<void>;
     onExport: () => void;
     getDisplayTitle: (p: VideoProject) => string;
-    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export') => void;
-    activeTour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | null;
+    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | 'folders') => void;
+    activeTour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | 'folders' | null;
 }
 
 const ScreenManager: React.FC<ScreenManagerProps> = ({

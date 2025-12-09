@@ -180,3 +180,26 @@ export const getExportTourSteps = (t: TFunction): Step[] => [
         placement: 'top',
     }
 ].map(step => ({ ...step, disableBeacon: true })) as Step[];
+
+export const getFoldersTourSteps = (t: TFunction): Step[] => [
+    {
+        target: '#folder-tree-container',
+        content: t('tour.folders.welcome'),
+        placement: 'right',
+    },
+    {
+        target: '#btn-create-root-folder',
+        content: t('tour.folders.create'),
+        placement: 'bottom',
+    },
+    {
+        target: '#folder-list-root-item',
+        content: t('tour.folders.root'),
+        placement: 'right',
+    },
+    {
+        target: '#folder-tree-container',
+        content: t('tour.folders.drag'),
+        placement: 'right',
+    }
+].map(step => ({ ...step, disableBeacon: true })) as Step[];

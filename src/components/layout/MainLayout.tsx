@@ -21,7 +21,7 @@ interface MainLayoutProps {
     runTutorial: boolean;
     tutorialSteps: Step[];
     onFinishTutorial: () => void;
-    onStartTour: (tour: 'settings' | 'creation' | 'script') => void;
+    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | 'folders') => void;
     deleteModal: { isOpen: boolean; projectId: string | null };
     onConfirmDelete: () => void;
     onCancelDelete: () => void;

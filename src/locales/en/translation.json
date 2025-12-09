@@ -24,6 +24,7 @@
         "script_tour": "Script Tour",
         "preview_tour": "Preview Tour",
         "export_tour": "Export Tour",
+        "folders_tour": "Folders Tour",
         "guides": "Guides & Templates"
     },
     "guides": {
@@ -332,6 +333,12 @@
             "fps_step": "60 FPS for smoother motion. 30 FPS for smaller size.",
             "merge_step": "Append an outro video automatically at the end.",
             "confirm_step": "Click here to request video rendering on the server."
+        },
+        "folders": {
+            "welcome": "Organize your work with Folders. Drag & drop projects!",
+            "create": "Create a new folder.",
+            "root": "View all projects here.",
+            "drag": "Drag folders into other folders to organize."
         }
     }
 }

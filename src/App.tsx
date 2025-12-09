@@ -11,7 +11,7 @@ import MainLayout from './components/layout/MainLayout';
 import ScreenManager from './components/layout/ScreenManager';
 import { useAuth } from './hooks/useAuth';
 import { useAutosave } from './hooks/useAutosave';
-import { getSettingsTourSteps, getCreationTourSteps, getScriptTourSteps, getPreviewTourSteps, getExportTourSteps } from './constants/tourSteps';
+import { getSettingsTourSteps, getCreationTourSteps, getScriptTourSteps, getPreviewTourSteps, getExportTourSteps, getFoldersTourSteps } from './constants/tourSteps';
 import { MOCK_PROJECT_TOUR, MOCK_PROJECT_PREVIEW } from './constants/mockProject';
 
 const App: React.FC = () => {
@@ -24,7 +24,7 @@ const App: React.FC = () => {
 
     // Tour State
     const [runTutorial, setRunTutorial] = useState(false);
-    const [activeTour, setActiveTour] = useState<'settings' | 'creation' | 'script' | 'preview' | 'export' | null>(null);
+    const [activeTour, setActiveTour] = useState<'settings' | 'creation' | 'script' | 'preview' | 'export' | 'folders' | null>(null);
     const [tutorialSteps, setTutorialSteps] = useState<Step[]>([]);
 
     // Dashboard State
@@ -114,7 +114,7 @@ const App: React.FC = () => {
         localStorage.setItem('shortsai_last_step', newStep);
     };
 
-    const handleStartTour = (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export') => {
+    const handleStartTour = (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | 'folders') => {
         setActiveTour(tour);
         if (tour === 'settings') {
             handleSetStep(AppStep.SETTINGS);
@@ -146,6 +146,10 @@ const App: React.FC = () => {
             }
             handleSetStep(AppStep.PREVIEW);
             setTutorialSteps(getExportTourSteps(t));
+        } else if (tour === 'folders') {
+            // Ensure we are in Dashboard to see folders
+            handleSetStep(AppStep.DASHBOARD);
+            setTutorialSteps(getFoldersTourSteps(t));
         }
         // Export tour needs longer delay to wait for modal open (1000ms in VideoPlayer)
         const delay = tour === 'export' ? 2000 : 800;

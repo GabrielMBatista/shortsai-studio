@@ -27,7 +27,7 @@ interface DashboardProps {
     setSelectedFolderId: (id: string | null) => void;
     showArchived: boolean;
     setShowArchived: (show: boolean) => void;
-    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export') => void;
+    onStartTour: (tour: 'settings' | 'creation' | 'script' | 'preview' | 'export' | 'folders') => void;
 }
 
 const useIsMobile = () => {
