@@ -116,7 +116,18 @@ export const useProjectCreation = (
                                     folderId: dayId
                                 };
 
-                                await saveProject(newProject, true);
+                                const saved = await saveProject(newProject, true);
+
+                                // Robustness: Explicitly patch folder_id in case creation dropped it (stale API)
+                                if (dayId) {
+                                    try {
+                                        // Dynamically import to ensure availability
+                                        const { patchProjectMetadata } = await import('../../services/projects');
+                                        await patchProjectMetadata(saved.id, { folder_id: dayId });
+                                    } catch (patchErr) {
+                                        console.warn("Failed to patch folder_id", patchErr);
+                                    }
+                                }
                             }
                         }
 
