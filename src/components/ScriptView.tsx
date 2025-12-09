@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED, ApiKeys } from '../types';
+import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED, ApiKeys, User } from '../types';
 import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download, Plus, Clock, Video } from 'lucide-react';
 import { generatePreviewAudio, getVoices } from '../services/geminiService';
 import SceneCard from './script/SceneCard';
@@ -8,6 +8,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
 import { SortableSceneCard } from './script/SortableSceneCard';
 import { useTranslation } from 'react-i18next';
+import { useCharacterLibrary } from '../hooks/useCharacterLibrary';
 
 interface ScriptViewProps {
     projectTopic: string;
@@ -53,6 +54,7 @@ interface ScriptViewProps {
     apiKeys: ApiKeys;
     showToast?: (msg: string, type: 'success' | 'error' | 'info') => void;
     projectCharacters: import('../types').SavedCharacter[];
+    currentUser?: User | null;
 }
 
 // Helper to detect mock projects
@@ -165,7 +167,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     onStartImageGeneration, onGenerateImagesOnly, onGenerateAudioOnly, onRegenerateAudio, onRegenerateSceneImage, onRegenerateSceneAudio, onRegenerateSceneVideo, onUpdateScene, isGeneratingImages, onCancelGeneration,
     canPreview, onPreview, includeMusic, musicStatus, musicUrl, musicPrompt, onRegenerateMusic, onRegenerateScript,
     isPaused, fatalError, onResume, onSkip, generationMessage, onRemoveScene, onAddScene, onExport, onUpdateProjectSettings, onReorderScenes, projectId, userId, apiKeys,
-    showToast, projectCharacters
+    showToast, projectCharacters, currentUser
 }) => {
     const { t } = useTranslation();
     const [selectedProvider, setSelectedProvider] = useState<TTSProvider>(projectProvider);
@@ -180,6 +182,14 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     const [isAddingScene, setIsAddingScene] = useState(false);
     const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
     const prevSceneCount = useRef(scenes.length);
+
+    // Fetch Global Character Library to allow linking any character
+    const { characters: libraryCharacters } = useCharacterLibrary(currentUser || null);
+
+    // Merge logic: prefer libraryCharacters, but fallback to projectCharacters if library not loaded yet or empty?
+    // Actually, libraryCharacters should be the source of truth for "Available Characters to Link".
+    // We use libraryCharacters instead of projectCharacters prop to show ALL characters.
+    const availableCharacters = libraryCharacters && libraryCharacters.length > 0 ? libraryCharacters : projectCharacters;
 
     useEffect(() => {
         if (scenes.length > prevSceneCount.current) {
@@ -710,7 +720,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                     userId={userId}
                                     apiKeys={apiKeys}
                                     videoModel={selectedVideoModel}
-                                    projectCharacters={projectCharacters}
+                                    projectCharacters={availableCharacters}
                                 />
                             );
                         })}

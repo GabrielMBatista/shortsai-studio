@@ -225,6 +225,7 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
                         apiKeys={currentUser?.apiKeys || {}}
                         showToast={showToast}
                         projectCharacters={project.projectCharacters || []}
+                        currentUser={currentUser}
                     />
                 ) : null
             )}
