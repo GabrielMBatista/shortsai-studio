@@ -23,7 +23,20 @@
         "creation_tour": "Tour de Criação",
         "script_tour": "Tour do Roteiro",
         "preview_tour": "Tour de Preview",
-        "export_tour": "Tour de Exportação"
+        "export_tour": "Tour de Exportação",
+        "guides": "Guias e Modelos"
+    },
+    "guides": {
+        "title": "Guias & Templates",
+        "chatgpt_title": "Prompts de IA (Texto)",
+        "json_title": "Schema JSON (Lote)",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "tip": "Dica",
+        "batch_tip": "Gerar em Lote",
+        "chatgpt_desc": "Use este prompt em qualquer modelo de IA (ChatGPT, Claude, Llama) para gerar roteiros compatíveis.",
+        "json_desc": "Estrutura para criação de projetos em massa via API ou Importação.",
+        "prompt_template": "Modelo de Prompt"
     },
     "folders": {
         "title": "Pastas",

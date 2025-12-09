@@ -1,0 +1,178 @@
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Book, Code, Copy, Check, Terminal, FileJson, MessageSquare } from 'lucide-react';
+
+export const GuideView: React.FC = () => {
+    const { t } = useTranslation();
+    const [activeSection, setActiveSection] = useState('chatgpt');
+
+    const sections = [
+        { id: 'chatgpt', label: t('guides.chatgpt_title', 'ChatGPT Prompts'), icon: MessageSquare },
+        { id: 'json-schema', label: t('guides.json_title', 'JSON Schema (Batch)'), icon: FileJson },
+    ];
+
+    return (
+        <div className="flex h-screen bg-[#0f172a] text-slate-200 overflow-hidden">
+            {/* Sidebar */}
+            <div className="w-64 border-r border-slate-800 flex-shrink-0 flex flex-col pt-4 overflow-y-auto bg-[#0f172a]">
+                <div className="px-6 mb-8">
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <Book className="w-5 h-5 text-indigo-500" />
+                        {t('guides.title', 'Guides & Templates')}
+                    </h2>
+                </div>
+                <nav className="flex-1 px-4 space-y-1">
+                    {sections.map(section => (
+                        <button
+                            key={section.id}
+                            onClick={() => setActiveSection(section.id)}
+                            className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeSection === section.id
+                                ? 'bg-indigo-500/10 text-indigo-400'
+                                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                }`}
+                        >
+                            <section.icon className="w-4 h-4" />
+                            {section.label}
+                        </button>
+                    ))}
+                </nav>
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto p-8 lg:p-12 relative">
+                <div className="max-w-3xl mx-auto space-y-12">
+                    {activeSection === 'chatgpt' && <ChatGPTGuide />}
+                    {activeSection === 'json-schema' && <JsonSchemaGuide />}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ChatGPTGuide = () => {
+    const { t } = useTranslation();
+    const [copied, setCopied] = useState(false);
+    const code = `I want to create a short video script about [TOPIC]. 
+Please generate a structured JSON output with the following format:
+
+{
+  "topic": "[TOPIC]",
+  "scenes": [
+    {
+      "scene_number": 1,
+      "visual_description": "Detailed visual description for Image/Video generation...",
+      "narration": "Text for the voiceover...",
+      "duration_seconds": 5
+    }
+  ]
+}
+
+Make sure the narration is engaging and the visual descriptions are vivid and suitable for AI image generation.`;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <section className="space-y-6">
+            <header className="border-b border-slate-800 pb-4">
+                <h1 className="text-3xl font-bold text-white mb-2">{t('guides.chatgpt_title', 'AI Text Model Prompts')}</h1>
+                <p className="text-slate-400 text-lg">{t('guides.chatgpt_desc', 'Use this prompt with any AI model to generate compatible scripts.')}</p>
+            </header>
+
+            <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-800/50 border-b border-slate-700">
+                    <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+                        <Terminal className="w-4 h-4" />
+                        <span>{t('guides.prompt_template')}</span>
+                    </div>
+                    <button
+                        onClick={handleCopy}
+                        className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors"
+                    >
+                        {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copied ? t('guides.copied') : t('guides.copy')}
+                    </button>
+                </div>
+                <div className="p-4 overflow-x-auto">
+                    <pre className="font-mono text-sm text-indigo-300 leading-relaxed whitespace-pre-wrap">{code}</pre>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                    <h3 className="font-bold text-white mb-2">💡 {t('guides.tip')}</h3>
+                    <p className="text-sm text-slate-400">Replace <span className="text-indigo-400 font-mono">[TOPIC]</span> with your specific subject matter (e.g., "The History of Rome" or "SpaceX Starship Launch").</p>
+                </div>
+                <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                    <h3 className="font-bold text-white mb-2">🚀 Batch Creation</h3>
+                    <p className="text-sm text-slate-400">You can ask ChatGPT to "Generate 5 different scripts" using this same format, then copy each JSON block.</p>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const JsonSchemaGuide = () => {
+    const { t } = useTranslation();
+    const [copied, setCopied] = useState(false);
+    const code = `{
+  "batches": [
+    {
+      "topic": "Example Project 1",
+      "style": "Cinematic",
+      "voice": "Puck",
+      "scenes": [
+        {
+          "narration": "Welcome to the future.",
+          "visual_description": "Futuristic city skyline at sunset",
+          "duration_seconds": 4
+        }
+      ]
+    },
+    {
+      "topic": "Example Project 2",
+      "style": "Cyberpunk",
+      "scenes": [...]
+    }
+  ]
+}`;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <section className="space-y-6">
+            <header className="border-b border-slate-800 pb-4">
+                <h1 className="text-3xl font-bold text-white mb-2">{t('guides.json_title')}</h1>
+                <p className="text-slate-400 text-lg">{t('guides.json_desc')}</p>
+            </header>
+
+            <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-800/50 border-b border-slate-700">
+                    <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+                        <FileJson className="w-4 h-4" />
+                        <span>batch_import.json</span>
+                    </div>
+                    <button
+                        onClick={handleCopy}
+                        className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors"
+                    >
+                        {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copied ? t('guides.copied') : t('guides.copy')}
+                    </button>
+                </div>
+                <div className="p-4 overflow-x-auto">
+                    <pre className="font-mono text-sm text-emerald-300 leading-relaxed whitespace-pre-wrap">{code}</pre>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+export default GuideView;

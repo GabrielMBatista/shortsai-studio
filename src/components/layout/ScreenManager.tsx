@@ -8,6 +8,7 @@ import VideoPlayer from '../VideoPlayer';
 import AdminDashboard from '../AdminDashboard';
 import Loader from '../Loader';
 import ShowsView from '../ShowsView';
+import GuideView from '../GuideView';
 import { useTranslation } from 'react-i18next';
 
 interface ScreenManagerProps {
@@ -238,6 +239,10 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
                     onStartTour={onStartTour}
                     activeTour={activeTour}
                 />
+            )}
+
+            {step === AppStep.GUIDES && (
+                <GuideView />
             )}
         </>
     );

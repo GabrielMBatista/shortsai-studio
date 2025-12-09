@@ -23,7 +23,20 @@
         "creation_tour": "Creation Tour",
         "script_tour": "Script Tour",
         "preview_tour": "Preview Tour",
-        "export_tour": "Export Tour"
+        "export_tour": "Export Tour",
+        "guides": "Guides & Templates"
+    },
+    "guides": {
+        "title": "Guides & Templates",
+        "chatgpt_title": "AI Text Model Prompts",
+        "json_title": "JSON Schema (Batch)",
+        "copy": "Copy",
+        "copied": "Copied",
+        "tip": "Tip",
+        "batch_tip": "Batch Generation",
+        "chatgpt_desc": "Use this prompt with any AI model (ChatGPT, Claude, Llama) to generate compatible scripts.",
+        "json_desc": "Structure for bulk project creation via API or Import.",
+        "prompt_template": "Prompt Template"
     },
     "folders": {
         "title": "Folders",

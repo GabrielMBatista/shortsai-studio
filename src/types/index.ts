@@ -9,7 +9,8 @@ export enum AppStep {
   SCRIPTING = 'SCRIPTING',
   GENERATING_IMAGES = 'GENERATING_IMAGES',
   PREVIEW = 'PREVIEW',
-  ADMIN = 'ADMIN'
+  ADMIN = 'ADMIN',
+  GUIDES = 'GUIDES'
 }
 
 // ...

@@ -122,7 +122,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                         <span className="text-sm font-bold">{t('nav.admin')}</span>
                                     </button>
                                 )}
-                                
+
                                 {/* Shows Navigation */}
                                 {currentUser.role === 'ADMIN' && (
                                     <button
@@ -133,6 +133,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                                         <span className="text-sm font-bold">Shows</span>
                                     </button>
                                 )}
+
+                                <button
+                                    onClick={() => onSetStep(AppStep.GUIDES)}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${step === AppStep.GUIDES ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                >
+                                    <HelpCircle className="w-4 h-4" />
+                                    <span className="text-sm font-bold">{t('nav.guides', 'Guides')}</span>
+                                </button>
 
                                 <button id="nav-settings" onClick={() => onSetStep(AppStep.SETTINGS)} className="flex items-center gap-2 group">
                                     <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-slate-600 transition-transform group-hover:scale-105 group-hover:border-indigo-500" />
