@@ -35,6 +35,108 @@ export const useProjectCreation = (
         try {
             const parsed = JSON.parse(topic);
 
+            // Check for Batch Schedule JSON (id_da_semana)
+            if (parsed && (parsed.id_da_semana || parsed.cronograma)) {
+                console.log("Detected Batch Schedule JSON");
+                let cronograma = null;
+                let rootName = "Semana Importada " + new Date().toLocaleDateString();
+
+                if (parsed.cronograma) {
+                    // Case: Flat structure { id_da_semana: "...", cronograma: {...} }
+                    cronograma = parsed.cronograma;
+                    if (typeof parsed.id_da_semana === 'string') {
+                        rootName = parsed.id_da_semana.replace(/_/g, ' ');
+                    }
+                } else if (typeof parsed.id_da_semana === 'object' && parsed.id_da_semana?.cronograma) {
+                    // Case: Nested structure { id_da_semana: { cronograma: {...} } }
+                    cronograma = parsed.id_da_semana.cronograma;
+                    // Attempt to name based on context
+                    if (parsed.id_da_semana.meta_global) {
+                        rootName = "Semana Nova " + new Date().toLocaleDateString();
+                    }
+                }
+
+                if (cronograma) {
+                    try {
+                        // Import dynamically to avoid circular dependencies if any, or just use imported
+                        const { createFolder } = await import('../../services/folders');
+
+                        // 1. Create Root Folder
+                        const rootFolder = await createFolder(rootName, undefined);
+                        const rootId = rootFolder.id || rootFolder._id;
+
+                        // 2. Iterate Days
+                        for (const [dayKey, dayContent] of Object.entries(cronograma)) {
+                            // dayKey: "segunda_feira"
+                            const dayName = dayKey.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+
+                            const dayFolder = await createFolder(dayName, rootId);
+                            const dayId = dayFolder.id || dayFolder._id;
+
+                            // 3. Iterate Videos
+                            const contentObj = dayContent as any;
+                            for (const [videoKey, videoData] of Object.entries(contentObj)) {
+                                if (['tema_dia', 'meta_dia'].includes(videoKey)) continue;
+                                if (!videoData || typeof videoData !== 'object') continue;
+
+                                const vData = videoData as any;
+                                if (!vData.scenes) continue;
+
+                                // Helper to generate project
+                                const newScenes = vData.scenes.map((s: any, idx: number) => ({
+                                    ...s,
+                                    visualDescription: s.visual || s.visualDescription || "Scene",
+                                    narration: s.narration || "",
+                                    sceneNumber: s.scene || s.sceneNumber || (idx + 1),
+                                    durationSeconds: 5
+                                }));
+
+                                const title = vData.titulo || vData.title || `${dayName} - ${videoKey}`;
+                                const desc = vData.hook_falado ? `Hook: ${vData.hook_falado}` : "";
+
+                                const newProject: VideoProject = {
+                                    id: crypto.randomUUID(),
+                                    userId: user.id,
+                                    createdAt: Date.now(),
+                                    topic: title, // Use title as topic to simulate intent
+                                    style,
+                                    voiceName: voice,
+                                    ttsProvider: provider,
+                                    language,
+                                    audioModel,
+                                    referenceCharacters: references,
+                                    scenes: newScenes,
+                                    generatedTitle: title,
+                                    generatedDescription: desc,
+                                    durationConfig,
+                                    includeMusic,
+                                    bgMusicStatus: includeMusic ? 'pending' : undefined,
+                                    bgMusicPrompt: includeMusic ? "Inspirational background music" : "",
+                                    status: 'draft',
+                                    folderId: dayId
+                                };
+
+                                await saveProject(newProject, true);
+                            }
+                        }
+
+                        queryClient.invalidateQueries({ queryKey: ['projects', user.id] });
+
+                        // We can't easily notify success via onError, but we can redirect.
+                        if (!skipNavigation) {
+                            onStepChange(AppStep.DASHBOARD);
+                        }
+                        return; // Exit function, job done.
+
+                    } catch (err: any) {
+                        console.error("Batch import failed", err);
+                        onError("Falha na importação em lote: " + err.message);
+                        return;
+                    }
+                }
+            }
+
+
             // Check if parsing result is an object with 'scenes' or 'script'
             if (parsed && (Array.isArray(parsed.scenes) || Array.isArray(parsed.script))) {
                 console.log("Detected pre-generated project JSON");
