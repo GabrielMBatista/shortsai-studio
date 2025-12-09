@@ -9,6 +9,7 @@ import ConfirmModal from '../ConfirmModal';
 import { SafeImage } from '../common/SafeImage';
 import { SafeVideo } from '../common/SafeVideo';
 import { useTranslation } from 'react-i18next';
+import { SceneCharacterSelector } from './SceneCharacterSelector';
 
 interface SceneCardProps {
     scene: Scene;
@@ -23,9 +24,10 @@ interface SceneCardProps {
     userId: string;
     apiKeys: ApiKeys;
     videoModel: string;
+    projectCharacters?: import('../../types').SavedCharacter[];
 }
 
-const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateImage, onRegenerateAudio, onRegenerateVideo, onUpdateScene, onRemoveScene, dragHandleProps, projectId, userId, apiKeys, videoModel }) => {
+const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateImage, onRegenerateAudio, onRegenerateVideo, onUpdateScene, onRemoveScene, dragHandleProps, projectId, userId, apiKeys, videoModel, projectCharacters }) => {
     const { t } = useTranslation();
     const { generate: generateVideo, isPending: isVideoPending } = useSceneVideoGeneration();
     const [isPromptOpen, setIsPromptOpen] = useState(false);
@@ -211,6 +213,27 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
         }
     }, [mediaData.imageUrl, scene.imageUrl]);
 
+    const selectedCharIds = scene.characters?.map(c => c.id) || [];
+
+    const handleToggleCharacter = (charId: string) => {
+        const chars = scene.characters || [];
+        const isSelected = chars.find(c => c.id === charId);
+        let newChars = [];
+
+        if (isSelected) {
+            newChars = chars.filter(c => c.id !== charId);
+        } else {
+            const charToAdd = projectCharacters?.find(c => c.id === charId);
+            if (charToAdd) newChars = [...chars, charToAdd];
+            else newChars = chars;
+        }
+        onUpdateScene(sceneIndex, { characters: newChars });
+    };
+
+    const handleClearSelection = () => {
+        onUpdateScene(sceneIndex, { characters: [] });
+    };
+
     return (
         <>
             <ConfirmModal
@@ -386,6 +409,18 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     </div>
 
                     <div className="mt-auto border-t border-slate-700/50 pt-3">
+                        {/* Character Selector */}
+                        {projectCharacters && projectCharacters.length > 0 && (
+                            <div className="mb-4">
+                                <SceneCharacterSelector
+                                    projectCharacters={projectCharacters}
+                                    selectedCharacterIds={selectedCharIds}
+                                    onToggleCharacter={handleToggleCharacter}
+                                    onClearSelection={handleClearSelection}
+                                />
+                            </div>
+                        )}
+
                         <div className="flex items-center justify-between mb-2">
                             <button
                                 id={sceneIndex === 0 ? 'scene-0-toggle-prompt' : undefined}

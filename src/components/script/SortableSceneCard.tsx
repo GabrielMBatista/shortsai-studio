@@ -17,6 +17,7 @@ interface SortableSceneCardProps {
     userId: string;
     apiKeys: ApiKeys;
     videoModel: string;
+    projectCharacters: import('../../types').SavedCharacter[];
 }
 
 export const SortableSceneCard: React.FC<SortableSceneCardProps> = (props) => {

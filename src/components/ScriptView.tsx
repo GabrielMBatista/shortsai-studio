@@ -52,6 +52,7 @@ interface ScriptViewProps {
     userId: string;
     apiKeys: ApiKeys;
     showToast?: (msg: string, type: 'success' | 'error' | 'info') => void;
+    projectCharacters: import('../types').SavedCharacter[];
 }
 
 // Helper to detect mock projects
@@ -164,7 +165,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     onStartImageGeneration, onGenerateImagesOnly, onGenerateAudioOnly, onRegenerateAudio, onRegenerateSceneImage, onRegenerateSceneAudio, onRegenerateSceneVideo, onUpdateScene, isGeneratingImages, onCancelGeneration,
     canPreview, onPreview, includeMusic, musicStatus, musicUrl, musicPrompt, onRegenerateMusic, onRegenerateScript,
     isPaused, fatalError, onResume, onSkip, generationMessage, onRemoveScene, onAddScene, onExport, onUpdateProjectSettings, onReorderScenes, projectId, userId, apiKeys,
-    showToast
+    showToast, projectCharacters
 }) => {
     const { t } = useTranslation();
     const [selectedProvider, setSelectedProvider] = useState<TTSProvider>(projectProvider);
@@ -709,6 +710,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                     userId={userId}
                                     apiKeys={apiKeys}
                                     videoModel={selectedVideoModel}
+                                    projectCharacters={projectCharacters}
                                 />
                             );
                         })}

@@ -130,6 +130,7 @@ export interface Scene {
   audioAttempts?: number;
   errorMessage?: string;
   wordTimings?: { word: string; start: number; end: number }[];
+  characters?: SavedCharacter[];
 }
 
 export type TTSProvider = 'gemini' | 'elevenlabs' | 'groq';
@@ -157,6 +158,7 @@ export interface VideoProject {
 
   // New Character Structure
   referenceCharacters?: ReferenceCharacter[];
+  projectCharacters?: SavedCharacter[]; // Full character objects from DB
 
   // Legacy fields
   referenceCharacter?: ReferenceCharacter;

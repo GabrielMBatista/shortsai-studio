@@ -120,6 +120,7 @@ export const patchScene = async (projectId: string, scene: Partial<Scene> & { sc
     if (scene.narration !== undefined) payload.narration = scene.narration;
     if (scene.visualDescription !== undefined) payload.visual_description = scene.visualDescription;
     if (scene.mediaType !== undefined) payload.media_type = scene.mediaType;
+    if (scene.characters !== undefined) payload.characterIds = scene.characters.map(c => c.id);
 
     if (Object.keys(payload).length > 0) {
         try {

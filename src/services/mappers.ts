@@ -26,6 +26,17 @@ export const toApiProject = (p: VideoProject) => {
 export const fromApiProject = (apiP: any): VideoProject => {
     const uniqueScenesMap = new Map<number, Scene>();
 
+    // Helper to map DB Character to Frontend SavedCharacter
+    const mapToSavedCharacter = (c: any) => ({
+        id: c.id,
+        userId: c.user_id,
+        name: c.name,
+        description: c.description,
+        images: c.images || [],
+        imageUrl: c.images?.[0] || '', // Legacy
+        createdAt: new Date(c.created_at).getTime()
+    });
+
     if (apiP.scenes && Array.isArray(apiP.scenes)) {
         apiP.scenes.forEach((s: any) => {
             if (!uniqueScenesMap.has(s.scene_number)) {
@@ -47,7 +58,8 @@ export const fromApiProject = (apiP: any): VideoProject => {
                     audioAttempts: s.audio_attempts || 0,
                     errorMessage: s.error_message,
                     videoStatus: s.video_status || 'pending',
-                    mediaType: s.media_type || 'image'
+                    mediaType: s.media_type || 'image',
+                    characters: s.characters ? s.characters.map(mapToSavedCharacter) : []
                 });
             }
 
@@ -76,6 +88,10 @@ export const fromApiProject = (apiP: any): VideoProject => {
         referenceImageUrl: apiP.reference_image_url || apiP.referenceImageUrl,
         scenes: Array.from(uniqueScenesMap.values()).sort((a, b) => a.sceneNumber - b.sceneNumber),
         characterIds: apiP.characterIds || apiP.character_ids || [],
+        // Map ProjectCharacters (join table) to flattened array
+        projectCharacters: apiP.ProjectCharacters
+            ? apiP.ProjectCharacters.map((pc: any) => mapToSavedCharacter(pc.characters))
+            : [],
         durationConfig: apiP.duration_config || apiP.durationConfig,
         status: apiP.status || 'draft',
         folderId: apiP.folder_id || apiP.folderId,
