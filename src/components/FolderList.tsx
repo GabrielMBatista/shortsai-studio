@@ -149,7 +149,10 @@ const FolderList: React.FC<FolderListProps> = ({
             <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
                 <DroppableFolder id="root" className={`rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}>
                     <button
-                        onClick={() => onSelectFolder(null)}
+                        onClick={() => {
+                            onSelectFolder(null);
+                            setExpandedFolders(new Set());
+                        }}
                         className={`flex items-center gap-3 px-3 py-2 w-full rounded-lg transition-colors text-sm font-medium ${selectedFolderId === null
                             ? 'bg-indigo-500/20 text-indigo-400'
                             : 'text-slate-300 hover:bg-slate-800 hover:text-white'
