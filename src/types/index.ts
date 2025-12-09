@@ -154,6 +154,7 @@ export interface VideoProject {
   voiceName: string;
   ttsProvider: TTSProvider;
   audioModel?: string;
+  videoModel?: string;
 
   language: string;
 

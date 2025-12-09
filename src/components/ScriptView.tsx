@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED, ApiKeys, User } from '../types';
-import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download, Plus, Clock, Video } from 'lucide-react';
+import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download, Plus, Clock, Video, Edit2 } from 'lucide-react';
 import { generatePreviewAudio, getVoices } from '../services/geminiService';
 import SceneCard from './script/SceneCard';
 import AudioPlayerButton from './common/AudioPlayerButton';
@@ -9,6 +9,7 @@ import { SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } fro
 import { SortableSceneCard } from './script/SortableSceneCard';
 import { useTranslation } from 'react-i18next';
 import { useCharacterLibrary } from '../hooks/useCharacterLibrary';
+import ProjectSettingsModal from './ProjectSettingsModal';
 
 interface ScriptViewProps {
     projectTopic: string;
@@ -47,7 +48,16 @@ interface ScriptViewProps {
     onRemoveScene: (index: number) => void;
     onAddScene?: () => void;
     onExport?: () => void;
-    onUpdateProjectSettings: (settings: { voiceName?: string; ttsProvider?: TTSProvider; language?: string; videoModel?: string; audioModel?: string }) => Promise<void>;
+    onUpdateProjectSettings: (settings: {
+        voiceName?: string;
+        ttsProvider?: TTSProvider;
+        language?: string;
+        videoModel?: string;
+        audioModel?: string;
+        generatedTitle?: string;
+        generatedDescription?: string;
+        characterIds?: string[];
+    }) => Promise<void>;
     onReorderScenes?: (oldIndex: number, newIndex: number) => void;
     projectId: string;
     userId: string;
@@ -175,6 +185,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     const [selectedLanguage, setSelectedLanguage] = useState(projectLanguage);
     const [selectedVideoModel, setSelectedVideoModel] = useState(projectVideoModel || 'veo-2.0-generate-001');
     const [selectedAudioModel, setSelectedAudioModel] = useState(projectAudioModel || 'eleven_turbo_v2_5');
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
     const [previewState, setPreviewState] = useState<{ status: 'idle' | 'loading' | 'playing' }>({ status: 'idle' });
     const [showMusicPrompt, setShowMusicPrompt] = useState(false);
@@ -308,6 +319,16 @@ const ScriptView: React.FC<ScriptViewProps> = ({
 
     return (
         <div className="w-full px-6 py-8 relative">
+            <ProjectSettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={() => setIsSettingsModalOpen(false)}
+                currentTitle={generatedTitle}
+                currentDescription={generatedDescription}
+                currentUser={currentUser || null}
+                initialCharacterIds={projectCharacters.map(c => c.id)}
+                onSave={onUpdateProjectSettings}
+            />
+
             {isPaused && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in-up">
                     <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl p-6">
@@ -399,12 +420,21 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                             </span>
                         </div>
 
-                        <h1 className="text-3xl font-bold text-white leading-tight tracking-tight break-words" title={generatedTitle || projectTopic}>
-                            {(() => {
-                                const text = generatedTitle || projectTopic || t('script.untitled_project');
-                                return text.trim().startsWith('{') ? t('script.untitled_project') : text;
-                            })()}
-                        </h1>
+                        <div className="flex items-center gap-3 group">
+                            <h1 className="text-3xl font-bold text-white leading-tight tracking-tight break-words" title={generatedTitle || projectTopic}>
+                                {(() => {
+                                    const text = generatedTitle || projectTopic || t('script.untitled_project');
+                                    return text.trim().startsWith('{') ? t('script.untitled_project') : text;
+                                })()}
+                            </h1>
+                            <button
+                                onClick={() => setIsSettingsModalOpen(true)}
+                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition-all"
+                                title={t('script.edit_project_settings', 'Edit Settings')}
+                            >
+                                <Edit2 className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Right Column: Controls */}

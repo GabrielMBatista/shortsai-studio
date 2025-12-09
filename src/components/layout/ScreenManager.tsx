@@ -68,7 +68,16 @@ interface ScreenManagerProps {
     removeScene: (index: number) => Promise<void>;
     addScene: () => Promise<void>;
     reorderScenes: (oldIndex: number, newIndex: number) => Promise<void>;
-    updateProjectSettings: (settings: { voiceName?: string; ttsProvider?: TTSProvider; language?: string; videoModel?: string; audioModel?: string }) => Promise<void>;
+    updateProjectSettings: (settings: {
+        voiceName?: string;
+        ttsProvider?: TTSProvider;
+        language?: string;
+        videoModel?: string;
+        audioModel?: string;
+        generatedTitle?: string;
+        generatedDescription?: string;
+        characterIds?: string[];
+    }) => Promise<void>;
     regenerateMusic: () => Promise<void>;
     regenerateScript: () => Promise<void>;
     onExport: () => void;

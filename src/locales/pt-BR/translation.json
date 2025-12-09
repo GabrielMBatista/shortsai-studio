@@ -58,7 +58,9 @@
         "home": "Home",
         "archive": "Arquivar",
         "unarchive": "Desarquivar",
-        "all": "TODOS"
+        "all": "TODOS",
+        "new_subfolder": "Nova Subpasta",
+        "new_subfolder_placeholder": "Nome da Nova Subpasta"
     },
     "dashboard": {
         "title": "Seus Projetos",

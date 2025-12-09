@@ -142,7 +142,16 @@ export const useProjectActions = (
         }
     };
 
-    const updateProjectSettings = async (settings: { voiceName?: string; ttsProvider?: TTSProvider; language?: string; videoModel?: string; audioModel?: string }) => {
+    const updateProjectSettings = async (settings: {
+        voiceName?: string;
+        ttsProvider?: TTSProvider;
+        language?: string;
+        videoModel?: string;
+        audioModel?: string;
+        generatedTitle?: string;
+        generatedDescription?: string;
+        characterIds?: string[];
+    }) => {
         if (!project) return;
         const updated = { ...project, ...settings };
         setProject(updated);

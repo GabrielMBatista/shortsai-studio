@@ -7,6 +7,7 @@ export const toApiProject = (p: VideoProject) => {
         style: p.style,
         voice_name: p.voiceName,
         tts_provider: p.ttsProvider,
+        video_model: p.videoModel,
         audio_model: p.audioModel,
         language: p.language,
         include_music: p.includeMusic,
@@ -18,7 +19,8 @@ export const toApiProject = (p: VideoProject) => {
         reference_image_url: p.referenceImageUrl,
         duration_config: p.durationConfig,
         status: p.status,
-        folder_id: p.folderId
+        folder_id: p.folderId,
+        characterIds: p.characterIds
     };
     return apiObj;
 };
@@ -77,6 +79,7 @@ export const fromApiProject = (apiP: any): VideoProject => {
         style: apiP.style,
         voiceName: apiP.voice_name || apiP.voiceName,
         ttsProvider: (apiP.tts_provider || apiP.ttsProvider) as any,
+        videoModel: apiP.video_model || apiP.videoModel,
         audioModel: apiP.audio_model || apiP.audioModel,
         language: apiP.language || 'en',
         includeMusic: apiP.include_music || apiP.includeMusic,

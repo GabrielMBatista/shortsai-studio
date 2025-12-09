@@ -392,9 +392,9 @@ const DraggableDroppableFolder: React.FC<{
                     style={{ marginLeft: !isCollapsed ? `${depth * 12}px` : 0 }}
                     onClick={(e) => {
                         onSelect();
-                        // Auto sort of expand
-                        // but we can't toggle here easily if clicking means select. 
-                        // Let's rely on arrow for toggle, or valid click.
+                        if (!isExpanded && hasChildren) {
+                            onToggle();
+                        }
                     }}
                     title={isCollapsed ? folder.name : undefined}
                 >

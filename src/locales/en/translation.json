@@ -57,7 +57,9 @@
         "home": "Home",
         "archive": "Archive",
         "unarchive": "Unarchive",
-        "all": "ALL"
+        "all": "ALL",
+        "new_subfolder": "New Subfolder",
+        "new_subfolder_placeholder": "New Subfolder Name"
     },
     "dashboard": {
         "title": "Your Projects",
