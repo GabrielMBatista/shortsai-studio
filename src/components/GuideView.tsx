@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { Book, Code, Copy, Check, Terminal, FileJson, MessageSquare } from 'lucide-react';
 
 export const GuideView: React.FC = () => {
@@ -52,7 +52,9 @@ export const GuideView: React.FC = () => {
 const ChatGPTGuide = () => {
     const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
-    const code = `I want to create a short video script about [TOPIC]. 
+    const [mode, setMode] = useState<'single' | 'batch'>('single');
+
+    const singleCode = `I want to create a short video script about [TOPIC]. 
 Please generate a structured JSON output with the following format:
 
 {
@@ -69,6 +71,10 @@ Please generate a structured JSON output with the following format:
 
 Make sure the narration is engaging and the visual descriptions are vivid and suitable for AI image generation.`;
 
+    const batchCode = t('guides.batch_prompt_code');
+
+    const code = mode === 'single' ? singleCode : batchCode;
+
     const handleCopy = () => {
         navigator.clipboard.writeText(code);
         setCopied(true);
@@ -77,9 +83,28 @@ Make sure the narration is engaging and the visual descriptions are vivid and su
 
     return (
         <section className="space-y-6">
-            <header className="border-b border-slate-800 pb-4">
-                <h1 className="text-3xl font-bold text-white mb-2">{t('guides.chatgpt_title', 'AI Text Model Prompts')}</h1>
-                <p className="text-slate-400 text-lg">{t('guides.chatgpt_desc', 'Use this prompt with any AI model to generate compatible scripts.')}</p>
+            <header className="border-b border-slate-800 pb-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-white mb-2">{t('guides.chatgpt_title')}</h1>
+                    <p className="text-slate-400 text-lg">
+                        {mode === 'single' ? t('guides.chatgpt_desc') : t('guides.batch_prompt_desc')}
+                    </p>
+                </div>
+
+                <div className="bg-slate-800 p-1 rounded-lg flex items-center">
+                    <button
+                        onClick={() => setMode('single')}
+                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${mode === 'single' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        {t('guides.single_mode', 'Single Video')}
+                    </button>
+                    <button
+                        onClick={() => setMode('batch')}
+                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${mode === 'batch' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        {t('guides.batch_mode', 'Weekly Batch')}
+                    </button>
+                </div>
             </header>
 
             <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-sm">
@@ -104,11 +129,15 @@ Make sure the narration is engaging and the visual descriptions are vivid and su
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                 <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
                     <h3 className="font-bold text-white mb-2">💡 {t('guides.tip')}</h3>
-                    <p className="text-sm text-slate-400">Replace <span className="text-indigo-400 font-mono">[TOPIC]</span> with your specific subject matter (e.g., "The History of Rome" or "SpaceX Starship Launch").</p>
+                    <p className="text-sm text-slate-400">
+                        <Trans i18nKey="guides.tip_desc">
+                            Replace <span className="text-indigo-400 font-mono">[TOPIC]</span> with your specific subject matter (e.g., "The History of Rome" or "SpaceX Starship Launch").
+                        </Trans>
+                    </p>
                 </div>
                 <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
-                    <h3 className="font-bold text-white mb-2">🚀 Batch Creation</h3>
-                    <p className="text-sm text-slate-400">You can ask ChatGPT to "Generate 5 different scripts" using this same format, then copy each JSON block.</p>
+                    <h3 className="font-bold text-white mb-2">🚀 {t('guides.batch_title')}</h3>
+                    <p className="text-sm text-slate-400">{t('guides.batch_desc')}</p>
                 </div>
             </div>
         </section>

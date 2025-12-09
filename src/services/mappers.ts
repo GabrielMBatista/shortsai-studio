@@ -89,9 +89,11 @@ export const fromApiProject = (apiP: any): VideoProject => {
         scenes: Array.from(uniqueScenesMap.values()).sort((a, b) => a.sceneNumber - b.sceneNumber),
         characterIds: apiP.characterIds || apiP.character_ids || [],
         // Map ProjectCharacters (join table) to flattened array
-        projectCharacters: apiP.ProjectCharacters
-            ? apiP.ProjectCharacters.map((pc: any) => mapToSavedCharacter(pc.characters))
-            : [],
+        projectCharacters: apiP.characters
+            ? apiP.characters.map(mapToSavedCharacter)
+            : (apiP.ProjectCharacters
+                ? apiP.ProjectCharacters.map((pc: any) => mapToSavedCharacter(pc.characters))
+                : []),
         durationConfig: apiP.duration_config || apiP.durationConfig,
         status: apiP.status || 'draft',
         folderId: apiP.folder_id || apiP.folderId,

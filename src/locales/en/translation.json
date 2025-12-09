@@ -36,7 +36,14 @@
         "batch_tip": "Batch Generation",
         "chatgpt_desc": "Use this prompt with any AI model (ChatGPT, Claude, Llama) to generate compatible scripts.",
         "json_desc": "Structure for bulk project creation via API or Import.",
-        "prompt_template": "Prompt Template"
+        "prompt_template": "Prompt Template",
+        "tip_desc": "Replace <1>[TOPIC]</1> with your specific subject matter (e.g., \"The History of Rome\" or \"SpaceX Starship Launch\").",
+        "batch_title": "Batch Creation",
+        "batch_desc": "You can ask the AI to \"Generate 5 different scripts\" using this same format, then copy each JSON block.",
+        "single_mode": "Single Video",
+        "batch_mode": "Weekly Plan (Batch)",
+        "batch_prompt_desc": "Generate a full content strategy for an entire week at once.",
+        "batch_prompt_code": "Act as a professional content strategist.\nCreate a 1-week editorial calendar (3 videos per day, 21 total) for the niche: [TOPIC].\n\nRules:\n- Target duration: 30-45 seconds per video.\n- Narration pace: 140 words/minute.\n- Visual style must be engaging and consistent.\n\nReturn ONLY valid JSON with the following structure (no markdown):\n\n{\n  \"batches\": [\n    {\n      \"topic\": \"Video Title 1 (Day 1)\",\n      \"style\": \"Cinematic\",\n      \"voice\": \"Onyx\",\n      \"scenes\": [\n        {\n          \"scene_number\": 1,\n          \"visual_description\": \"...\",\n          \"narration\": \"...\",\n          \"duration_seconds\": 5\n        }\n      ]\n    }\n    // ... other videos\n  ]\n}"
     },
     "folders": {
         "title": "Folders",
