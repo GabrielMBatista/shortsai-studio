@@ -8,6 +8,7 @@ import QuotaHud from '../QuotaHud';
 import { Film, LogOut, ChevronLeft, Shield, HelpCircle, Globe, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Step } from 'react-joyride';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -86,28 +87,24 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 hidden sm:inline">{t('app.name')}</span>
                         </div>
 
-                        {/* Module Switcher - Only visible on Dashboard or Channels */}
+                        {/* Module Switcher - Shadcn Style */}
                         {currentUser && (step === AppStep.DASHBOARD || step === AppStep.CHANNELS) && (
-                            <div className="hidden md:flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
-                                <button
-                                    onClick={() => onSetStep(AppStep.DASHBOARD)}
-                                    className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${step === AppStep.DASHBOARD
-                                            ? 'bg-indigo-500/20 text-indigo-400 shadow-sm'
-                                            : 'text-slate-400 hover:text-white'
-                                        }`}
-                                >
-                                    Studio
-                                </button>
-                                <button
-                                    onClick={() => onSetStep(AppStep.CHANNELS)}
-                                    className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${step === AppStep.CHANNELS
-                                            ? 'bg-indigo-500/20 text-indigo-400 shadow-sm'
-                                            : 'text-slate-400 hover:text-white'
-                                        }`}
-                                >
-                                    Channels
-                                </button>
-                            </div>
+                            <Tabs value={step === AppStep.CHANNELS ? 'channels' : 'studio'} onValueChange={(v) => onSetStep(v === 'channels' ? AppStep.CHANNELS : AppStep.DASHBOARD)}>
+                                <TabsList className="bg-transparent">
+                                    <TabsTrigger
+                                        value="studio"
+                                        className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-500 rounded-none px-4"
+                                    >
+                                        Studio
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="channels"
+                                        className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-500 rounded-none px-4"
+                                    >
+                                        Channels
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
                         )}
                     </div>
 
