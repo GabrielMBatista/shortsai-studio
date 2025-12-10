@@ -173,6 +173,10 @@ export interface VideoProject {
   // Metadata
   generatedTitle?: string;
   generatedDescription?: string;
+  generatedShortsHashtags?: string[];
+  generatedTiktokText?: string;
+  generatedTiktokHashtags?: string[];
+  scriptMetadata?: any; // Full JSON from script generation
 
   // Configuration Metadata
   durationConfig?: {

@@ -27,7 +27,7 @@ export const useProjectCreation = (
         if (!user) { onError("User not authenticated."); return; }
 
         let scenes: any[] = [];
-        let metadata = { title: "", description: "" };
+        let metadata: any = { title: "", description: "" };
         let finalTopic = topic;
 
         // Bypassing AI if topic is a pre-generated JSON (Bulk Import)
@@ -190,30 +190,20 @@ export const useProjectCreation = (
                 });
                 scenes = result.scenes;
 
-                // Combine SEO metadata into the description field for storage
-                const shortsTags = (result.metadata.shortsHashtags || []).join(' ');
-                const tiktokTags = (result.metadata.tiktokHashtags || []).join(' ');
-                const tiktokText = result.metadata.tiktokText || ""; // User requested "Texto para TikTok"
-
-                const richDescription = [
-                    result.metadata.description,
-                    "",
-                    shortsTags,
-                    "",
-                    "--- TikTok Strategy ---",
-                    tiktokText,
-                    tiktokTags
-                ].filter(Boolean).join('\n');
-
+                // Store metadata separately (not concatenated)
                 metadata = {
                     title: result.metadata.title,
-                    description: richDescription
+                    description: result.metadata.description,
+                    shortsHashtags: result.metadata.shortsHashtags || [],
+                    tiktokText: result.metadata.tiktokText || "",
+                    tiktokHashtags: result.metadata.tiktokHashtags || [],
+                    fullMetadata: result.metadata // Full JSON
                 };
             }
 
             let bgMusicPrompt = "";
             if (includeMusic) {
-                // Safely try to extract bgMusicPrompt if pre-generated
+                // Safely try toextract bgMusicPrompt if pre-generated
                 let preGenBgMusic = "";
                 if (isPreGenerated) {
                     try {
@@ -248,6 +238,10 @@ export const useProjectCreation = (
                 scenes,
                 generatedTitle: metadata.title || "Untitled Project",
                 generatedDescription: metadata.description || "No description generated.",
+                generatedShortsHashtags: (metadata as any).shortsHashtags || [],
+                generatedTiktokText: (metadata as any).tiktokText || "",
+                generatedTiktokHashtags: (metadata as any).tiktokHashtags || [],
+                scriptMetadata: (metadata as any).fullMetadata,
                 durationConfig,
                 includeMusic,
                 bgMusicStatus: includeMusic ? 'pending' : undefined,
