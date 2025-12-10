@@ -161,8 +161,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       if (musicRef.current) {
         musicRef.current.play().catch(e => console.error("Music play error:", e));
       }
-      if (videoRef.current) {
-        videoRef.current.play().catch(e => console.error("Video play error:", e));
+      // Play video if available and paused
+      if (videoRef.current && videoRef.current.paused) {
+        const playPromise = videoRef.current.play();
+        if (playPromise) {
+          playPromise.catch(e => {
+            // Ignore AbortError which happens when pausing quickly after playing
+            if (e.name !== 'AbortError') console.error("Video play error:", e);
+          });
+        }
       }
     } else {
       // Pause audio
@@ -295,6 +302,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             videoStatus: activeScene.videoStatus
           });
 
+
           return shouldUseVideo ? (
             <video
               ref={videoRef}
@@ -305,23 +313,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
               playsInline
               onEnded={() => setVideoEnded(true)}
               onPlay={() => {
-                console.log('[VideoPlayer] Video playing:', activeScene.sceneNumber);
                 if (audioRef.current && Math.abs(audioRef.current.currentTime - 0) > 0.5) {
                   audioRef.current.currentTime = 0;
                 }
               }}
-              onError={(e) => {
-                console.error('[VideoPlayer] Video ERROR:', {
-                  sceneNumber: activeScene.sceneNumber,
-                  error: e.currentTarget.error?.message,
-                  code: e.currentTarget.error?.code,
-                  src: videoSrc.substring(0, 150)
-                });
+              // When video is ready, if we are playing, force play
+              onCanPlay={() => {
+                if (isPlaying && videoRef.current && videoRef.current.paused) {
+                  const playPromise = videoRef.current.play();
+                  if (playPromise) {
+                    playPromise.catch(e => {
+                      if (e.name !== 'AbortError') console.error("Auto-play error:", e);
+                    });
+                  }
+                }
               }}
-              onLoadStart={() => console.log('[VideoPlayer] Video load START:', activeScene.sceneNumber)}
-              onLoadedMetadata={() => console.log('[VideoPlayer] Video metadata LOADED:', activeScene.sceneNumber)}
-              onLoadedData={() => console.log('[VideoPlayer] Video data LOADED:', activeScene.sceneNumber)}
-              onCanPlay={() => console.log('[VideoPlayer] Video CAN PLAY:', activeScene.sceneNumber)}
+              onError={(e) => {
+                // Only log real errors, not aborts/empties
+                if (e.currentTarget.error) {
+                  console.error('[VideoPlayer] Video error:', e.currentTarget.error);
+                }
+              }}
             />
           ) : (
             <SafeImage
