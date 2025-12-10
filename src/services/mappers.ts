@@ -65,6 +65,7 @@ export const fromApiProject = (apiP: any): VideoProject => {
                     errorMessage: s.error_message,
                     videoStatus: s.video_status || 'pending',
                     mediaType: s.media_type || 'image',
+                    videoModel: s.video_model || s.videoModel, // Map backend field
                     characters: s.characters ? s.characters.map(mapToSavedCharacter) : []
                 });
             }

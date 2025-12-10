@@ -337,7 +337,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                         )}
                         {hasVideo && showVideo && (
                             <div className="bg-purple-500/80 backdrop-blur px-2 py-1 rounded-md text-xs font-bold text-white pointer-events-none border border-purple-400/30 shadow-sm flex items-center gap-1">
-                                <Video className="w-3 h-3" /> {t('scene.veo_label')}
+                                <Video className="w-3 h-3" /> {scene.videoModel === 'veo3' ? 'VEO 3' : scene.videoModel === 'veo2' ? 'VEO 2' : 'VEO'}
                             </div>
                         )}
                     </div>

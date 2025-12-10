@@ -122,10 +122,11 @@ export interface Scene {
   sfxUrl?: string;
   sfxStatus: BackendSceneStatus;
 
-  // Video State (Veo 2)
+  // Video State (Veo 2/3)
   videoUrl?: string;
   videoStatus: BackendSceneStatus;
   mediaType?: string;
+  videoModel?: string; // 'veo', 'veo2', 'veo3', etc.
 
   // Orchestration Metadata
   imageAttempts?: number;
