@@ -292,15 +292,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             (!activeScene.mediaType && activeScene.videoUrl && activeScene.videoStatus === 'completed');
           const videoSrc = activeMedia.videoUrl || activeScene.videoUrl || '';
 
-          console.log('[VideoPlayer] Render decision:', {
-            sceneNumber: activeScene.sceneNumber,
-            shouldUseVideo,
-            mediaType: activeScene.mediaType,
-            activeMediaVideoUrl: activeMedia.videoUrl ? 'EXISTS' : 'MISSING',
-            activeSceneVideoUrl: activeScene.videoUrl ? 'EXISTS' : 'MISSING',
-            videoSrc: videoSrc ? 'HAS_SRC' : 'NO_SRC',
-            videoStatus: activeScene.videoStatus
-          });
+
 
 
           return shouldUseVideo ? (
