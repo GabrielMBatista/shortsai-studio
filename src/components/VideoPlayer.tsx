@@ -280,28 +280,44 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
         {/* Background Media */}
         {/* Prefer video if: 1) mediaType is explicitly 'video', OR 2) no mediaType but video available */}
-        {((activeScene.mediaType === 'video') || (!activeScene.mediaType && activeScene.videoUrl && activeScene.videoStatus === 'completed')) ? (
-          <video
-            ref={videoRef}
-            src={activeMedia.videoUrl || activeScene.videoUrl || ''}
-            poster={activeMedia.imageUrl || activeScene.imageUrl || undefined}
-            className={`w-full h-full object-cover ${videoEnded ? 'transition-transform duration-[20s] ease-linear scale-110' : 'scale-100'}`}
-            muted={true}
-            playsInline
-            onEnded={() => setVideoEnded(true)}
-            onPlay={() => {
-              if (audioRef.current && Math.abs(audioRef.current.currentTime - 0) > 0.5) {
-                audioRef.current.currentTime = 0;
-              }
-            }}
-          />
-        ) : (
-          <SafeImage
-            src={activeMedia.imageUrl || activeScene.imageUrl || ''}
-            alt={`Scene ${currentSceneIndex + 1}`}
-            className={`w-full h-full object-cover transition-transform duration-[20s] ease-linear ${isPlaying ? 'scale-110' : 'scale-100'}`}
-          />
-        )}
+        {(() => {
+          const shouldUseVideo = (activeScene.mediaType === 'video') ||
+            (!activeScene.mediaType && activeScene.videoUrl && activeScene.videoStatus === 'completed');
+          const videoSrc = activeMedia.videoUrl || activeScene.videoUrl || '';
+
+          console.log('[VideoPlayer] Render decision:', {
+            sceneNumber: activeScene.sceneNumber,
+            shouldUseVideo,
+            mediaType: activeScene.mediaType,
+            activeMediaVideoUrl: activeMedia.videoUrl ? 'EXISTS' : 'MISSING',
+            activeSceneVideoUrl: activeScene.videoUrl ? 'EXISTS' : 'MISSING',
+            videoSrc: videoSrc ? 'HAS_SRC' : 'NO_SRC',
+            videoStatus: activeScene.videoStatus
+          });
+
+          return shouldUseVideo ? (
+            <video
+              ref={videoRef}
+              src={videoSrc}
+              poster={activeMedia.imageUrl || activeScene.imageUrl || undefined}
+              className={`w-full h-full object-cover ${videoEnded ? 'transition-transform duration-[20s] ease-linear scale-110' : 'scale-100'}`}
+              muted={true}
+              playsInline
+              onEnded={() => setVideoEnded(true)}
+              onPlay={() => {
+                if (audioRef.current && Math.abs(audioRef.current.currentTime - 0) > 0.5) {
+                  audioRef.current.currentTime = 0;
+                }
+              }}
+            />
+          ) : (
+            <SafeImage
+              src={activeMedia.imageUrl || activeScene.imageUrl || ''}
+              alt={`Scene ${currentSceneIndex + 1}`}
+              className={`w-full h-full object-cover transition-transform duration-[20s] ease-linear ${isPlaying ? 'scale-110' : 'scale-100'}`}
+            />
+          );
+        })()}
 
         {/* Audio Elements */}
         <audio
