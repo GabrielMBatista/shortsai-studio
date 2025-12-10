@@ -32,10 +32,9 @@ interface InputSectionProps {
     loadingMessage?: string;
     showToast: (message: string, type: ToastType) => void;
     editingProject?: import('../types').VideoProject | null;
-    onCancelEdit?: () => void;
 }
 
-const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading, loadingMessage, showToast, editingProject, onCancelEdit }) => {
+const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading, loadingMessage, showToast, editingProject }) => {
     const { t } = useTranslation();
     const { characters, addCharacter, removeCharacter, isLoading: isCharLoading } = useCharacterLibrary(user);
 

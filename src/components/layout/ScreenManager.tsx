@@ -192,7 +192,6 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
                     loadingMessage={generationMessage}
                     showToast={showToast}
                     editingProject={project}
-                    onCancelEdit={() => onSetStep(AppStep.DASHBOARD)}
                 />
             )}
 
