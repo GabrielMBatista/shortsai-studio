@@ -15,7 +15,8 @@ export const prepareAssets = async (
         let videoDuration = 0;
         let lastFrameImg: HTMLImageElement | null = null;
 
-        const useVideo = (s.mediaType === 'video' || (!s.mediaType && s.videoUrl)) && s.videoUrl && s.videoStatus === 'completed';
+        // Prefer video if: 1) mediaType is explicitly 'video', OR 2) no mediaType but video available and completed
+        const useVideo = (s.mediaType === 'video' || (!s.mediaType && s.videoUrl && s.videoStatus === 'completed')) && s.videoUrl && s.videoStatus === 'completed';
 
         if (useVideo) {
             try {

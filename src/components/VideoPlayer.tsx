@@ -260,10 +260,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         )}
 
         {/* Background Media */}
-        {activeScene.mediaType !== 'image' && (
-          (activeScene.mediaType === 'video' || (activeScene.videoUrl && activeScene.videoStatus === 'completed')) ||
-          (activeMedia.videoUrl)
-        ) ? (
+        {/* Prefer video if: 1) mediaType is explicitly 'video', OR 2) no mediaType but video available */}
+        {((activeScene.mediaType === 'video') || (!activeScene.mediaType && activeScene.videoUrl && activeScene.videoStatus === 'completed')) ? (
           <video
             ref={videoRef}
             src={activeMedia.videoUrl || activeScene.videoUrl || ''}

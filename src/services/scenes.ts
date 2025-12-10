@@ -111,10 +111,10 @@ export const reportSceneError = async (projectId: string, sceneId: string, asset
 
 export const patchScene = async (projectId: string, scene: Partial<Scene> & { sceneNumber: number }) => {
     const project = await getProject(projectId);
-    if (!project) return;
+    if (!project) return null;
 
     const targetScene = project.scenes.find(s => s.sceneNumber === scene.sceneNumber);
-    if (!targetScene || !targetScene.id) return;
+    if (!targetScene || !targetScene.id) return null;
 
     const payload: any = {};
     if (scene.narration !== undefined) payload.narration = scene.narration;
@@ -124,12 +124,31 @@ export const patchScene = async (projectId: string, scene: Partial<Scene> & { sc
 
     if (Object.keys(payload).length > 0) {
         try {
-            await apiFetch(`/scenes/${targetScene.id}`, {
+            const res = await apiFetch(`/scenes/${targetScene.id}`, {
                 method: 'PATCH',
                 body: JSON.stringify(payload)
             });
-        } catch (e) { console.warn("Patch scene failed", e); }
+
+            // Return updated scene data from backend
+            return {
+                ...res,
+                sceneNumber: res.scene_number,
+                imageStatus: res.image_status,
+                audioStatus: res.audio_status,
+                imageUrl: res.image_url,
+                audioUrl: res.audio_url,
+                sfxUrl: res.sfx_url,
+                sfxStatus: res.sfx_status,
+                videoUrl: res.video_url,
+                videoStatus: res.video_status,
+                mediaType: res.media_type
+            } as Scene;
+        } catch (e) {
+            console.warn("Patch scene failed", e);
+            return null;
+        }
     }
+    return null;
 };
 
 export const deleteScene = async (sceneId: string) => {

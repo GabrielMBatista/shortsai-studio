@@ -23,13 +23,22 @@ export const useProjectActions = (
 
         if (isMock) return;
 
-        // Persist to Backend
+        // Persist to Backend and sync with server response
         if (scene.id) {
             try {
-                await patchScene(project.id, { sceneNumber: scene.sceneNumber, ...updates });
+                const updatedScene = await patchScene(project.id, { sceneNumber: scene.sceneNumber, ...updates });
+
+                // If backend returned updated data, sync local state with it
+                if (updatedScene) {
+                    const syncedScenes = [...project.scenes];
+                    syncedScenes[index] = { ...syncedScenes[index], ...updatedScene };
+                    setProject({ ...project, scenes: syncedScenes });
+                }
             } catch (e) {
                 console.error("Failed to update scene", e);
                 onError("Failed to save changes.");
+                // Revert optimistic update on error
+                setProject({ ...project });
             }
         }
     };
