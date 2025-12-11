@@ -212,7 +212,20 @@ const ChannelsPage: React.FC = () => {
     };
 
     const handleConnect = () => {
-        window.location.href = `${apiUrl}/auth/signin/google?callbackUrl=${window.location.origin}`;
+        // Authenticated users need to force a re-auth to add new accounts.
+        // Using form submit to force correct flow in Auth.js v5 which prefers POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `${apiUrl}/auth/signin/google`;
+
+        const callbackInput = document.createElement('input');
+        callbackInput.type = 'hidden';
+        callbackInput.name = 'callbackUrl';
+        callbackInput.value = window.location.origin;
+        form.appendChild(callbackInput);
+
+        document.body.appendChild(form);
+        form.submit();
     };
 
     const formatNumber = (num?: string) => {
