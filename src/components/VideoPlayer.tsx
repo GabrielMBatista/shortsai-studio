@@ -154,12 +154,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(e => {
-            console.error("Audio play error:", e);
+            if (e.name !== 'AbortError') {
+              console.error("Audio play error:", e);
+            }
           });
         }
       }
       if (musicRef.current) {
-        musicRef.current.play().catch(e => console.error("Music play error:", e));
+        musicRef.current.play().catch(e => {
+          if (e.name !== 'AbortError') {
+            console.error("Music play error:", e);
+          }
+        });
       }
       // Play video if available and paused
       if (videoRef.current && videoRef.current.paused) {
