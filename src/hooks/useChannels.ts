@@ -29,7 +29,7 @@ export function useChannels() {
         try {
             const updated = await channelsApi.assignPersona(channelId, personaId);
             setChannels(prev =>
-                prev.map(ch => ch.id === channelId ? updated : ch)
+                prev.map(ch => ch.id === channelId ? { ...ch, ...updated } : ch)
             );
             return updated;
         } catch (err: any) {
@@ -37,11 +37,18 @@ export function useChannels() {
         }
     };
 
+    const updateChannel = (updated: Channel) => {
+        setChannels(prev =>
+            prev.map(ch => ch.id === updated.id ? updated : ch)
+        );
+    };
+
     return {
         channels,
         loading,
         error,
         refetch: loadChannels,
-        assignPersona
+        assignPersona,
+        updateChannel
     };
 }

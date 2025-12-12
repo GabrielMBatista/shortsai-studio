@@ -39,6 +39,10 @@ export interface Channel {
     viewCount?: bigint;
     lastSyncedAt?: string;
     persona?: PersonaBasic;
+    account?: {
+        id: string;
+        provider: string;
+    };
     createdAt: string;
     updatedAt: string;
 }

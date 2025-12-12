@@ -25,10 +25,24 @@ export function usePersonas() {
         }
     };
 
+    const createPersona = async (data: any) => {
+        try {
+            setLoading(true);
+            const newPersona = await personasApi.create(data);
+            setPersonas(prev => [newPersona, ...prev]);
+            return newPersona;
+        } catch (err: any) {
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         personas,
         loading,
         error,
-        refetch: loadPersonas
+        refetch: loadPersonas,
+        createPersona
     };
 }
