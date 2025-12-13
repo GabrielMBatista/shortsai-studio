@@ -208,7 +208,7 @@ export interface Folder {
   name: string;
   userId: string;
   parent_id?: string | null;  // Matches backend field
-  channelId?: string | null;  // Channel association
+  channel_id?: string | null;  // Channel association
   createdAt: string;
   updatedAt: string;
   _count?: {

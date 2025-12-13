@@ -21,7 +21,7 @@ export const updateFolder = async (id: string, name?: string, parentId?: string 
     const body: any = {};
     if (name !== undefined) body.name = name;
     if (parentId !== undefined) body.parent_id = parentId;
-    if (channelId !== undefined) body.channelId = channelId;
+    if (channelId !== undefined) body.channel_id = channelId;
 
     return await apiFetch(`/folders/${id}`, {
         method: 'PATCH',

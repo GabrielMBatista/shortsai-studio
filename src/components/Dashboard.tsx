@@ -3,6 +3,8 @@ import { User, VideoProject, Folder as FolderType } from '../types';
 import { Plus, Clock, Film, Play, Trash2, Zap, Sparkles, ArrowRight, Archive, Download, Filter, MoreVertical, FolderInput, Folder, Menu, X, Loader2, HelpCircle, Settings, PlayCircle, FileText, Video, AlertTriangle, Edit2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import FolderList from './FolderList';
+import LinkChannelToFolderModal from './LinkChannelToFolderModal';
+import { useChannels } from '../hooks/useChannels';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, PointerSensor, pointerWithin } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import ProjectCard from './ProjectCard';
@@ -67,6 +69,11 @@ const Dashboard: React.FC<DashboardProps> = ({
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    // Channels for Linking
+    const { channels } = useChannels();
+    const [linkFolderModalOpen, setLinkFolderModalOpen] = useState(false);
+    const [folderLinkTarget, setFolderLinkTarget] = useState<FolderType | null>(null);
+
 
     const handleCreateFolder = async (name: string, parentId?: string) => {
         await createFolder(name, parentId);
@@ -74,8 +81,8 @@ const Dashboard: React.FC<DashboardProps> = ({
         onRefreshProjects();
     };
 
-    const handleUpdateFolder = async (id: string, name?: string, parentId?: string | null) => {
-        await updateFolder(id, name, parentId);
+    const handleUpdateFolder = async (id: string, name?: string, parentId?: string | null, channelId?: string | null) => {
+        await updateFolder(id, name, parentId, channelId);
         handleRefreshFolders();
         onRefreshProjects();
     };
@@ -287,6 +294,24 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
     };
 
+    const handleLinkToChannel = (folder: FolderType) => {
+        setFolderLinkTarget(folder);
+        setLinkFolderModalOpen(true);
+    };
+
+    const handleLinkChannelSubmit = async (channelId: string | null) => {
+        if (!folderLinkTarget) return;
+        try {
+            await handleUpdateFolder(folderLinkTarget.id, undefined, undefined, channelId);
+            setLinkFolderModalOpen(false);
+            setFolderLinkTarget(null);
+            if (showToast) showToast('Folder linked to channel successfully', 'success');
+        } catch (error) {
+            console.error(error);
+            if (showToast) showToast('Failed to link folder', 'error');
+        }
+    };
+
     const handleRequestPermanentDelete = (projectId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
@@ -362,6 +387,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     onCreateFolder={handleCreateFolder}
                     onUpdateFolder={handleUpdateFolder}
                     onDeleteFolder={handleDeleteFolder}
+                    onLinkToChannel={handleLinkToChannel}
                     isCollapsed={isSidebarCollapsed}
                     onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                     isLoading={isLoadingFolders}
@@ -624,6 +650,21 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Link Channel Modal */}
+            {folderLinkTarget && (
+                <LinkChannelToFolderModal
+                    isOpen={linkFolderModalOpen}
+                    onClose={() => {
+                        setLinkFolderModalOpen(false);
+                        setFolderLinkTarget(null);
+                    }}
+                    folderName={folderLinkTarget.name}
+                    currentChannelId={folderLinkTarget.channel_id}
+                    channels={channels}
+                    onLink={handleLinkChannelSubmit}
+                />
             )}
         </DndContext>
     );
