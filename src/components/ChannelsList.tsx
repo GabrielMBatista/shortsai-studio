@@ -53,13 +53,13 @@ export default function ChannelsList({ onConnect, onImport }: ChannelsListProps 
     };
 
     const handleSync = async (channel: Channel) => {
-        if (syncingIds.has(channel.id)) return;
-
         setSyncingIds(prev => new Set(prev).add(channel.id));
         try {
-            await refetch();
-        } catch (err) {
-            console.error("Sync failed", err);
+            // In a real app, call API to sync channel data
+            await refetch(); // Refresh all channels
+            console.log('Synced channel:', channel.name);
+        } catch (error) {
+            console.error('Failed to sync channel:', error);
         } finally {
             setSyncingIds(prev => {
                 const next = new Set(prev);
@@ -70,19 +70,22 @@ export default function ChannelsList({ onConnect, onImport }: ChannelsListProps 
     };
 
     const handleViewAnalytics = async (channel: Channel) => {
-        setSelectedChannel({ id: channel.id, name: channel.name });
-        setIsLoadingVideos(true);
+        setSelectedChannel(channel);
+        setSelectedChannelId(channel.id);
 
+        // Load videos for this channel
+        setChannelVideos([]);
         try {
-            const response = await fetch(`${apiUrl}/channels/${channel.id}/videos?accountId=${channel.googleAccountId}`);
-            if (!response.ok) throw new Error('Failed to fetch videos');
-            const videos: VideoAnalytics[] = await response.json();
-            setChannelVideos(videos);
-        } catch (err) {
-            console.error('[ChannelsList] Failed to fetch videos:', err);
-            setChannelVideos([]);
-        } finally {
-            setIsLoadingVideos(false);
+            const apiUrl = import.meta.env.VITE_API_URL || '/api';
+            const res = await fetch(`${apiUrl}/channels/${channel.id}/videos`, {
+                credentials: 'include'
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setChannelVideos(data.videos || []);
+            }
+        } catch (error) {
+            console.error('Failed to load videos:', error);
         }
     };
 
@@ -114,6 +117,15 @@ export default function ChannelsList({ onConnect, onImport }: ChannelsListProps 
                 onSelectChannel={(id) => {
                     setSelectedChannelId(id);
                     setSelectedChannel(null); // Reset details view
+                }}
+                onViewAnalytics={(channel) => {
+                    handleViewAnalytics(channel);
+                }}
+                onManageChannel={(channel) => {
+                    // TODO: Implement manage channel (could open a modal or navigate)
+                    console.log('Manage channel:', channel);
+                    // For now, just show analytics
+                    handleViewAnalytics(channel);
                 }}
                 isCollapsed={isSidebarCollapsed}
                 onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
