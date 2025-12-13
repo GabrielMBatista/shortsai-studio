@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Save, Sparkles, AlertCircle, Info, Tag } from 'lucide-react';
-import { CreatePersonaData } from '../types/personas';
+import { CreatePersonaData, Persona } from '../types/personas';
 import { useTranslation } from 'react-i18next';
 
 interface CreatePersonaModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: CreatePersonaData) => Promise<void>;
+    persona?: Persona | null; // If provided, we're editing
 }
 
-export default function CreatePersonaModal({ isOpen, onClose, onSubmit }: CreatePersonaModalProps) {
+export default function CreatePersonaModal({ isOpen, onClose, onSubmit, persona }: CreatePersonaModalProps) {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState<CreatePersonaData>({
@@ -21,6 +22,34 @@ export default function CreatePersonaModal({ isOpen, onClose, onSubmit }: Create
         tags: []
     });
     const [tagInput, setTagInput] = useState('');
+
+    // Reset or populate form when modal opens or persona changes
+    useEffect(() => {
+        if (isOpen) {
+            if (persona) {
+                // Edit mode - populate with existing data
+                setFormData({
+                    name: persona.name || '',
+                    description: persona.description || '',
+                    category: persona.category || 'general',
+                    systemInstruction: persona.systemInstruction || '',
+                    temperature: persona.temperature ?? 0.7,
+                    tags: persona.tags || []
+                });
+            } else {
+                // Create mode - reset form
+                setFormData({
+                    name: '',
+                    description: '',
+                    category: 'general',
+                    systemInstruction: '',
+                    temperature: 0.7,
+                    tags: []
+                });
+            }
+            setTagInput('');
+        }
+    }, [isOpen, persona]);
 
     if (!isOpen) return null;
 
@@ -65,9 +94,11 @@ export default function CreatePersonaModal({ isOpen, onClose, onSubmit }: Create
                     <div>
                         <h2 className="text-xl font-bold text-white flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-indigo-400" />
-                            Create New Persona
+                            {persona ? 'Edit Persona' : 'Create New Persona'}
                         </h2>
-                        <p className="text-sm text-slate-400">Define a custom AI personality for your scripts.</p>
+                        <p className="text-sm text-slate-400">
+                            {persona ? 'Update your AI personality settings.' : 'Define a custom AI personality for your scripts.'}
+                        </p>
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors p-2 hover:bg-slate-800 rounded-lg">
                         <X className="w-6 h-6" />
@@ -199,7 +230,7 @@ export default function CreatePersonaModal({ isOpen, onClose, onSubmit }: Create
                         ) : (
                             <Save className="w-4 h-4" />
                         )}
-                        Create Persona
+                        {persona ? 'Update Persona' : 'Create Persona'}
                     </button>
                 </div>
             </div>

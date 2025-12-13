@@ -255,11 +255,22 @@ const PersonaLibrary: React.FC<PersonaLibraryProps> = ({ onBack }) => {
                 </div>
             </div>
 
-            {/* Create Modal */}
+            {/* Create/Edit Modal */}
             <CreatePersonaModal
                 isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                onSubmit={async (data) => { await createPersona(data); }}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setEditingPersona(null);
+                }}
+                onSubmit={async (data) => {
+                    if (editingPersona) {
+                        await updatePersona(editingPersona.id, data);
+                    } else {
+                        await createPersona(data);
+                    }
+                    setEditingPersona(null);
+                }}
+                persona={editingPersona}
             />
         </div>
     );
