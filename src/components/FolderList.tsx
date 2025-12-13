@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
-import { Folder, Plus, MoreVertical, Edit2, Trash2, FolderOpen, Loader2, HelpCircle, PlayCircle, Settings, FileText, Video, Download, PanelLeft, ChevronLeft, ChevronRight, ChevronDown, FolderInput, GripVertical } from 'lucide-react';
+import { Folder, Plus, MoreVertical, Edit2, Trash2, FolderOpen, Loader2, HelpCircle, PlayCircle, Settings, FileText, Video, Download, PanelLeft, ChevronLeft, ChevronRight, ChevronDown, FolderInput, GripVertical, Youtube } from 'lucide-react';
 import { Folder as FolderType } from '../types';
 import { useTranslation } from 'react-i18next';
 import { CSS } from '@dnd-kit/utilities';
@@ -11,8 +11,9 @@ interface FolderListProps {
     selectedFolderId: string | null;
     onSelectFolder: (folderId: string | null) => void;
     onCreateFolder: (name: string, parentId?: string) => Promise<void>;
-    onUpdateFolder: (id: string, name?: string, parentId?: string | null) => Promise<void>;
+    onUpdateFolder: (id: string, name?: string, parentId?: string | null, channelId?: string | null) => Promise<void>;
     onDeleteFolder: (id: string) => Promise<void>;
+    onLinkToChannel?: (folder: FolderType) => void;
     isCollapsed: boolean;
     onToggleCollapse: () => void;
     className?: string;
@@ -29,6 +30,7 @@ const FolderList: React.FC<FolderListProps> = ({
     onCreateFolder,
     onUpdateFolder,
     onDeleteFolder,
+    onLinkToChannel,
     isCollapsed,
     onToggleCollapse,
     className,
@@ -169,6 +171,8 @@ const FolderList: React.FC<FolderListProps> = ({
                                     setMenuOpenId(null);
                                     if (!isExpanded) toggleFolder(folder.id);
                                 }}
+                                onLinkToChannel={onLinkToChannel}
+                                setMenuOpenId={setMenuOpenId}
                                 updatingFolderId={updatingFolderId}
                                 getInitials={getInitials}
                                 t={t}
@@ -352,13 +356,16 @@ const DraggableDroppableFolder: React.FC<{
     onRename: () => void,
     onDelete: () => void,
     onAddSubfolder: () => void,
+    onLinkToChannel?: (folder: FolderType) => void,
+    setMenuOpenId: (id: string | null) => void,
     updatingFolderId: string | null,
     getInitials: (n: string) => string,
     t: any
 }> = ({
     folder, isSelected, isCollapsed, depth, isExpanded, hasChildren, onToggle, onSelect,
     isEditing, editName, onEditNameChange, onEditSubmit, onEditBlur,
-    menuOpenId, onMenuToggle, onRename, onDelete, onAddSubfolder, updatingFolderId, getInitials, t
+    menuOpenId, onMenuToggle, onRename, onDelete, onAddSubfolder, onLinkToChannel, setMenuOpenId,
+    updatingFolderId, getInitials, t
 }) => {
         // Make it droppable (to receive files OR other folders)
         const { setNodeRef: setDropRef, isOver } = useDroppable({ id: folder.id, data: { type: 'folder', folder } });
@@ -464,7 +471,7 @@ const DraggableDroppableFolder: React.FC<{
                                     </button>
 
                                     {menuOpenId === folder.id && (
-                                        <div className="absolute right-0 top-6 w-36 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 py-1">
+                                        <div className="absolute right-0 top-6 w-44 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 py-1">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); onAddSubfolder(); }}
                                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white"
@@ -477,6 +484,19 @@ const DraggableDroppableFolder: React.FC<{
                                             >
                                                 <Edit2 className="w-3 h-3" /> {t('folders.rename')}
                                             </button>
+
+                                            {onLinkToChannel && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMenuOpenId(null);
+                                                        onLinkToChannel(folder);
+                                                    }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white border-t border-slate-700/50"
+                                                >
+                                                    <Youtube className="w-3 h-3" /> Link to Channel
+                                                </button>
+                                            )}
 
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); onDelete(); }}
