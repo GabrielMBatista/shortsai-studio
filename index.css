@@ -1,0 +1,8 @@
+/**
+ * SHORTSAI STUDIO - Main Stylesheet
+ * Imports theme and provides global styles
+ */
+
+@import './src/styles/theme.css';
+
+/* Additional global overrides can go here if needed */
