@@ -1,16 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, VideoProject, Folder as FolderType } from '../types';
+import { User, VideoProject, Folder as FolderType } from '../../types';
 import { Plus, Clock, Film, Play, Trash2, Zap, Sparkles, ArrowRight, Archive, Download, Filter, MoreVertical, FolderInput, Folder, Menu, X, Loader2, HelpCircle, Settings, PlayCircle, FileText, Video, AlertTriangle, Edit2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import FolderList from './FolderList';
-import LinkChannelToFolderModal from './LinkChannelToFolderModal';
-import { useChannels } from '../hooks/useChannels';
+import FolderList from '../Project/FolderList';
+import LinkChannelToFolderModal from '../Channels/LinkChannelToFolderModal';
+import { useChannels } from '../../hooks/useChannels';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, PointerSensor, pointerWithin } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
-import ProjectCard from './ProjectCard';
-import ProjectCardSkeleton from './ProjectCardSkeleton';
-import { exportProjectContext, patchProjectMetadata, getFolders, createFolder, updateFolder, deleteFolder } from '../services/storageService';
-import Pagination from './Pagination';
+import ProjectCard from '../Project/ProjectCard';
+import ProjectCardSkeleton from '../Project/ProjectCardSkeleton';
+import { exportProjectContext, patchProjectMetadata, getFolders, createFolder, updateFolder, deleteFolder } from '../../services/storageService';
+import Pagination from '../Common/Pagination';
 
 interface DashboardProps {
     user: User;

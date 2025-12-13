@@ -1,12 +1,12 @@
 import React from 'react';
-import { VideoProject } from '../types';
+import { VideoProject } from '../../types';
 import { Zap, MoreVertical, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDraggable } from '@dnd-kit/core';
 
-import { getSceneMedia } from '../services/scenes';
-import { SafeImage } from './common/SafeImage';
-import { Card, CardContent, CardFooter, Badge } from './ui';
+import { getSceneMedia } from '../../services/scenes';
+import { SafeImage } from '../Common/SafeImage';
+import { Card, CardContent, CardFooter, Badge } from '../ui';
 
 interface ProjectCardProps {
     project: VideoProject;
@@ -22,6 +22,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenProject, onEdi
 
     React.useEffect(() => {
         const loadThumbnail = async () => {
+            // Only fetch if we don't have a URL, but the scene implies it should have one (completed status)
             if (!thumbnailUrl && project.scenes.length > 0 && project.scenes[0].imageStatus === 'completed') {
                 const sceneId = project.scenes[0].id;
                 if (sceneId) {
@@ -44,6 +45,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenProject, onEdi
     });
 
     const style = {
+        // transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined, // Disable transform on original
         opacity: isDragging ? 0.3 : 1,
         position: 'relative' as const,
     };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Video, AlertTriangle } from 'lucide-react';
-import { User, IS_DEMO_LOGIN } from '../types';
-import Loader from './Loader';
+import { User, IS_DEMO_LOGIN } from '../../types';
+import Loader from '../Common/Loader';
 import { useTranslation } from 'react-i18next';
 
 interface AuthScreenProps {

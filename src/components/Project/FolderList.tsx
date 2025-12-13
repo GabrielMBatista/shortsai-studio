@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { Folder, Plus, MoreVertical, Edit2, Trash2, FolderOpen, Loader2, HelpCircle, PlayCircle, Settings, FileText, Video, Download, PanelLeft, ChevronLeft, ChevronRight, ChevronDown, FolderInput, GripVertical, Youtube } from 'lucide-react';
-import { Folder as FolderType } from '../types';
+import { Folder as FolderType } from '../../types';
 import { useTranslation } from 'react-i18next';
 import { CSS } from '@dnd-kit/utilities';
 

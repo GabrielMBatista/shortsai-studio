@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { createShow } from '../services/shows';
+import { createShow } from '../../services/shows';
 
 interface CreateShowModalProps {
     isOpen: boolean;

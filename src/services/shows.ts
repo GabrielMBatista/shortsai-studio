@@ -5,6 +5,7 @@ export interface Show {
     name: string;
     description?: string;
     style_preset?: string;
+    visual_prompt?: string;
     created_at: string;
     _count?: {
         episodes: number;

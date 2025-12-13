@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Scene } from '../types';
+import { Scene } from '../../types';
 import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer, Clock, UploadCloud } from 'lucide-react';
-import { useVideoExport } from '../hooks/useVideoExport';
+import { useVideoExport } from '../../hooks/useVideoExport';
 import SubtitleOverlay from './SubtitleOverlay';
 import { useTranslation } from 'react-i18next';
-import { getSceneMedia } from '../services/scenes';
-import { SafeImage } from './common/SafeImage';
+import { getSceneMedia } from '../../services/scenes';
+import { SafeImage } from '../Common/SafeImage';
 import { ScheduleUploadModal } from './ScheduleUploadModal';
 
 interface VideoPlayerProps {

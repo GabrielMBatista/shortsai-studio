@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Film, Users, Trash2, Edit, Clapperboard, Calendar } from 'lucide-react';
-import { Show, getShows, deleteShow } from '../services/shows';
-import CreateShowModal from './CreateShowModal';
-import Loader from './Loader';
+import { Show, getShows, deleteShow } from '../../services/shows';
+import CreateShowModal from '../Shows/CreateShowModal';
+import Loader from '../Common/Loader';
 
 interface ShowsViewProps {
     onOpenShow: (showId: string) => void;
@@ -36,7 +36,7 @@ const ShowsView: React.FC<ShowsViewProps> = ({ onOpenShow, showToast }) => {
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (!confirm('Tem certeza? Isso apagará a série e desconectará os episódios.')) return;
-        
+
         try {
             await deleteShow(id);
             setShows(prev => prev.filter(s => s.id !== id));
@@ -51,7 +51,7 @@ const ShowsView: React.FC<ShowsViewProps> = ({ onOpenShow, showToast }) => {
     return (
         <div className="w-full h-full p-6 lg:p-10 overflow-y-auto">
             <div className="max-w-7xl mx-auto space-y-8">
-                
+
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>

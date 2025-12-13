@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppStep, VideoProject } from './types';
-import Toast, { ToastType } from './components/Toast';
-import AuthScreen from './components/AuthScreen';
+import Toast, { ToastType } from './components/Common/Toast';
+import AuthScreen from './components/Screens/AuthScreen';
 import { getProject } from './services/storageService';
 import { Step } from 'react-joyride';
 import { useVideoGeneration } from './hooks/useVideoGeneration';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, ApiKeys, IS_SUNO_ENABLED } from '../types';
+import { User, ApiKeys, IS_SUNO_ENABLED } from '../../types';
 import { Save, Key, User as UserIcon, ShieldAlert, Music, Loader2 } from 'lucide-react';
-import { updateUserApiKeys } from '../services/storageService';
+import { updateUserApiKeys } from '../../services/storageService';
 import { useTranslation } from 'react-i18next';
 
 interface SettingsScreenProps {

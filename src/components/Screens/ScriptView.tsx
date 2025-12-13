@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED, ApiKeys, User } from '../types';
+import { Scene, AVAILABLE_VOICES, AVAILABLE_LANGUAGES, Voice, TTSProvider, IS_SUNO_ENABLED, ApiKeys, User } from '../../types';
 import { Sparkles, Waves, Globe, Play, Square, RefreshCw, StopCircle, ImageIcon, PlayCircle, Loader2, Music, Youtube, Check, Copy, ChevronDown, ChevronUp, LayoutTemplate, AlertTriangle, SkipForward, Play as PlayIcon, Download, Plus, Clock, Video, Edit2 } from 'lucide-react';
-import { generatePreviewAudio, getVoices } from '../services/geminiService';
-import SceneCard from './script/SceneCard';
-import AudioPlayerButton from './common/AudioPlayerButton';
+import { generatePreviewAudio, getVoices } from '../../services/geminiService';
+import SceneCard from '../Scripts/SceneCard';
+import AudioPlayerButton from '../Common/AudioPlayerButton';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
-import { SortableSceneCard } from './script/SortableSceneCard';
+import { SortableSceneCard } from '../Scripts/SortableSceneCard';
 import { useTranslation } from 'react-i18next';
-import { useCharacterLibrary } from '../hooks/useCharacterLibrary';
-import ProjectSettingsModal from './ProjectSettingsModal';
+import { useCharacterLibrary } from '../../hooks/useCharacterLibrary';
+import ProjectSettingsModal from '../Project/ProjectSettingsModal';
 
 interface ScriptViewProps {
     projectTopic: string;
@@ -66,7 +66,7 @@ interface ScriptViewProps {
     userId: string;
     apiKeys: ApiKeys;
     showToast?: (msg: string, type: 'success' | 'error' | 'info') => void;
-    projectCharacters: import('../types').SavedCharacter[];
+    projectCharacters: import('../../types').SavedCharacter[];
     currentUser?: User | null;
 }
 
@@ -331,7 +331,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                     setAvailableVoices([]);
                 }
             } else if (selectedProvider === 'groq') {
-                const { GROQ_VOICES } = await import('../types');
+                const { GROQ_VOICES } = await import('../../types');
                 setAvailableVoices(GROQ_VOICES);
             } else {
                 setAvailableVoices(AVAILABLE_VOICES);

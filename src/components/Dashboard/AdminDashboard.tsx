@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { User, Role, SubscriptionPlan, Plan } from '../types';
-import Loader from './Loader';
+import { User, Role, SubscriptionPlan, Plan } from '../../types';
+import Loader from '../Common/Loader';
 import { Shield, Users, Film, Layers, Ban, TrendingUp, Loader2, Search, Filter, ArrowUp, ArrowDown, CheckCircle2, Save, X, Edit2, CreditCard, Plus, Trash2 } from 'lucide-react';
 import LogConsole from './LogConsole';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';

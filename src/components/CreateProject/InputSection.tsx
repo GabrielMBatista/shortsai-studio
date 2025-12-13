@@ -3,19 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import JSON5 from 'json5';
 
-import { VIDEO_STYLES, AVAILABLE_LANGUAGES, TTSProvider, User, AVAILABLE_VOICES, IS_SUNO_ENABLED } from '../types';
-import { useCharacterLibrary } from '../hooks/useCharacterLibrary';
-import { useChannels } from '../hooks/useChannels';
-import { usePersonas } from '../hooks/usePersonas';
-import Loader from './Loader';
-import { ToastType } from './Toast';
-import { Button } from './ui/Button';
+import { VIDEO_STYLES, AVAILABLE_LANGUAGES, TTSProvider, User, AVAILABLE_VOICES, IS_SUNO_ENABLED } from '../../types';
+import { useCharacterLibrary } from '../../hooks/useCharacterLibrary';
+import { useChannels } from '../../hooks/useChannels';
+import { usePersonas } from '../../hooks/usePersonas';
+import Loader from '../Common/Loader';
+import { ToastType } from '../Common/Toast';
+import { Button } from '../ui/Button';
 
-import { ScriptConfig } from './CreateProject/ScriptConfig';
-import { StyleSelector } from './CreateProject/StyleSelector';
-import { CharacterManager } from './CreateProject/CharacterManager';
-import { AudioStudio } from './CreateProject/AudioStudio';
-import { ChannelPersonaSelector } from './CreateProject/ChannelPersonaSelector';
+import { ScriptConfig } from './ScriptConfig';
+import { StyleSelector } from './StyleSelector';
+import { CharacterManager } from './CharacterManager';
+import { AudioStudio } from './AudioStudio';
+import { ChannelPersonaSelector } from './ChannelPersonaSelector';
 
 interface InputSectionProps {
     user: User | null;
@@ -37,7 +37,7 @@ interface InputSectionProps {
     isLoading: boolean;
     loadingMessage?: string;
     showToast: (message: string, type: ToastType) => void;
-    editingProject?: import('../types').VideoProject | null;
+    editingProject?: import('../../types').VideoProject | null;
     initialPersonaId?: string | null;
 }
 
@@ -272,7 +272,7 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
         try {
             if (bulkProjects.length > 0) {
                 let processed = 0;
-                const { createFolder } = await import('../services/folders');
+                const { createFolder } = await import('../../services/folders');
 
                 // 1. Identify Unique Folders Structure
                 // Map: WeekName -> { id: string, subfolders: Map<SubFolderName, string> }
