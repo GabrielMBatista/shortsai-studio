@@ -60,8 +60,8 @@ export default function ChannelSidebarList({
                 <button
                     onClick={() => onSelectChannel(null)}
                     className={`flex items-center gap-3 px-3 py-2 w-full rounded-lg transition-colors text-sm font-medium ${selectedChannelId === null
-                            ? 'bg-indigo-500/20 text-indigo-400'
-                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        ? 'bg-indigo-500/20 text-indigo-400'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                         } ${isCollapsed ? 'justify-center flex-col gap-1 py-3' : ''}`}
                     title={isCollapsed ? 'All Channels' : undefined}
                 >
@@ -91,8 +91,8 @@ export default function ChannelSidebarList({
                                 >
                                     <div
                                         className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm font-medium cursor-pointer ${isSelected
-                                                ? 'bg-indigo-500/20 text-indigo-400'
-                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                            ? 'bg-indigo-500/20 text-indigo-400'
+                                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                             } ${isCollapsed ? 'justify-center flex-col gap-1 py-3' : ''}`}
                                         onClick={() => onSelectChannel(channel.id)}
                                         title={isCollapsed ? channel.name : undefined}
@@ -123,7 +123,7 @@ export default function ChannelSidebarList({
                                                     </div>
 
                                                     {channel.persona && (
-                                                        <Sparkles className="w-3 h-3 text-indigo-400 flex-shrink-0" title={channel.persona.name} />
+                                                        <Sparkles className="w-3 h-3 text-indigo-400 flex-shrink-0" />
                                                     )}
                                                 </>
                                             ) : (
