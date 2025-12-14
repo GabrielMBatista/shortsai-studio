@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Link, Youtube, Unlink } from 'lucide-react';
 import { Channel } from '../../types/personas';
 import { Button, Card } from '../ui';
@@ -21,6 +22,7 @@ export default function LinkChannelToFolderModal({
     channels,
     onLink
 }: LinkChannelToFolderModalProps) {
+    const { t } = useTranslation();
     const [selectedChannelId, setSelectedChannelId] = useState<string | null>(currentChannelId || null);
     const [isLinking, setIsLinking] = useState(false);
 
@@ -57,7 +59,7 @@ export default function LinkChannelToFolderModal({
                 <ModalTitle>
                     <div className="flex items-center gap-2">
                         <Link className="w-5 h-5" />
-                        Link Channel to Folder
+                        {t('link_modal.title')}
                     </div>
                 </ModalTitle>
             </ModalHeader>
@@ -66,7 +68,7 @@ export default function LinkChannelToFolderModal({
                 <div className="space-y-4">
                     {/* Folder Info */}
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                        <p className="text-sm text-slate-400 mb-1">Linking folder:</p>
+                        <p className="text-sm text-slate-400 mb-1">{t('link_modal.linking_folder')}</p>
                         <p className="text-white font-semibold">{folderName}</p>
                     </div>
 
@@ -75,9 +77,9 @@ export default function LinkChannelToFolderModal({
                         <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-lg p-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-xs text-indigo-400 mb-1">Currently linked to:</p>
+                                    <p className="text-xs text-indigo-400 mb-1">{t('link_modal.currently_linked')}</p>
                                     <p className="text-white font-medium">
-                                        {channels.find(ch => ch.id === currentChannelId)?.name || 'Unknown Channel'}
+                                        {channels.find(ch => ch.id === currentChannelId)?.name || t('link_modal.unknown_channel')}
                                     </p>
                                 </div>
                                 <Button
@@ -88,7 +90,7 @@ export default function LinkChannelToFolderModal({
                                     isLoading={isLinking}
                                     leftIcon={<Unlink className="w-4 h-4" />}
                                 >
-                                    Unlink
+                                    {t('link_modal.unlink')}
                                 </Button>
                             </div>
                         </div>
@@ -97,13 +99,13 @@ export default function LinkChannelToFolderModal({
                     {/* Channel Selection */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-300">
-                            {currentChannelId ? 'Change to a different channel:' : 'Select a channel:'}
+                            {currentChannelId ? t('link_modal.change_channel') : t('link_modal.select_channel')}
                         </label>
 
                         <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
                             {channels.length === 0 ? (
                                 <p className="text-center py-8 text-slate-500 text-sm">
-                                    No channels available. Connect a channel first.
+                                    {t('link_modal.no_channels')}
                                 </p>
                             ) : (
                                 channels.map(channel => (
@@ -151,7 +153,7 @@ export default function LinkChannelToFolderModal({
 
             <ModalFooter>
                 <Button variant="ghost" onClick={onClose} disabled={isLinking}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button
                     variant="primary"
@@ -160,7 +162,7 @@ export default function LinkChannelToFolderModal({
                     isLoading={isLinking}
                     leftIcon={<Link className="w-4 h-4" />}
                 >
-                    {currentChannelId ? 'Update Link' : 'Link Channel'}
+                    {currentChannelId ? t('link_modal.update_link') : t('link_modal.create_link')}
                 </Button>
             </ModalFooter>
         </Modal>

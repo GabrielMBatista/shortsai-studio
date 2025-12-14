@@ -305,10 +305,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             await handleUpdateFolder(folderLinkTarget.id, undefined, undefined, channelId);
             setLinkFolderModalOpen(false);
             setFolderLinkTarget(null);
-            if (showToast) showToast('Folder linked to channel successfully', 'success');
+            if (showToast) showToast(t('folders.linked_success'), 'success');
         } catch (error) {
             console.error(error);
-            if (showToast) showToast('Failed to link folder', 'error');
+            if (showToast) showToast(t('folders.link_failed'), 'error');
         }
     };
 

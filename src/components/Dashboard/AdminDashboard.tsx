@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { User, Role, SubscriptionPlan, Plan } from '../../types';
 import Loader from '../Common/Loader';
 import { Shield, Users, Film, Layers, Ban, TrendingUp, Loader2, Search, Filter, ArrowUp, ArrowDown, CheckCircle2, Save, X, Edit2, CreditCard, Plus, Trash2 } from 'lucide-react';
@@ -25,6 +26,7 @@ interface AdminUser extends User {
 }
 
 const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, type: 'success' | 'error' | 'info') => void }> = ({ currentUser, showToast }) => {
+    const { t } = useTranslation();
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [plans, setPlans] = useState<Plan[]>([]);
@@ -184,22 +186,22 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                 fetchData();
             } else {
                 const err = await res.json();
-                if (showToast) showToast(`Error saving plan: ${err.error}`, 'error');
+                if (showToast) showToast(`${t('admin.error_saving_plan')} ${err.error}`, 'error');
             }
         } catch (e) {
             console.error("Failed to save plan", e);
-            if (showToast) showToast("Failed to save plan", 'error');
+            if (showToast) showToast(t('admin.failed_save_plan'), 'error');
         }
     };
 
     const handleDeletePlan = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this plan? This might affect users assigned to it.")) return;
+        if (!confirm(t('admin.delete_plan_confirm'))) return;
         try {
             const res = await fetch(`/api/admin/plans/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchData();
             } else {
-                if (showToast) showToast("Failed to delete plan", 'error');
+                if (showToast) showToast(t('admin.failed_delete_plan'), 'error');
             }
         } catch (e) {
             console.error("Failed to delete plan", e);
@@ -213,13 +215,13 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
         }));
     };
 
-    if (isLoading && !stats && !users.length) return <Loader text="Loading Admin Dashboard..." />;
+    if (isLoading && !stats && !users.length) return <Loader text={t('admin.loading')} />;
 
     return (
         <div className="w-full max-w-[1800px] mx-auto px-6 py-8">
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                    <Shield className="w-8 h-8 text-indigo-500" /> Admin Dashboard
+                    <Shield className="w-8 h-8 text-indigo-500" /> {t('admin.title')}
                 </h1>
 
                 {/* Tabs */}
@@ -228,19 +230,19 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                         onClick={() => setActiveTab('overview')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'overview' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                     >
-                        Overview
+                        {t('admin.overview')}
                     </button>
                     <button
                         onClick={() => setActiveTab('users')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                     >
-                        User Management
+                        {t('admin.users')}
                     </button>
                     <button
                         onClick={() => setActiveTab('plans')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'plans' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                     >
-                        Plans & Limits
+                        {t('admin.plans')}
                     </button>
                 </div>
             </div>
@@ -252,7 +254,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                         {isLoading && (
                             <div className="flex items-center gap-2 text-slate-400 text-sm bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 animate-pulse">
                                 <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-                                <span>Updating...</span>
+                                <span>{t('admin.updating')}</span>
                             </div>
                         )}
                         <select
@@ -261,9 +263,9 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             className="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={isLoading}
                         >
-                            <option value={7}>Last 7 Days</option>
-                            <option value={30}>Last 30 Days</option>
-                            <option value={90}>Last 90 Days</option>
+                            <option value={7}>{t('admin.last_7_days')}</option>
+                            <option value={30}>{t('admin.last_30_days')}</option>
+                            <option value={90}>{t('admin.last_90_days')}</option>
                         </select>
                     </div>
 
@@ -273,7 +275,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400"><Users className="w-6 h-6" /></div>
                                 <div>
-                                    <p className="text-slate-400 text-sm">Total Users</p>
+                                    <p className="text-slate-400 text-sm">{t('admin.total_users')}</p>
                                     <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
                                 </div>
                             </div>
@@ -282,7 +284,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400"><Film className="w-6 h-6" /></div>
                                 <div>
-                                    <p className="text-slate-400 text-sm">Total Projects</p>
+                                    <p className="text-slate-400 text-sm">{t('admin.total_projects')}</p>
                                     <p className="text-2xl font-bold text-white">{stats.totalProjects}</p>
                                 </div>
                             </div>
@@ -291,7 +293,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-pink-500/10 rounded-xl text-pink-400"><Layers className="w-6 h-6" /></div>
                                 <div>
-                                    <p className="text-slate-400 text-sm">Total Scenes</p>
+                                    <p className="text-slate-400 text-sm">{t('admin.total_scenes')}</p>
                                     <p className="text-2xl font-bold text-white">{stats.totalScenes}</p>
                                 </div>
                             </div>
@@ -302,7 +304,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                         <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
                             <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5 text-emerald-400" /> User Growth ({dateRange} Days)
+                                <TrendingUp className="w-5 h-5 text-emerald-400" /> {t('admin.user_growth', { days: dateRange })}
                             </h3>
                             <div className="h-64 lg:h-96 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -328,7 +330,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
 
                         <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
                             <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                                <Film className="w-5 h-5 text-purple-400" /> Project Creation ({dateRange} Days)
+                                <Film className="w-5 h-5 text-purple-400" /> {t('admin.project_creation', { days: dateRange })}
                             </h3>
                             <div className="h-64 lg:h-96 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -352,7 +354,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
                             <div className="lg:col-span-1 bg-slate-800 p-6 rounded-2xl border border-slate-700">
                                 <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                                    <Ban className="w-5 h-5 text-red-400" /> System Health
+                                    <Ban className="w-5 h-5 text-red-400" /> {t('admin.system_health')}
                                 </h3>
                                 <div className="h-64 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -390,8 +392,8 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
             {activeTab === 'users' && (
                 <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden animate-fade-in">
                     <div className="p-6 border-b border-slate-700 flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-white">User Management</h2>
-                        <span className="text-sm text-slate-400">{users.length} users found</span>
+                        <h2 className="text-xl font-bold text-white">{t('admin.users')}</h2>
+                        <span className="text-sm text-slate-400">{t('admin.users_found', { count: users.length })}</span>
                     </div>
 
                     {/* Filters Toolbar */}
@@ -400,7 +402,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                             <input
                                 type="text"
-                                placeholder="Search users..."
+                                placeholder={t('admin.search_users')}
                                 value={filters.search}
                                 onChange={e => setFilters({ ...filters, search: e.target.value })}
                                 className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -411,7 +413,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             onChange={e => setFilters({ ...filters, role: e.target.value })}
                             className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                            <option value="ALL">All Roles</option>
+                            <option value="ALL">{t('admin.all_roles')}</option>
                             <option value="USER">User</option>
                             <option value="ADMIN">Admin</option>
                         </select>
@@ -420,7 +422,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             onChange={e => setFilters({ ...filters, plan: e.target.value })}
                             className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                            <option value="ALL">All Plans</option>
+                            <option value="ALL">{t('admin.all_plans')}</option>
                             <option value="FREE">Free</option>
                             <option value="PRO">Pro</option>
                         </select>
@@ -429,7 +431,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             onChange={e => setFilters({ ...filters, status: e.target.value })}
                             className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                            <option value="ALL">All Status</option>
+                            <option value="ALL">{t('admin.all_status')}</option>
                             <option value="active">Active</option>
                             <option value="blocked">Blocked</option>
                         </select>
@@ -442,18 +444,18 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                                         <div className="flex items-center gap-1">User {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
                                     </th>
                                     <th onClick={() => handleSort('role')} className="px-6 py-4 cursor-pointer hover:text-indigo-400 transition-colors">
-                                        <div className="flex items-center gap-1">Role {sortConfig.key === 'role' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
+                                        <div className="flex items-center gap-1">{t('admin.role')} {sortConfig.key === 'role' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
                                     </th>
                                     <th onClick={() => handleSort('subscription_plan')} className="px-6 py-4 cursor-pointer hover:text-indigo-400 transition-colors">
-                                        <div className="flex items-center gap-1">Plan {sortConfig.key === 'subscription_plan' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
+                                        <div className="flex items-center gap-1">{t('admin.plan_name')} {sortConfig.key === 'subscription_plan' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
                                     </th>
                                     <th onClick={() => handleSort('is_blocked')} className="px-6 py-4 cursor-pointer hover:text-indigo-400 transition-colors">
-                                        <div className="flex items-center gap-1">Status {sortConfig.key === 'is_blocked' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
+                                        <div className="flex items-center gap-1">{t('admin.status')} {sortConfig.key === 'is_blocked' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
                                     </th>
                                     <th onClick={() => handleSort('projects')} className="px-6 py-4 cursor-pointer hover:text-indigo-400 transition-colors">
-                                        <div className="flex items-center gap-1">Projects {sortConfig.key === 'projects' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
+                                        <div className="flex items-center gap-1">{t('admin.projects')} {sortConfig.key === 'projects' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}</div>
                                     </th>
-                                    <th className="px-6 py-4 text-right">Actions</th>
+                                    <th className="px-6 py-4 text-right">{t('admin.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-700">
@@ -509,13 +511,13 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                                                         onChange={e => setEditForm({ ...editForm, isBlocked: e.target.checked })}
                                                         className="rounded bg-slate-900 border-slate-600 text-red-500 focus:ring-red-500"
                                                     />
-                                                    <span className="text-xs">Blocked</span>
+                                                    <span className="text-xs">{t('admin.blocked')}</span>
                                                 </label>
                                             ) : (
                                                 user.isBlocked ? (
-                                                    <span className="flex items-center gap-1 text-red-400 text-xs font-bold"><Ban className="w-3 h-3" /> Blocked</span>
+                                                    <span className="flex items-center gap-1 text-red-400 text-xs font-bold"><Ban className="w-3 h-3" /> {t('admin.blocked')}</span>
                                                 ) : (
-                                                    <span className="flex items-center gap-1 text-emerald-400 text-xs font-bold"><CheckCircle2 className="w-3 h-3" /> Active</span>
+                                                    <span className="flex items-center gap-1 text-emerald-400 text-xs font-bold"><CheckCircle2 className="w-3 h-3" /> {t('admin.active')}</span>
                                                 )
                                             )}
                                         </td>
@@ -544,7 +546,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
             {activeTab === 'plans' && (
                 <div className="animate-fade-in">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-white">Subscription Plans</h2>
+                        <h2 className="text-xl font-bold text-white">{t('admin.subscription_plans')}</h2>
                         <button
                             onClick={() => {
                                 setEditingPlan({
@@ -566,7 +568,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             }}
                             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors font-medium shadow-lg shadow-indigo-500/20"
                         >
-                            <Plus className="w-4 h-4" /> Create Plan
+                            <Plus className="w-4 h-4" /> {t('admin.create_plan')}
                         </button>
                     </div>
 
@@ -584,24 +586,24 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                                     </div>
                                 </div>
 
-                                <p className="text-slate-400 text-sm mb-6 flex-grow">{plan.description || "No description"}</p>
+                                <p className="text-slate-400 text-sm mb-6 flex-grow">{plan.description || t('admin.no_description')}</p>
 
                                 <div className="space-y-3 mb-6">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">Monthly Videos</span>
+                                        <span className="text-slate-500">{t('admin.monthly_videos')}</span>
                                         <span className="text-white font-medium">{plan.monthly_videos_limit}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">Monthly Images</span>
+                                        <span className="text-slate-500">{t('admin.monthly_images')}</span>
                                         <span className="text-white font-medium">{plan.monthly_images_limit}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">TTS Minutes</span>
+                                        <span className="text-slate-500">{t('admin.monthly_tts')}</span>
                                         <span className="text-white font-medium">{plan.monthly_minutes_tts}</span>
                                     </div>
                                     <div className="h-px bg-slate-700/50 my-2"></div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">Daily Videos</span>
+                                        <span className="text-slate-500">{t('admin.daily_videos')}</span>
                                         <span className="text-white font-medium">{plan.daily_videos_limit}</span>
                                     </div>
                                 </div>
@@ -611,12 +613,12 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                                         onClick={() => { setEditingPlan(plan); setIsCreatingPlan(false); }}
                                         className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm font-medium"
                                     >
-                                        <Edit2 className="w-4 h-4" /> Edit
+                                        <Edit2 className="w-4 h-4" /> {t('admin.edit_plan')}
                                     </button>
                                     <button
                                         onClick={() => handleDeletePlan(plan.id)}
                                         className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                        title="Delete Plan"
+                                        title={t('common.delete')}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
@@ -634,7 +636,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                         <div className="p-6 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 z-10">
                             <h3 className="text-xl font-bold text-white flex items-center gap-2">
                                 <CreditCard className="w-5 h-5 text-indigo-500" />
-                                {isCreatingPlan ? 'Create New Plan' : 'Edit Plan'}
+                                {isCreatingPlan ? t('admin.create_new_plan') : t('admin.edit_plan')}
                             </h3>
                             <button onClick={() => setEditingPlan(null)} className="text-slate-400 hover:text-white"><X className="w-6 h-6" /></button>
                         </div>
@@ -642,7 +644,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                         <div className="p-6 space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-400 mb-1">Plan Name</label>
+                                    <label className="block text-xs font-medium text-slate-400 mb-1">{t('admin.plan_name')}</label>
                                     <input
                                         type="text"
                                         value={editingPlan.name}
@@ -652,7 +654,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-400 mb-1">Slug (Unique ID)</label>
+                                    <label className="block text-xs font-medium text-slate-400 mb-1">{t('admin.slug')}</label>
                                     <input
                                         type="text"
                                         value={isCreatingPlan ? 'Auto-generated' : editingPlan.slug}
@@ -663,7 +665,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">Description</label>
+                                <label className="block text-xs font-medium text-slate-400 mb-1">{t('admin.description')}</label>
                                 <textarea
                                     value={editingPlan.description || ''}
                                     onChange={e => setEditingPlan({ ...editingPlan, description: e.target.value })}
@@ -673,7 +675,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">Price ($)</label>
+                                <label className="block text-xs font-medium text-slate-400 mb-1">{t('admin.price')}</label>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -684,10 +686,10 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                             </div>
 
                             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
-                                <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><Shield className="w-4 h-4 text-emerald-400" /> Limits Configuration</h4>
+                                <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><Shield className="w-4 h-4 text-emerald-400" /> {t('admin.limits_config')}</h4>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Monthly Videos</label>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">{t('admin.monthly_videos')}</label>
                                         <input
                                             type="number"
                                             value={editingPlan.monthly_videos_limit}
@@ -696,7 +698,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Monthly Images</label>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">{t('admin.monthly_images')}</label>
                                         <input
                                             type="number"
                                             value={editingPlan.monthly_images_limit}
@@ -705,7 +707,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Monthly TTS Minutes</label>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">{t('admin.monthly_tts')}</label>
                                         <input
                                             type="number"
                                             value={editingPlan.monthly_minutes_tts}
@@ -714,7 +716,7 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Daily Videos (Rate Limit)</label>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">{t('admin.daily_videos')}</label>
                                         <input
                                             type="number"
                                             value={editingPlan.daily_videos_limit}
@@ -727,9 +729,9 @@ const AdminDashboard: React.FC<{ currentUser: User, showToast?: (msg: string, ty
                         </div>
 
                         <div className="p-6 border-t border-slate-800 flex justify-end gap-3 bg-slate-900 sticky bottom-0 z-10 rounded-b-2xl">
-                            <button onClick={() => setEditingPlan(null)} className="px-4 py-2 text-slate-400 hover:text-white transition-colors">Cancel</button>
+                            <button onClick={() => setEditingPlan(null)} className="px-4 py-2 text-slate-400 hover:text-white transition-colors">{t('common.cancel')}</button>
                             <button onClick={() => handleSavePlan(editingPlan)} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium shadow-lg shadow-indigo-500/20 transition-colors">
-                                {isCreatingPlan ? 'Create Plan' : 'Save Changes'}
+                                {isCreatingPlan ? t('admin.create_plan') : t('admin.save_changes')}
                             </button>
                         </div>
                     </div>
