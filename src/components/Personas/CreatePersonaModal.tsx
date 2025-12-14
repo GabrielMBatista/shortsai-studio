@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Sparkles, AlertCircle, Info, Tag } from 'lucide-react';
 import { CreatePersonaData, Persona } from '../../types/personas';
 import { useTranslation } from 'react-i18next';
+import SmartJsonInput from '../Common/SmartJsonInput';
 
 interface CreatePersonaModalProps {
     isOpen: boolean;
@@ -148,20 +149,21 @@ export default function CreatePersonaModal({ isOpen, onClose, onSubmit, persona 
                     </div>
 
                     <div className="space-y-2">
-                        <label className="flex items-center justify-between text-sm font-medium text-slate-300">
-                            <span>System Instructions</span>
-                            <div className="group relative">
-                                <Info className="w-4 h-4 text-slate-500 cursor-help" />
-                                <div className="absolute right-0 bottom-full mb-2 w-64 p-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                    The core instructions that define how the AI behaves. Be specific about tone, style, and structure.
-                                </div>
-                            </div>
-                        </label>
-                        <textarea
+                        <SmartJsonInput
                             required
+                            label={
+                                <span className="flex items-center gap-2">
+                                    System Instructions
+                                    <div className="group relative">
+                                        <Info className="w-4 h-4 text-slate-500 cursor-help" />
+                                        <div className="absolute left-full ml-2 top-0 w-64 p-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                            The core instructions that define how the AI behaves. Be specific about tone, style, and structure.
+                                        </div>
+                                    </div>
+                                </span>
+                            }
                             value={formData.systemInstruction}
-                            onChange={e => setFormData({ ...formData, systemInstruction: e.target.value })}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-600 font-mono text-sm h-48"
+                            onChange={val => setFormData({ ...formData, systemInstruction: val })}
                             placeholder="You are an enthusiastic tech reviewer who loves gadgets. Always start with a hook..."
                         />
                     </div>

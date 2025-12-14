@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+declare module 'json5';
 
 interface ImportMetaEnv {
   readonly VITE_ENABLE_SUNO: string;
