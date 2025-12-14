@@ -77,5 +77,22 @@ export const personasApi = {
             throw new Error(error.error || 'Failed to chat with persona');
         }
         return res.json();
+    },
+
+    async getJobStatus(jobId: string): Promise<{
+        status: 'pending' | 'processing' | 'completed' | 'failed';
+        result?: string;
+        error?: string;
+        progress?: number;
+        message?: string;
+    }> {
+        const res = await fetch(`${API_URL}/personas/jobs/${jobId}`, {
+            credentials: 'include'
+        });
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({ error: 'Failed to get job status' }));
+            throw new Error(error.error || 'Failed to get job status');
+        }
+        return res.json();
     }
 };
