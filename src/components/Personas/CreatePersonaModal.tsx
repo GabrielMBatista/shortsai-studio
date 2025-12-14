@@ -164,6 +164,7 @@ export default function CreatePersonaModal({ isOpen, onClose, onSubmit, persona 
                             }
                             value={formData.systemInstruction}
                             onChange={val => setFormData({ ...formData, systemInstruction: val })}
+                            height="h-96"
                             placeholder="You are an enthusiastic tech reviewer who loves gadgets. Always start with a hook..."
                         />
                     </div>
