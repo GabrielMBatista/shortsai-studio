@@ -1,8 +1,9 @@
 import { apiFetch } from './api';
 
-export const getFolders = async (): Promise<{ folders: any[]; rootCount: number }> => {
+export const getFolders = async (forceRefresh?: boolean): Promise<{ folders: any[]; rootCount: number }> => {
     try {
-        const data = await apiFetch('/folders');
+        const url = forceRefresh ? '/folders?refresh=true' : '/folders';
+        const data = await apiFetch(url);
         if (Array.isArray(data)) return { folders: data, rootCount: 0 };
         return { folders: data.folders || [], rootCount: data.rootCount || 0 };
     } catch (e) {

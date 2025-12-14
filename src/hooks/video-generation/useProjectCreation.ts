@@ -73,7 +73,8 @@ export const useProjectCreation = (
                                 // 409 = Conflict (Already Exists)
                                 if (e.status === 409 || (e.message && e.message.includes('exists'))) {
                                     console.log(`Folder "${name}" exists. Fetching ID...`);
-                                    const { folders } = await getFolders();
+
+                                    const { folders } = await getFolders(true); // Force refresh
                                     // Ensure we match correct parent (or root if undefined)
                                     // Note: Backend might return parent_id as null
                                     const targetParent = parentId || null;
