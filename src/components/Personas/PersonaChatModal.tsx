@@ -44,7 +44,6 @@ export default function PersonaChatModal({ isOpen, onClose, persona, channelId }
         setIsLoading(true);
 
         try {
-            // Prepare history for API (Gemini format: role 'user'|'model', parts: [{text}])
             const history = messages.map(m => ({
                 role: m.role,
                 parts: [{ text: m.text }]
@@ -52,13 +51,63 @@ export default function PersonaChatModal({ isOpen, onClose, persona, channelId }
 
             const res = await personasApi.chat(persona.id, userMsg, history, channelId);
 
-            setMessages(prev => [...prev, { role: 'model', text: res.response }]);
+            // Check if response is a Job Signal
+            let jobSignal = null;
+            try {
+                if (res.response.trim().startsWith('{')) {
+                    const parsed = JSON.parse(res.response);
+                    if (parsed.type === 'job_started') jobSignal = parsed;
+                }
+            } catch (e) { /* Not a job signal */ }
+
+            if (jobSignal) {
+                // Background Job Started
+                setMessages(prev => [...prev, { role: 'model', text: '🔄 ' + t('input.job_started', 'Iniciando pesquisa profunda... Isso pode levar alguns minutos.') }]);
+                pollJob(jobSignal.jobId);
+                // Note: isLoading stays true or we handle it inside poll?
+                // Let's set isLoading false here, but maybe show a different status?
+                // Actually, let's keep isLoading=false and let the user wait for the new message.
+                // Or better: keep a "polling" state. 
+            } else {
+                setMessages(prev => [...prev, { role: 'model', text: res.response }]);
+            }
         } catch (error) {
             console.error('Chat error:', error);
             setMessages(prev => [...prev, { role: 'model', text: t('input.error_message') }]);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const pollJob = async (jobId: string) => {
+        const interval = setInterval(async () => {
+            try {
+                // Fetch job status
+                // We need a way to call the API. Assuming we have a fetch wrapper or use raw fetch.
+                // Since this is a specialized endpoint, raw fetch is fine or use a new api method.
+                const res = await fetch(`/api/jobs/schedule/${jobId}`);
+                const data = await res.json();
+
+                if (data.state === 'completed') {
+                    clearInterval(interval);
+                    // Job Done!
+                    let finalResult = data.result;
+                    // If result has unescaped chars, clean it? usually it's fine.
+                    // Often result is { result: string }. 
+                    // My worker returns { result: resultJson }.
+                    if (typeof finalResult === 'object' && finalResult.result) finalResult = finalResult.result;
+
+                    setMessages(prev => [...prev, { role: 'model', text: finalResult }]);
+                } else if (data.state === 'failed') {
+                    clearInterval(interval);
+                    setMessages(prev => [...prev, { role: 'model', text: '❌ Erro ao gerar cronograma: ' + (data.result?.error || 'Unknown error') }]);
+                }
+                // If active/waiting, continue polling...
+            } catch (err) {
+                console.error('Polling error', err);
+                // Don't clear interval immediately on network error, maybe transient.
+            }
+        }, 3000);
     };
 
     const handleClear = () => {
