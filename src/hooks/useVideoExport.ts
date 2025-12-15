@@ -139,9 +139,30 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             let blob: Blob | null = null;
 
             if (format === 'mp4') {
-                if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') {
-                    throw new Error("MP4 export requires WebCodecs API support. Please use a modern browser (Chrome 94+, Edge 94+) or try WebM export instead.");
+                // Detailed WebCodecs detection
+                const hasVideoEncoder = typeof VideoEncoder !== 'undefined';
+                const hasAudioEncoder = typeof AudioEncoder !== 'undefined';
+                const isSecureContext = window.isSecureContext;
+                const protocol = window.location.protocol;
+
+                if (!hasVideoEncoder || !hasAudioEncoder) {
+                    let errorMsg = "MP4 export requires WebCodecs API which is not available.\n\n";
+
+                    if (!isSecureContext && protocol !== 'https:') {
+                        errorMsg += "🔒 CAUSE: You're accessing via HTTP (insecure).\n";
+                        errorMsg += `Current: ${protocol}//${window.location.host}\n\n`;
+                        errorMsg += "SOLUTION: Access via HTTPS or use WebM export instead.";
+                    } else if (!isSecureContext) {
+                        errorMsg += "🔒 CAUSE: Non-secure context (browser restrictions).\n\n";
+                        errorMsg += "SOLUTION: Try WebM export instead or use a supported browser.";
+                    } else {
+                        errorMsg += "🌐 CAUSE: Your browser doesn't support WebCodecs API.\n\n";
+                        errorMsg += "SOLUTION: Update to Chrome 94+, Edge 94+ or use WebM export.";
+                    }
+
+                    throw new Error(errorMsg);
                 }
+
                 blob = await exportMp4(
                     canvas, ctx, assets, endingVideoElement,
                     totalScenesDuration, totalDuration, renderedAudioBuffer,
