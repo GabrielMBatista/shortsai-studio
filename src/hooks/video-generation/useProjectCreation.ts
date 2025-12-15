@@ -107,35 +107,48 @@ export const useProjectCreation = (
                         // Import dynamically to avoid circular dependencies if any, or just use imported
                         const { createFolder, getFolders } = await import('../../services/folders');
 
-                        // Helper: Idempotent Create
+                        // Helper: Robust folder creation with idempotency
                         const safeCreateFolder = async (name: string, parentId?: string): Promise<string> => {
-                            // Check if folder exists FIRST
+                            const targetParent = parentId || null;
+                            console.log(`🔍 Checking folder "${name}" (parent: ${targetParent || 'root'})...`);
+
+                            // ALWAYS check first
                             try {
                                 const { folders } = await getFolders(false);
-                                const targetParent = parentId || null;
-                                const existing = folders.find((f: any) => f.name === name && f.parent_id === targetParent);
+                                const existing = folders.find((f: any) =>
+                                    f.name === name && f.parent_id === targetParent
+                                );
+
                                 if (existing) {
-                                    console.log(`✓ Folder "${name}" already exists, reusing.`);
+                                    console.log(`✓ Folder "${name}" exists, ID: ${existing.id}`);
                                     return existing.id;
                                 }
                             } catch (fetchErr) {
-                                console.warn('Could not fetch folders, will try to create:', fetchErr);
+                                console.warn(`⚠ Could not fetch folders:`, fetchErr);
                             }
 
-                            // Create only if doesn't exist
+                            // Create only if not found
+                            console.log(`📁 Creating folder "${name}"...`);
                             try {
                                 const res = await createFolder(name, parentId);
-                                console.log(`✓ Created folder "${name}"`);
-                                return res.id || res._id;
-                            } catch (e: any) {
-                                // 409 = Conflict (race condition - someone created it)
-                                if (e.status === 409 || (e.message && e.message.includes('exists'))) {
-                                    const { folders } = await getFolders(true);
-                                    const targetParent = parentId || null;
-                                    const match = folders.find((f: any) => f.name === name && f.parent_id === targetParent);
-                                    if (match) return match.id;
+                                const newId = res.id || res._id;
+                                console.log(`✅ Created folder "${name}", ID: ${newId}`);
+                                return newId;
+                            } catch (createErr: any) {
+                                // Race condition: someone else created it
+                                if (createErr.status === 409 || createErr.message?.includes('exists')) {
+                                    console.warn(`⚠ Folder "${name}" was just created by another process, fetching...`);
+                                    const { folders } = await getFolders(true); // Force refresh
+                                    const match = folders.find((f: any) =>
+                                        f.name === name && f.parent_id === targetParent
+                                    );
+                                    if (match) {
+                                        console.log(`✓ Found folder "${name}", ID: ${match.id}`);
+                                        return match.id;
+                                    }
                                 }
-                                throw e;
+                                console.error(`❌ Failed to create folder "${name}":`, createErr);
+                                throw createErr;
                             }
                         };
 
