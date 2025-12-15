@@ -325,93 +325,47 @@ export const useProjectCreation = (
             }
 
 
-            // Check if parsing result is an object with 'scenes' or 'script'
-            // Also check for nested formats like: { "some_key": { "meta": {}, "scenes": [] } }
-            let scenesData: any[] = [];
-            let hasScenes = false;
 
-            // Direct scenes array
-            if (parsed && (Array.isArray(parsed.scenes) || Array.isArray(parsed.script))) {
-                console.log("Detected pre-generated project JSON (direct scenes)");
-                isPreGenerated = true;
-                scenesData = parsed.scenes || parsed.script;
-                hasScenes = true;
-            }
+            // Check if parsing result is a pre-generated script
+            // Use backend normalization to handle ANY persona format variation
+            try {
+                console.log("Attempting to normalize JSON using backend normalizer...");
 
-            // Nested format: single root key with content
-            if (!hasScenes && parsed && typeof parsed === 'object') {
-                const keys = Object.keys(parsed);
-                if (keys.length === 1) {
-                    const rootKey = keys[0];
-                    const content = parsed[rootKey];
-
-                    if (content && typeof content === 'object' && (content.scenes || content.script)) {
-                        console.log(`Detected pre-generated project JSON (nested format: ${rootKey})`);
-                        isPreGenerated = true;
-                        scenesData = content.scenes || content.script;
-                        hasScenes = true;
-
-                        // Extract metadata from nested structure
-                        if (content.meta) {
-                            metadata = {
-                                title: content.meta.titulo_otimizado || content.meta.titulo || content.title || "Untitled Project",
-                                description: [
-                                    content.hook_killer,
-                                    content.meta.mensagem_nuclear,
-                                    content.meta.citacao_chave && `📖 ${content.meta.citacao_chave}`
-                                ].filter(Boolean).join('\n\n')
-                            };
-                        } else {
-                            metadata = {
-                                title: content.title || content.titulo || rootKey.replace(/_/g, ' '),
-                                description: content.description || content.hook_killer || ""
-                            };
-                        }
-
-                        finalTopic = content.title || content.titulo || metadata.title;
-                    }
-                }
-            }
-
-            if (hasScenes) {
-                scenes = scenesData;
-
-                // Normalize scenes with duration calculation
-                scenes = scenes.map((s: any, idx: number) => {
-                    // Use duration from JSON if available
-                    let duration = s.duration || s.durationSeconds || 5;
-
-                    // If duration is still default  and we have narration, calculate based on word count
-                    if (duration === 5 && s.narration) {
-                        const wordCount = s.narration.split(/\s+/).length;
-                        duration = Math.ceil(wordCount / 3.5); // 3.5 words per second
-                        duration = Math.min(duration, 8); // Max 8s for Veo
-                        duration = Math.max(duration, 3); // Min 3s
-                    }
-
-                    return {
-                        ...s,
-                        visualDescription: s.visualDescription || s.visual_description || s.visual || s.imagePrompt || s.desc || "Scene visual",
-                        narration: s.narration || s.audio || s.text || s.speech || "",
-                        sceneNumber: s.sceneNumber || s.scene_number || s.scene || (idx + 1),
-                        durationSeconds: duration
-                    };
+                const normalizeResponse = await fetch('/api/scripts/normalize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        scriptJson: parsed,
+                        fallbackTopic: topic
+                    })
                 });
 
-                // Build description if not already set
-                if (!metadata.description) {
-                    const descParts = [];
-                    if (parsed.description) descParts.push(parsed.description);
-                    if (parsed.intro) descParts.push(parsed.intro);
-                    if (parsed.hook_falado || parsed.hook_killer) descParts.push(parsed.hook_falado || parsed.hook_killer);
-                    if (parsed.hashtags) descParts.push(parsed.hashtags);
-                    metadata.description = descParts.join("\n\n") || "";
-                }
+                if (normalizeResponse.ok) {
+                    const { success, normalized } = await normalizeResponse.json();
 
-                // Keep the JSON as the topic for reference, or extract the real topic if available
-                if (!finalTopic) {
-                    finalTopic = parsed.topic || parsed.title || parsed.titulo || "Untitled Logic";
+                    if (success && normalized && normalized.scenes && normalized.scenes.length > 0) {
+                        console.log(`✅ Backend normalized successfully: ${normalized.scenes.length} scenes detected`);
+                        isPreGenerated = true;
+                        scenes = normalized.scenes;
+
+                        metadata = {
+                            title: normalized.videoTitle || "Untitled Project",
+                            description: normalized.videoDescription || "",
+                            shortsHashtags: normalized.shortsHashtags || [],
+                            tiktokText: normalized.tiktokText || "",
+                            tiktokHashtags: normalized.tiktokHashtags || [],
+                            fullMetadata: normalized.metadata
+                        };
+
+                        finalTopic = normalized.videoTitle || topic;
+                    }
+                } else {
+                    console.warn("Backend normalization failed, will proceed with AI generation");
                 }
+            } catch (normErr) {
+                console.warn("Failed to normalize with backend:", normErr);
+                // Fall through to AI generation
             }
         } catch (e) {
             // Not JSON, proceed with normal generation
