@@ -26,7 +26,7 @@ const ChannelsPage: React.FC = () => {
 
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `${apiUrl}/auth/signin/google`;
+            form.action = `${apiUrl}/auth/signin/google-channels`;
 
             const callbackInput = document.createElement('input');
             callbackInput.type = 'hidden';
