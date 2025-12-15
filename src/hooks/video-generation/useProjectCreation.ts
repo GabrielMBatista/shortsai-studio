@@ -358,7 +358,7 @@ export const useProjectCreation = (
                             fullMetadata: normalized.metadata
                         };
 
-                        finalTopic = normalized.videoTitle || topic;
+                        // Keep original JSON in topic - don't overwrite with just the title
                     }
                 } else {
                     console.warn("Backend normalization failed, will proceed with AI generation");

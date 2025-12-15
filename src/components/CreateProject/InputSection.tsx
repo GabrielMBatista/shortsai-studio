@@ -235,7 +235,40 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
         }
 
         if (json) {
-            foundProjects = extractProjects(json);
+            // Try backend normalization first to catch ALL persona formats
+            (async () => {
+                try {
+                    const normalizeResponse = await fetch('/api/scripts/normalize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            scriptJson: json,
+                            fallbackTopic: 'Untitled'
+                        })
+                    });
+
+                    if (normalizeResponse.ok) {
+                        const { success, normalized } = await normalizeResponse.json();
+                        if (success && normalized && normalized.scenes && normalized.scenes.length > 0) {
+                            // Backend successfully normalized - this is a valid pre-generated script
+                            console.log(`✅ Backend detected valid script: ${normalized.scenes.length} scenes`);
+                            setBulkProjects([normalized]);
+                            showToast(t('input.json_detected', { count: 1 }), 'success');
+                            return;
+                        }
+                    }
+                } catch (normErr) {
+                    console.warn('Backend normalization failed, using local extraction:', normErr);
+                }
+
+                // Fallback to local extraction
+                foundProjects = extractProjects(json);
+                if (foundProjects.length > 0) {
+                    setBulkProjects(foundProjects);
+                    showToast(t('input.json_detected', { count: foundProjects.length }), 'success');
+                }
+            })();
         } else if (looksLikeJson && !error) {
             // If it looks like JSON but we couldn't parse logic
             // error = "Invalid JSON format";
