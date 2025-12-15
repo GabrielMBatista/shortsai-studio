@@ -16,6 +16,33 @@ const generateUUID = (): string => {
     });
 };
 
+// Generate week range name in format: DD-DD_MMM_YY (e.g., "16-22_DEZ_24")
+const generateWeekRangeName = (): string => {
+    const now = new Date();
+
+    // Find next Monday (or today if it's Monday)
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
+
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + daysUntilMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    // Format dates
+    const dayStart = monday.getDate();
+    const dayEnd = sunday.getDate();
+
+    const monthNames = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN',
+        'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+    const month = monthNames[monday.getMonth()];
+    const year = monday.getFullYear().toString().slice(-2);
+
+    return `${dayStart}-${dayEnd}_${month}_${year}`;
+};
+
 export const useProjectCreation = (
     user: User | null,
     setProject: React.Dispatch<React.SetStateAction<VideoProject | null>>,
@@ -54,21 +81,24 @@ export const useProjectCreation = (
             if (parsed && (parsed.id_da_semana || parsed.cronograma)) {
                 console.log("Detected Batch Schedule JSON");
                 let cronograma = null;
-                let rootName = "Semana Importada " + new Date().toLocaleDateString();
+                let rootName = generateWeekRangeName(); // Default: next full week
 
                 if (parsed.cronograma) {
                     // Case: Flat structure { id_da_semana: "...", cronograma: {...} }
                     cronograma = parsed.cronograma;
-                    if (typeof parsed.id_da_semana === 'string') {
-                        rootName = parsed.id_da_semana; // Use exactly as generated (e.g. 15-21_Dez_25)
+
+                    // Validate and use id_da_semana if present and valid format
+                    if (typeof parsed.id_da_semana === 'string' &&
+                        parsed.id_da_semana.match(/^\d{1,2}-\d{1,2}_[A-Z]{3}_\d{2}$/)) {
+                        rootName = parsed.id_da_semana; // Use from JSON (e.g., "16-22_DEZ_24")
+                        console.log(`✓ Using week range from JSON: ${rootName}`);
+                    } else {
+                        console.log(`⚠ Invalid or missing id_da_semana, using calculated: ${rootName}`);
                     }
                 } else if (typeof parsed.id_da_semana === 'object' && parsed.id_da_semana?.cronograma) {
                     // Case: Nested structure { id_da_semana: { cronograma: {...} } }
                     cronograma = parsed.id_da_semana.cronograma;
-                    // Attempt to name based on context
-                    if (parsed.id_da_semana.meta_global) {
-                        rootName = "Semana Nova " + new Date().toLocaleDateString();
-                    }
+                    console.log(`⚠ Nested structure detected, using calculated: ${rootName}`);
                 }
 
                 if (cronograma) {
@@ -114,9 +144,13 @@ export const useProjectCreation = (
 
                         // 2. Iterate Days
                         for (const [dayKey, dayContent] of Object.entries(cronograma)) {
-                            // dayKey: "segunda_feira"
-                            let dayName = dayKey.replace(/_/g, '_').charAt(0).toUpperCase() + dayKey.replace(/_/g, '_').slice(1);
+                            // dayKey: "segunda_feira" -> "Segunda Feira"
+                            const dayName = dayKey
+                                .split('_')
+                                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                .join(' ');
 
+                            console.log(`📁 Creating day folder: "${dayName}" under "${rootName}"`);
                             const dayId = await safeCreateFolder(dayName, rootId);
 
                             // 3. Iterate Videos
@@ -182,6 +216,7 @@ export const useProjectCreation = (
                                     personaId: personaId || undefined
                                 };
 
+                                console.log(`📄 Creating project "${title}" in folder ${dayId} (${dayName})`);
                                 const saved = await saveProject(newProject, true);
 
                                 // Robustness: Explicitly patch folder_id in case creation dropped it (stale API)
@@ -190,8 +225,9 @@ export const useProjectCreation = (
                                         // Dynamically import to ensure availability
                                         const { patchProjectMetadata } = await import('../../services/projects');
                                         await patchProjectMetadata(saved.id, { folder_id: dayId });
+                                        console.log(`✅ Project "${title}" linked to folder ${dayId}`);
                                     } catch (patchErr) {
-                                        console.warn("Failed to patch folder_id", patchErr);
+                                        console.error(`❌ Failed to patch folder_id for "${title}"`, patchErr);
                                     }
                                 }
                             }
