@@ -68,66 +68,17 @@ Directly output the topic/concept. Do not add conversational filler like "Here i
                 selectedChannelId || undefined
             );
 
-            // Check if backend returned a job signal (async processing)
-            let parsedResponse: any = null;
-            try {
-                parsedResponse = JSON.parse(response.response);
-            } catch {
-                // Not JSON, it's a normal text response
+            // Apply response directly (no polling needed anymore)
+            if (response && response.response) {
+                setTopic(response.response);
+                setPersonaPrompt(''); // Clear input after success
             }
 
-            if (parsedResponse && parsedResponse.type === 'job_started') {
-                // Backend started an async job, we need to poll
-                const jobId = parsedResponse.jobId;
-                console.log(`[ScriptConfig] Job started: ${jobId}. Starting polling...`);
-
-                // Poll every 3 seconds
-                const pollInterval = setInterval(async () => {
-                    try {
-                        const jobStatus = await personasApi.getJobStatus(jobId);
-
-                        if (jobStatus.status === 'completed') {
-                            clearInterval(pollInterval);
-                            setIsGeneratingPrompt(false);
-
-                            // Apply result to topic field
-                            if (jobStatus.result) {
-                                setTopic(jobStatus.result);
-                                setPersonaPrompt(''); // Clear input after success
-                            }
-                        } else if (jobStatus.status === 'failed') {
-                            clearInterval(pollInterval);
-                            setIsGeneratingPrompt(false);
-                            console.error('[ScriptConfig] Job failed:', jobStatus.error);
-                            // Optional: Show toast notification
-                        }
-                        // If status is 'pending' or 'processing', keep polling
-                    } catch (pollError) {
-                        console.error('[ScriptConfig] Polling error:', pollError);
-                        clearInterval(pollInterval);
-                        setIsGeneratingPrompt(false);
-                    }
-                }, 3000);
-
-                // Safety timeout: stop polling after 5 minutes
-                setTimeout(() => {
-                    clearInterval(pollInterval);
-                    setIsGeneratingPrompt(false);
-                    console.warn('[ScriptConfig] Polling timeout reached');
-                }, 300000);
-
-            } else {
-                // Normal text response, apply immediately
-                if (response && response.response) {
-                    setTopic(response.response);
-                    setPersonaPrompt(''); // Clear input after success
-                }
-                setIsGeneratingPrompt(false);
-            }
         } catch (error) {
             console.error('Failed to ask persona:', error);
-            setIsGeneratingPrompt(false);
             // Optional: Show toast error
+        } finally {
+            setIsGeneratingPrompt(false);
         }
     };
 
