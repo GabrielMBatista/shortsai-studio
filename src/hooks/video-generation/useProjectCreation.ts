@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AppStep, User, VideoProject, ReferenceCharacter, TTSProvider } from '../../types';
 import { generateScript, generateMusicPrompt } from '../../services/geminiService';
 import { saveProject } from '../../services/storageService';
+import { apiFetch } from '../../services/api';
 
 // UUID generator compatible with all browsers
 const generateUUID = (): string => {
@@ -295,12 +296,12 @@ export const useProjectCreation = (
 
                                 // 🔥 BACKGROUND ASYNC: Gera metadados otimizados SEM BLOQUEAR
                                 (async () => {
+                                    console.log(`🚀 [ASYNC STARTED] Background task initiated for "${baseTitle}"`);
                                     try {
                                         console.log(`📊 [Background] Generating optimized metadata for "${baseTitle}"...`);
 
-                                        const metadataResponse = await fetch('/api/ai/metadata', {
+                                        const metadata = await apiFetch('/ai/metadata', {
                                             method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({
                                                 videoTitle: baseTitle,
                                                 videoContent: videoContent,
@@ -309,35 +310,32 @@ export const useProjectCreation = (
                                             })
                                         });
 
-                                        if (metadataResponse.ok) {
-                                            const metadata = await metadataResponse.json();
-                                            const optimizedTitle = metadata.optimizedTitle || fallbackTitle;
-                                            const optimizedDesc = metadata.optimizedDescription || fallbackDesc;
-                                            const optimizedHashtags = metadata.shortsHashtags || finalFallbackHashtags;
+                                        const optimizedTitle = metadata.optimizedTitle || fallbackTitle;
+                                        const optimizedDesc = metadata.optimizedDescription || fallbackDesc;
+                                        const optimizedHashtags = metadata.shortsHashtags || finalFallbackHashtags;
 
-                                            console.log(`✅ [Background] Optimized metadata ready for "${baseTitle}"`);
-                                            console.log(`   Title: ${optimizedTitle}`);
-                                            console.log(`   Hashtags: ${optimizedHashtags.join(', ')}`);
+                                        console.log(`✅ [Background] Optimized metadata ready for "${baseTitle}"`);
+                                        console.log(`   Title: ${optimizedTitle}`);
+                                        console.log(`   Hashtags: ${optimizedHashtags.join(', ')}`);
 
-                                            // 🎯 ATUALIZAR PROJETO COM METADADOS OTIMIZADOS
-                                            const { patchProjectMetadata } = await import('../../services/projects');
-                                            await patchProjectMetadata(saved.id, {
-                                                generated_title: optimizedTitle,
-                                                generated_description: optimizedDesc,
-                                                generated_shorts_hashtags: optimizedHashtags
-                                            });
+                                        // 🎯 ATUALIZAR PROJETO COM METADADOS OTIMIZADOS
+                                        const { patchProjectMetadata } = await import('../../services/projects');
+                                        await patchProjectMetadata(saved.id, {
+                                            generated_title: optimizedTitle,
+                                            generated_description: optimizedDesc,
+                                            generated_shorts_hashtags: optimizedHashtags
+                                        });
 
-                                            console.log(`🎉 [Background] Project "${optimizedTitle}" updated with optimized metadata!`);
+                                        console.log(`🎉 [Background] Project "${optimizedTitle}" updated with optimized metadata!`);
 
-                                            // 🔄 Invalida cache para UI refletir mudanças
-                                            queryClient.invalidateQueries({ queryKey: ['projects', user.id] });
-                                        } else {
-                                            const errorText = await metadataResponse.text();
-                                            console.error(`❌ [Background] Metadata API returned ${metadataResponse.status}:`, errorText);
-                                            throw new Error(`Metadata API returned ${metadataResponse.status}`);
-                                        }
-                                    } catch (error) {
-                                        console.warn(`⚠️ [Background] Metadata optimization failed for "${baseTitle}", keeping fallback:`, error);
+                                        // 🔄 Invalida cache para UI refletir mudanças
+                                        queryClient.invalidateQueries({ queryKey: ['projects', user.id] });
+                                    } catch (error: any) {
+                                        console.error(`❌ [Background] Metadata optimization FAILED for "${baseTitle}"`);
+                                        console.error(`Error type: ${error?.constructor?.name}`);
+                                        console.error(`Error message: ${error?.message}`);
+                                        console.error(`Error stack:`, error?.stack);
+                                        console.warn(`⚠️ [Background] Applying fallback metadata...`);
 
                                         // FALLBACK: Atualiza com metadados básicos pelo menos
                                         try {
