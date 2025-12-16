@@ -28,6 +28,13 @@ const ChannelsPage: React.FC = () => {
             form.method = 'POST';
             form.action = `${apiUrl}/auth/signin/google-channels`;
 
+            // Força seleção de conta (ignora cache do Google)
+            const promptInput = document.createElement('input');
+            promptInput.type = 'hidden';
+            promptInput.name = 'prompt';
+            promptInput.value = 'select_account consent';
+            form.appendChild(promptInput);
+
             const callbackInput = document.createElement('input');
             callbackInput.type = 'hidden';
             callbackInput.name = 'callbackUrl';
