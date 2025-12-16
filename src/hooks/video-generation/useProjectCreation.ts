@@ -202,93 +202,53 @@ export const useProjectCreation = (
                                 const narrations = newScenes.map(s => s.narration).join(' ');
                                 const videoContent = `${hook}\n\n${narrations}`;
 
-                                // 2. METADADOS OTIMIZADOS: Sistema gera com análise de canal
-                                let title = baseTitle;
-                                let fullDesc = "";
-                                let finalHashtags: string[] = [];
+                                // 🚀 SOLUÇÃO ASSÍNCRONA: Criar projeto IMEDIATAMENTE, otimizar DEPOIS
+                                // Fallback metadata (SEMPRE válido)
+                                const fallbackTitle = baseTitle;
+                                let fallbackDesc = "";
+                                const descParts = [];
 
-                                try {
-                                    console.log(`📊 Generating optimized metadata for "${baseTitle}" with channel analysis...`);
-
-                                    const metadataResponse = await fetch('/api/ai/metadata', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            videoTitle: baseTitle,
-                                            videoContent: videoContent,
-                                            channelId: channelId || undefined,
-                                            language: language || 'pt-BR'
-                                        })
-                                    });
-
-                                    if (metadataResponse.ok) {
-                                        const metadata = await metadataResponse.json();
-                                        title = metadata.optimizedTitle || baseTitle;
-                                        fullDesc = metadata.optimizedDescription || "";
-                                        finalHashtags = metadata.shortsHashtags || [];
-
-                                        console.log(`✅ Optimized metadata generated for "${title}"`);
-                                        console.log(`   Hashtags: ${finalHashtags.join(', ')}`);
-                                    } else {
-                                        const errorText = await metadataResponse.text();
-                                        console.error(`❌ Metadata API returned ${metadataResponse.status}:`, errorText);
-                                        throw new Error(`Metadata API returned ${metadataResponse.status}`);
-                                    }
-                                } catch (error) {
-                                    console.warn('⚠️ Metadata optimization failed, using fallback:', error);
-
-                                    // Fallback: Basic metadata generation (SEMPRE GERA ALGO VÁLIDO)
-                                    title = baseTitle;
-                                    const descParts = [];
-
-                                    // Adiciona hook se existir
-                                    if (hook && hook.trim()) {
-                                        descParts.push(hook.trim());
-                                    }
-
-                                    // Adiciona resumo das cenas
-                                    if (newScenes && newScenes.length > 0) {
-                                        const essenceScenes = newScenes.slice(0, Math.min(3, newScenes.length));
-                                        const essence = essenceScenes.map(s => s.narration).filter(n => n && n.trim()).join(' ').trim();
-
-                                        if (essence && essence !== hook) {
-                                            const truncated = essence.length > 200 ? essence.substring(0, 200) + '...' : essence;
-                                            descParts.push(truncated);
-                                        }
-                                    }
-
-                                    // Se ainda não temos descrição, usa o baseTitle
-                                    if (descParts.length === 0) {
-                                        descParts.push(baseTitle);
-                                    }
-
-                                    // CTA padrão
-                                    descParts.push("💬 Comente 'Amém' e compartilhe com quem precisa ouvir isso!");
-                                    fullDesc = descParts.join('\n\n');
-
-                                    // Gera hashtags básicas
-                                    const hashtags: string[] = [];
-                                    const stopwords = ['o', 'a', 'de', 'da', 'do', 'os', 'as', 'em', 'e', 'para', 'com', 'que', 'é', 'se', 'não'];
-                                    const titleWords = baseTitle.toLowerCase().replace(/[^\w\sáéíóúâêôãõç]/g, '').split(/\s+/).filter(w => w.length > 3 && !stopwords.includes(w)).slice(0, 5);
-                                    hashtags.push('#shorts', '#viral', '#fe', '#jesus', '#deus');
-                                    titleWords.forEach(word => {
-                                        const tag = `#${word.replace(/\s+/g, '')}`;
-                                        if (!hashtags.includes(tag)) hashtags.push(tag);
-                                    });
-                                    const content = (baseTitle + ' ' + narrations).toLowerCase();
-                                    if (content.includes('bíbli') || content.includes('verso') || content.includes('salmo')) hashtags.push('#biblia');
-                                    if (content.includes('oração') || content.includes('ora')) hashtags.push('#oracao');
-                                    if (content.includes('amor')) hashtags.push('#amor');
-                                    if (content.includes('paz')) hashtags.push('#paz');
-                                    if (content.includes('esperança') || content.includes('espera')) hashtags.push('#esperanca');
-                                    finalHashtags = [...new Set(hashtags)].slice(0, 12);
-
-                                    console.log(`✅ Fallback metadata generated:`, {
-                                        title,
-                                        descLength: fullDesc.length,
-                                        hashtagsCount: finalHashtags.length
-                                    });
+                                // Adiciona hook se existir
+                                if (hook && hook.trim()) {
+                                    descParts.push(hook.trim());
                                 }
+
+                                // Adiciona resumo das cenas
+                                if (newScenes && newScenes.length > 0) {
+                                    const essenceScenes = newScenes.slice(0, Math.min(3, newScenes.length));
+                                    const essence = essenceScenes.map(s => s.narration).filter(n => n && n.trim()).join(' ').trim();
+
+                                    if (essence && essence !== hook) {
+                                        const truncated = essence.length > 200 ? essence.substring(0, 200) + '...' : essence;
+                                        descParts.push(truncated);
+                                    }
+                                }
+
+                                // Se ainda não temos descrição, usa o baseTitle
+                                if (descParts.length === 0) {
+                                    descParts.push(baseTitle);
+                                }
+
+                                // CTA padrão
+                                descParts.push("💬 Comente 'Amém' e compartilhe com quem precisa ouvir isso!");
+                                fallbackDesc = descParts.join('\n\n');
+
+                                // Gera hashtags básicas
+                                const fallbackHashtags: string[] = [];
+                                const stopwords = ['o', 'a', 'de', 'da', 'do', 'os', 'as', 'em', 'e', 'para', 'com', 'que', 'é', 'se', 'não'];
+                                const titleWords = baseTitle.toLowerCase().replace(/[^\w\sáéíóúâêôãõç]/g, '').split(/\s+/).filter(w => w.length > 3 && !stopwords.includes(w)).slice(0, 5);
+                                fallbackHashtags.push('#shorts', '#viral', '#fe', '#jesus', '#deus');
+                                titleWords.forEach(word => {
+                                    const tag = `#${word.replace(/\s+/g, '')}`;
+                                    if (!fallbackHashtags.includes(tag)) fallbackHashtags.push(tag);
+                                });
+                                const content = (baseTitle + ' ' + narrations).toLowerCase();
+                                if (content.includes('bíbli') || content.includes('verso') || content.includes('salmo')) fallbackHashtags.push('#biblia');
+                                if (content.includes('oração') || content.includes('ora')) fallbackHashtags.push('#oracao');
+                                if (content.includes('amor')) fallbackHashtags.push('#amor');
+                                if (content.includes('paz')) fallbackHashtags.push('#paz');
+                                if (content.includes('esperança') || content.includes('espera')) fallbackHashtags.push('#esperanca');
+                                const finalFallbackHashtags = [...new Set(fallbackHashtags)].slice(0, 12);
 
 
                                 const newProject: VideoProject = {
@@ -303,9 +263,10 @@ export const useProjectCreation = (
                                     audioModel,
                                     referenceCharacters: references,
                                     scenes: newScenes,
-                                    generatedTitle: title,
-                                    generatedDescription: fullDesc,
-                                    generatedShortsHashtags: finalHashtags,
+                                    // TÍTULOS TEMPORÁRIOS: Usuário vê IMEDIATAMENTE
+                                    generatedTitle: `⏳ ${fallbackTitle}`,
+                                    generatedDescription: "Gerando descrição otimizada...",
+                                    generatedShortsHashtags: ['#shorts'],
                                     scriptMetadata: vData, // Store full JSON in metadata as well
                                     durationConfig,
                                     includeMusic,
@@ -317,7 +278,7 @@ export const useProjectCreation = (
                                     personaId: personaId || undefined
                                 };
 
-                                console.log(`📄 Creating project "${title}" in folder ${dayId} (${dayName})`);
+                                console.log(`📄 Creating project "${fallbackTitle}" in folder ${dayId} (${dayName})`);
                                 const saved = await saveProject(newProject, true);
 
                                 // Robustness: Explicitly patch folder_id in case creation dropped it (stale API)
@@ -326,11 +287,75 @@ export const useProjectCreation = (
                                         // Dynamically import to ensure availability
                                         const { patchProjectMetadata } = await import('../../services/projects');
                                         await patchProjectMetadata(saved.id, { folder_id: dayId });
-                                        console.log(`✅ Project "${title}" linked to folder ${dayId}`);
+                                        console.log(`✅ Project "${fallbackTitle}" linked to folder ${dayId}`);
                                     } catch (patchErr) {
-                                        console.error(`❌ Failed to patch folder_id for "${title}"`, patchErr);
+                                        console.error(`❌ Failed to patch folder_id for "${fallbackTitle}"`, patchErr);
                                     }
                                 }
+
+                                // 🔥 BACKGROUND ASYNC: Gera metadados otimizados SEM BLOQUEAR
+                                (async () => {
+                                    try {
+                                        console.log(`📊 [Background] Generating optimized metadata for "${baseTitle}"...`);
+
+                                        const metadataResponse = await fetch('/api/ai/metadata', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                videoTitle: baseTitle,
+                                                videoContent: videoContent,
+                                                channelId: channelId || undefined,
+                                                language: language || 'pt-BR'
+                                            })
+                                        });
+
+                                        if (metadataResponse.ok) {
+                                            const metadata = await metadataResponse.json();
+                                            const optimizedTitle = metadata.optimizedTitle || fallbackTitle;
+                                            const optimizedDesc = metadata.optimizedDescription || fallbackDesc;
+                                            const optimizedHashtags = metadata.shortsHashtags || finalFallbackHashtags;
+
+                                            console.log(`✅ [Background] Optimized metadata ready for "${baseTitle}"`);
+                                            console.log(`   Title: ${optimizedTitle}`);
+                                            console.log(`   Hashtags: ${optimizedHashtags.join(', ')}`);
+
+                                            // 🎯 ATUALIZAR PROJETO COM METADADOS OTIMIZADOS
+                                            const { patchProjectMetadata } = await import('../../services/projects');
+                                            await patchProjectMetadata(saved.id, {
+                                                generated_title: optimizedTitle,
+                                                generated_description: optimizedDesc,
+                                                generated_shorts_hashtags: optimizedHashtags
+                                            });
+
+                                            console.log(`🎉 [Background] Project "${optimizedTitle}" updated with optimized metadata!`);
+
+                                            // 🔄 Invalida cache para UI refletir mudanças
+                                            queryClient.invalidateQueries({ queryKey: ['projects', user.id] });
+                                        } else {
+                                            const errorText = await metadataResponse.text();
+                                            console.error(`❌ [Background] Metadata API returned ${metadataResponse.status}:`, errorText);
+                                            throw new Error(`Metadata API returned ${metadataResponse.status}`);
+                                        }
+                                    } catch (error) {
+                                        console.warn(`⚠️ [Background] Metadata optimization failed for "${baseTitle}", keeping fallback:`, error);
+
+                                        // FALLBACK: Atualiza com metadados básicos pelo menos
+                                        try {
+                                            const { patchProjectMetadata } = await import('../../services/projects');
+                                            await patchProjectMetadata(saved.id, {
+                                                generated_title: fallbackTitle,
+                                                generated_description: fallbackDesc,
+                                                generated_shorts_hashtags: finalFallbackHashtags
+                                            });
+                                            console.log(`✅ [Background] Fallback metadata applied for "${fallbackTitle}"`);
+
+                                            // 🔄 Invalida cache para UI refletir mudanças
+                                            queryClient.invalidateQueries({ queryKey: ['projects', user.id] });
+                                        } catch (fallbackErr) {
+                                            console.error(`❌ [Background] Failed to apply fallback metadata:`, fallbackErr);
+                                        }
+                                    }
+                                })(); // 🚀 NÃO ESPERA! Roda em paralelo
                             }
                         }
 

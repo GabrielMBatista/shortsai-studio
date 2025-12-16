@@ -138,7 +138,19 @@ export const saveProject = async (project: VideoProject, isNew: boolean = false)
     return savedProject;
 };
 
-export const patchProjectMetadata = async (projectId: string, updates: { folder_id?: string | null, is_archived?: boolean, tags?: string[] }) => {
+export const patchProjectMetadata = async (
+    projectId: string,
+    updates: {
+        folder_id?: string | null;
+        is_archived?: boolean;
+        tags?: string[];
+        generated_title?: string;
+        generated_description?: string;
+        generated_shorts_hashtags?: string[];
+        generated_tiktok_text?: string;
+        generated_tiktok_hashtags?: string[];
+    }
+) => {
     try {
         await apiFetch(`/projects/${projectId}`, {
             method: 'PATCH',
