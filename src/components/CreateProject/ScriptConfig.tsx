@@ -154,7 +154,7 @@ Directly output the topic/concept. Do not add conversational filler like "Here i
                         onChange={(e) => setLanguage(e.target.value)}
                         disabled={isBusy}
                     >
-                        {AVAILABLE_LANGUAGES.map((l) => <option key={l.code} value={l.label}>{l.label}</option>)}
+                        {AVAILABLE_LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
                     </Select>
 
                     {/* DURATION CONFIG */}

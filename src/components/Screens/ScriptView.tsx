@@ -352,7 +352,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
 
     const filteredVoices = availableVoices.filter(v => {
         if (!selectedLanguage) return true;
-        const langObj = AVAILABLE_LANGUAGES.find(l => l.label === selectedLanguage);
+        const langObj = AVAILABLE_LANGUAGES.find(l => l.code === selectedLanguage);
         if (!langObj) return true;
 
         if (v.supportedLanguages && v.supportedLanguages.length > 0) {
@@ -578,7 +578,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
                                         disabled={isGeneratingImages}
                                         className="bg-transparent text-xs font-medium outline-none cursor-pointer hover:text-white transition-colors appearance-none w-24"
                                     >
-                                        {AVAILABLE_LANGUAGES.map(lang => <option key={lang.code} value={lang.label} className="bg-slate-900">{lang.label}</option>)}
+                                        {AVAILABLE_LANGUAGES.map(lang => <option key={lang.code} value={lang.code} className="bg-slate-900">{lang.label}</option>)}
                                     </select>
                                 </div>
 

@@ -66,7 +66,7 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
 
     // Script & Config
     const [topic, setTopic] = useState('');
-    const [language, setLanguage] = useState(() => localStorage.getItem('shortsai_pref_language') || AVAILABLE_LANGUAGES[0].label);
+    const [language, setLanguage] = useState(() => localStorage.getItem('shortsai_pref_language') || AVAILABLE_LANGUAGES[0].code);
     const [minDuration, setMinDuration] = useState<number | ''>(60);
     const [maxDuration, setMaxDuration] = useState<number | ''>(70);
     const [targetScenes, setTargetScenes] = useState<string>("");

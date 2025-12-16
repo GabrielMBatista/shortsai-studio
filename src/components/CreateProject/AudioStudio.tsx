@@ -99,7 +99,7 @@ export const AudioStudio: React.FC<AudioStudioProps> = ({
     // Filter voices
     const filteredVoices = dynamicVoices.filter(v => {
         if (!language) return true;
-        const langObj = AVAILABLE_LANGUAGES.find(l => l.label === language);
+        const langObj = AVAILABLE_LANGUAGES.find(l => l.code === language);
         if (!langObj) return true;
 
         if (v.supportedLanguages && v.supportedLanguages.length > 0) {
