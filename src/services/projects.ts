@@ -37,38 +37,50 @@ export const saveProject = async (project: VideoProject, isNew: boolean = false)
 
     try {
         if (!isNew) {
-            await apiFetch(`/projects/${project.id}`, {
+            const response = await apiFetch(`/projects/${project.id}`, {
                 method: 'PATCH',
                 body: JSON.stringify(apiPayload)
             });
+
+            // Se PATCH funcionou, atualizar dados do projeto com resposta
+            if (response) {
+                savedProject = { ...savedProject, ...response };
+            }
+
             apiSuccess = true;
         } else {
             // Force 404-like flow to trigger creation below
             throw { status: 404, message: 'New project' };
         }
     } catch (e: any) {
-        // Typical behavior: We try to UPDATE first. If it fails with 404, it means the ID is new or deleted on backend.
-        // So we proceed to CREATE.
-        if (e.status === 404 || e.message?.includes('404') || e.message === 'New project') {
-            // This is expected for new projects.
-        } else {
-            console.warn("Update project failed with non-404 error:", e);
-            throw e; // Rethrow real errors
-        }
+        // APENAS cria projeto novo se for erro 404 REAL (projeto não existe)
+        // Outros erros (503, timeout, network) NÃO devem criar projeto duplicado
+        const is404Error =
+            e.status === 404 ||
+            e.message === 'New project' ||
+            (e.message && typeof e.message === 'string' && e.message.toLowerCase().includes('not found'));
 
-        try {
-            const res = await apiFetch('/projects', {
-                method: 'POST',
-                body: JSON.stringify(apiPayload)
-            });
-            backendProjectId = res.id || res._id;
-            savedProject.id = backendProjectId;
-            if (res.status) savedProject.status = res.status;
-            if (res.bg_music_status) savedProject.bgMusicStatus = res.bg_music_status;
-            apiSuccess = true;
-        } catch (createErr) {
-            console.warn("Create project failed", createErr);
-            throw createErr;
+        if (is404Error) {
+            console.log(`[saveProject] Project ${project.id} not found, creating new...`);
+
+            try {
+                const res = await apiFetch('/projects', {
+                    method: 'POST',
+                    body: JSON.stringify(apiPayload)
+                });
+                backendProjectId = res.id || res._id;
+                savedProject.id = backendProjectId;
+                if (res.status) savedProject.status = res.status;
+                if (res.bg_music_status) savedProject.bgMusicStatus = res.bg_music_status;
+                apiSuccess = true;
+            } catch (createErr) {
+                console.error("[saveProject] Failed to create project", createErr);
+                throw createErr;
+            }
+        } else {
+            // Não é 404, é erro real (503, network, etc)
+            console.error("[saveProject] Update failed with non-404 error:", e);
+            throw e; // Rethrow para não perder dados
         }
     }
 
