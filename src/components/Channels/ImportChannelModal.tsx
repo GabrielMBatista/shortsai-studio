@@ -103,6 +103,7 @@ export default function ImportChannelModal({ isOpen, onClose, onImportSuccess }:
 
         try {
             setImportingId(channel.youtubeChannelId);
+            setError(null); // Clear previous errors
             const res = await fetch(`${apiUrl}/channels/import`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -113,14 +114,16 @@ export default function ImportChannelModal({ isOpen, onClose, onImportSuccess }:
                 credentials: 'include'
             });
 
-            if (!res.ok) throw new Error('Failed to import channel');
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Failed to import channel');
+            }
 
             onImportSuccess();
-            // Optional: Close modal or show success state
             onClose();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert('Failed to import channel');
+            setError(err.message || 'Failed to import channel. Please try again.');
         } finally {
             setImportingId(null);
         }
