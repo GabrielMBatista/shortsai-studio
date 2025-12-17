@@ -11,6 +11,7 @@ import ProjectCard from '../Project/ProjectCard';
 import ProjectCardSkeleton from '../Project/ProjectCardSkeleton';
 import { exportProjectContext, patchProjectMetadata, getFolders, createFolder, updateFolder, deleteFolder } from '../../services/storageService';
 import Pagination from '../Common/Pagination';
+import { extractProjectTitle } from '../../utils/projectUtils';
 
 interface DashboardProps {
     user: User;
@@ -316,7 +317,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
 
-        const title = project.generatedTitle || project.topic || t('app.untitled_project');
+        const title = extractProjectTitle(project.generatedTitle || project.topic, t('app.untitled_project'));
         setPermanentDeleteModal({ isOpen: true, projectId, projectTitle: title });
         setContextMenu(null);
     };

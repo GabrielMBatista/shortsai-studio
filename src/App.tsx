@@ -13,6 +13,7 @@ import { useAuth } from './hooks/useAuth';
 import { useAutosave } from './hooks/useAutosave';
 import { getSettingsTourSteps, getCreationTourSteps, getScriptTourSteps, getPreviewTourSteps, getExportTourSteps, getFoldersTourSteps } from './constants/tourSteps';
 import { MOCK_PROJECT_TOUR, MOCK_PROJECT_PREVIEW } from './constants/mockProject';
+import { extractProjectTitle } from './utils/projectUtils';
 
 const App: React.FC = () => {
     const { t } = useTranslation();
@@ -100,16 +101,7 @@ const App: React.FC = () => {
 
     // Helpers
     const getDisplayTitle = (p: VideoProject) => {
-        let title = p.generatedTitle || p.topic;
-        if (typeof title === 'string' && (title.trim().startsWith('{') || title.trim().startsWith('['))) {
-            try {
-                const json = JSON.parse(title);
-                title = json.projectTitle || json.videoTitle || json.title || json.scriptTitle || t('app.untitled_project');
-            } catch (e) {
-                title = t('app.untitled_project');
-            }
-        }
-        return title;
+        return extractProjectTitle(p.generatedTitle || p.topic, t('app.untitled_project'));
     };
 
     const handleSetStep = (newStep: AppStep) => {
