@@ -8,25 +8,31 @@
 const isValidTitle = (title: string | null | undefined): boolean => {
     if (!title || typeof title !== 'string') return false;
     const lower = title.toLowerCase().trim();
-    return lower.length > 0 &&
-        !lower.includes('untitled project') &&
-        !lower.includes('projeto sem título') &&
-        !lower.includes('sem título') &&
-        !lower.startsWith('⏳');
+    if (lower.length < 3 || lower.length > 100) return false;
+
+    // Allow standard titles but block common system values
+    const blockers = ['untitled project', 'projeto sem título', 'sem título', 'video', 'project', 'json', 'data', 'undefined', 'null'];
+    if (blockers.some(b => lower.includes(b))) return false;
+
+    // Explicit exclusions if it looks like an ID
+    if (/^[a-f0-9-]{36}$/.test(lower)) return false; // UUID
+
+    return true;
 };
 
 /**
- * Recursively searches for a title-like key in an object.
+ * Aggressive recursive search for title.
+ * Uses BFS to favor top-level keys but goes deep.
  */
 const findTitleDeep = (obj: any, depth: number = 0): string | null => {
-    if (!obj || typeof obj !== 'object' || depth > 3) return null;
+    if (!obj || typeof obj !== 'object' || depth > 8) return null; // Very deep
 
-    // 1. Check Priority Keys at this level
+    // 1. Exact Match Priority Keys (The "Good" Keys)
     const priorityKeys = [
-        'titulo', 'tittle', 'title', // Portuguese, Typo, English
-        'projectTitle', 'videoTitle', 'scriptTitle',
-        'id_da_semana', // Schedule ID
-        'tema_dia'
+        'titulo', 'tittle', 'title',
+        'projectTitle', 'videoTitle', 'scriptTitle', 'headline',
+        'id_da_semana', 'tema_dia', 'cronograma', 'weekId',
+        'name', 'topic', 'subject'
     ];
 
     for (const key of priorityKeys) {
@@ -35,15 +41,19 @@ const findTitleDeep = (obj: any, depth: number = 0): string | null => {
         }
     }
 
-    // 2. Fallback Keys (lower priority)
-    const fallbackKeys = ['name', 'topic', 'subject'];
-    for (const key of fallbackKeys) {
-        if (obj[key] && typeof obj[key] === 'string' && isValidTitle(obj[key])) {
-            return obj[key];
+    // 2. Fuzzy / Loose Search (Any key containing "title", "name", "tema")
+    // Only at top levels to avoid grabbing random nested noise
+    if (depth < 2) {
+        for (const key in obj) {
+            const lowerKey = key.toLowerCase();
+            if ((lowerKey.includes('title') || lowerKey.includes('título') || lowerKey.includes('name')) &&
+                typeof obj[key] === 'string' && isValidTitle(obj[key])) {
+                return obj[key];
+            }
         }
     }
 
-    // 3. Recurse into children (DFS)
+    // 3. Recurse (DFS)
     for (const key in obj) {
         if (typeof obj[key] === 'object') {
             const found = findTitleDeep(obj[key], depth + 1);
@@ -99,7 +109,7 @@ export const extractProjectTitle = (rawTitle: string | null | undefined, fallbac
  * Generic deep finder for multiple keys
  */
 const findValueDeep = (obj: any, keys: string[], depth: number = 0): string | string[] | null => {
-    if (!obj || typeof obj !== 'object' || depth > 3) return null;
+    if (!obj || typeof obj !== 'object' || depth > 6) return null; // Increased depth to 6
 
     for (const key of keys) {
         if (obj[key]) {
@@ -120,6 +130,7 @@ const findValueDeep = (obj: any, keys: string[], depth: number = 0): string | st
 
 /**
  * Extracts a human-readable description from a string that might be a recursive JSON.
+ * Falls back to synthesizing from hook/scenes if no explicit description exists.
  */
 export const extractProjectDescription = (rawDesc: string | null | undefined, fallback: string = ''): string => {
     if (!rawDesc) return fallback;
@@ -128,8 +139,34 @@ export const extractProjectDescription = (rawDesc: string | null | undefined, fa
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
         try {
             const json = JSON.parse(trimmed);
+
+            // 1. Explicit Description
             const found = findValueDeep(json, ['description', 'generatedDescription', 'desc', 'generated_description', 'resumo']);
             if (found && typeof found === 'string') return found;
+
+            // 2. Synthetic Description (Hook + First Scene)
+            // Use a shallow search for hook/scenes to avoid widespread crawling
+            const hook = findValueDeep(json, ['hook_falado', 'hook']) as string;
+
+            // Try to find scenes array
+            let scenes: any[] | null = null;
+            if (Array.isArray(json.scenes)) scenes = json.scenes;
+            else if (json.cronograma) {
+                // Too complex to guess which video, skip synthesis for full schedule unless specific
+            } else {
+                const scenesFound = findValueDeep(json, ['scenes']);
+                if (Array.isArray(scenesFound)) scenes = scenesFound;
+            }
+
+            if (hook || (scenes && scenes.length > 0)) {
+                let synthetic = hook || '';
+                if (scenes && scenes.length > 0) {
+                    const firstNarration = scenes[0].narration || scenes[0].text || scenes[0].visualDescription || '';
+                    if (firstNarration) synthetic = synthetic ? `${synthetic} ${firstNarration}` : firstNarration;
+                }
+                if (synthetic.length > 5) return synthetic.substring(0, 300); // Limit length
+            }
+
         } catch (e) {
             // Ignore
         }
