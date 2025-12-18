@@ -59,7 +59,7 @@ class WorkflowClient {
                     // Initial state from server
                     const newState: WorkflowState = {
                         projectStatus: data.projectStatus,
-                        scenes: data.scenes,
+                        scenes: (data.scenes || []).map((s: any) => this.mapApiScene(s)),
                         music_status: data.bgMusicStatus,
                         music_url: data.bgMusicUrl
                     };
@@ -110,6 +110,31 @@ class WorkflowClient {
 
     private lastUpdateTimestamp = 0;
 
+    private mapApiScene(s: any): Scene {
+        return {
+            id: s.id || s._id,
+            sceneNumber: s.scene_number || s.sceneNumber,
+            visualDescription: s.visual_description || s.visualDescription,
+            narration: s.narration,
+            durationSeconds: Number(s.duration_seconds) || Number(s.durationSeconds) || 5,
+            imageUrl: s.image_url || s.imageUrl,
+            audioUrl: s.audio_url || s.audioUrl,
+            sfxUrl: s.sfx_url || s.sfxUrl,
+            imageStatus: s.image_status || s.imageStatus || (s.image_url ? 'completed' : 'pending'),
+            audioStatus: s.audio_status || s.audioStatus || (s.audio_url ? 'completed' : 'pending'),
+            sfxStatus: s.sfx_status || s.sfxStatus || (s.sfx_url ? 'completed' : 'pending'),
+            videoStatus: s.video_status || s.videoStatus || (s.video_url ? 'completed' : 'pending'),
+            videoUrl: s.video_url || s.videoUrl,
+            imageAttempts: s.image_attempts || 0,
+            audioAttempts: s.audio_attempts || 0,
+            errorMessage: s.error_message,
+            wordTimings: s.wordTimings || s.word_timings,
+            mediaType: s.media_type || s.mediaType || 'image',
+            videoModel: s.video_model || s.videoModel,
+            characters: s.characters || []
+        };
+    }
+
     private updateLocalState(newState: WorkflowState) {
         this.lastState = newState;
         this.lastUpdateTimestamp = Date.now();
@@ -118,32 +143,54 @@ class WorkflowClient {
 
     private handleSceneUpdate(data: any) {
         if (!this.lastState) {
-            this.fetchState(); // Fallback if no state yet
+            this.fetchState();
             return;
         }
 
-        const { sceneId, field, status, url, error, timings, duration, mediaType } = data;
+        const {
+            sceneId, field, status, url, error, timings, duration,
+            mediaType, videoModel, imageUrl, audioUrl, sfxUrl, videoUrl,
+            sceneNumber, scene_number, visual_description, visualDescription,
+            narration, characters, ...rest
+        } = data;
 
         const updatedScenes = this.lastState.scenes.map(scene => {
             if (scene.id === sceneId) {
-                const updatedScene = { ...scene };
+                const updatedScene = { ...scene, ...rest };
 
                 if (mediaType) updatedScene.mediaType = mediaType;
+                if (videoModel) updatedScene.videoModel = videoModel;
+                if (timings) updatedScene.wordTimings = timings;
+                if (duration) updatedScene.durationSeconds = Number(duration);
+                if (error !== undefined) updatedScene.errorMessage = error;
+
+                // Content updates
+                if (sceneNumber !== undefined) updatedScene.sceneNumber = sceneNumber;
+                if (scene_number !== undefined) updatedScene.sceneNumber = scene_number;
+                if (visualDescription !== undefined) updatedScene.visualDescription = visualDescription;
+                if (visual_description !== undefined) updatedScene.visualDescription = visual_description;
+                if (narration !== undefined) updatedScene.narration = narration;
+                if (characters !== undefined) updatedScene.characters = characters;
+
+                // Handle direct URL updates
+                if (imageUrl) updatedScene.imageUrl = imageUrl;
+                if (audioUrl) updatedScene.audioUrl = audioUrl;
+                if (sfxUrl) updatedScene.sfxUrl = sfxUrl;
+                if (videoUrl) updatedScene.videoUrl = videoUrl;
 
                 if (field === 'image') {
                     updatedScene.imageStatus = error ? 'failed' : status;
                     if (url) updatedScene.imageUrl = url;
                 } else if (field === 'audio') {
-                    updatedScene.audioStatus = error ? 'failed' : status;
+                    updatedScene.audioStatus = status;
                     if (url) updatedScene.audioUrl = url;
-                    if (timings) updatedScene.wordTimings = timings;
-                    if (duration) updatedScene.durationSeconds = duration;
+                } else if (field === 'sfx') {
+                    updatedScene.sfxStatus = status;
+                    if (url) updatedScene.sfxUrl = url;
                 } else if (field === 'video') {
-                    updatedScene.videoStatus = error ? 'failed' : status;
+                    updatedScene.videoStatus = status;
                     if (url) updatedScene.videoUrl = url;
                 }
-
-                if (error) updatedScene.errorMessage = error;
 
                 return updatedScene;
             }
@@ -223,25 +270,7 @@ class WorkflowClient {
                 return;
             }
 
-            const mappedScenes = (data.scenes || []).map((s: any) => ({
-                id: s.id || s._id,
-                sceneNumber: s.scene_number || s.sceneNumber,
-                visualDescription: s.visual_description || s.visualDescription,
-                narration: s.narration,
-                durationSeconds: Number(s.duration_seconds) || Number(s.durationSeconds) || 5,
-                imageUrl: s.image_url || s.imageUrl,
-                audioUrl: s.audio_url || s.audioUrl,
-                sfxUrl: s.sfx_url || s.sfxUrl,
-                imageStatus: s.image_status || s.imageStatus || (s.image_url ? 'completed' : 'pending'),
-                audioStatus: s.audio_status || s.audioStatus || (s.audio_url ? 'completed' : 'pending'),
-                sfxStatus: s.sfx_status || s.sfxStatus || (s.sfx_url ? 'completed' : 'pending'),
-                videoStatus: s.video_status || s.videoStatus || (s.video_url ? 'completed' : 'pending'),
-                videoUrl: s.video_url || s.videoUrl,
-                imageAttempts: s.image_attempts || 0,
-                audioAttempts: s.audio_attempts || 0,
-                errorMessage: s.error_message,
-                wordTimings: s.wordTimings || s.word_timings
-            }));
+            const mappedScenes = (data.scenes || []).map((s: any) => this.mapApiScene(s));
 
             const newState: WorkflowState = {
                 projectStatus: data.projectStatus as BackendProjectStatus,

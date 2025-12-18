@@ -31,6 +31,7 @@ export const saveProject = async (project: VideoProject, isNew: boolean = false)
     }
 
     const apiPayload = toApiProject(project);
+    const targetScenes = project.scenes || []; // Store input scenes to avoid loss
     let savedProject = { ...project };
     let backendProjectId = project.id;
     let apiSuccess = false;
@@ -42,9 +43,13 @@ export const saveProject = async (project: VideoProject, isNew: boolean = false)
                 body: JSON.stringify(apiPayload)
             });
 
-            // Se PATCH funcionou, atualizar dados do projeto com resposta
+            // If PATCH worked, update project data with response but PRESERVE scenes from input
             if (response) {
-                savedProject = { ...savedProject, ...response };
+                // Remove scenes from response to avoid overwriting our reordered local scenes
+                const { scenes: _discardedScenes, ...metadata } = response;
+                savedProject = { ...savedProject, ...metadata };
+                // Ensure targetScenes (which have the new order) are still used
+                savedProject.scenes = targetScenes;
             }
 
             apiSuccess = true;

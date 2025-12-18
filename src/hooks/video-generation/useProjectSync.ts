@@ -33,11 +33,21 @@ export const useProjectSync = (
                         if (!localScene) return backendScene;
 
                         return {
+                            ...localScene,
                             ...backendScene,
+                            // Ensure we don't lose media if backend failed to provide it
+                            imageUrl: backendScene.imageUrl || localScene.imageUrl,
+                            audioUrl: backendScene.audioUrl || localScene.audioUrl,
+                            videoUrl: backendScene.videoUrl || localScene.videoUrl,
+                            sfxUrl: backendScene.sfxUrl || localScene.sfxUrl,
+                            // Keep local characters if backend has none
+                            characters: (backendScene.characters && backendScene.characters.length > 0)
+                                ? backendScene.characters
+                                : localScene.characters,
+                            // Content fields from local trust
                             narration: localScene.narration,
                             visualDescription: localScene.visualDescription,
                             sceneNumber: localScene.sceneNumber,
-                            mediaType: backendScene.mediaType || localScene.mediaType,
                         };
                     });
 
