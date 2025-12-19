@@ -11,6 +11,8 @@ import { SafeVideo } from '../Common/SafeVideo';
 import { useTranslation } from 'react-i18next';
 import { SceneCharacterPicker } from './SceneCharacterPicker';
 import { useIntersectionObserver } from '../../hooks/useIntersectionObserver';
+import { AssetLibraryModal } from '../Common/AssetLibraryModal';
+import { Library } from 'lucide-react';
 
 interface SceneCardProps {
     scene: Scene;
@@ -40,6 +42,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
 
     const [isEditingPrompt, setIsEditingPrompt] = useState(false);
     const [promptText, setPromptText] = useState(scene.visualDescription);
+    const [isAssetLibraryOpen, setIsAssetLibraryOpen] = useState(false);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -246,6 +249,29 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
         onUpdateScene(sceneIndex, { characters: [] });
     };
 
+    const handleSelectLibraryAsset = async (asset: any) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/scenes/${scene.id}/reuse`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assetUrl: asset.url, assetId: asset.id })
+            });
+            const data = await response.json();
+            if (data.success) {
+                // Atualiza o estado local para refletir a mudança imediatamente
+                onUpdateScene(sceneIndex, {
+                    videoUrl: scene.mediaType === 'video' ? asset.url : scene.videoUrl,
+                    imageUrl: scene.mediaType === 'video' ? scene.imageUrl : asset.url,
+                    videoStatus: scene.mediaType === 'video' ? 'completed' : scene.videoStatus,
+                    imageStatus: scene.mediaType === 'video' ? scene.imageStatus : 'completed'
+                });
+            }
+        } catch (error) {
+            console.error('Failed to apply asset:', error);
+            throw error;
+        }
+    };
+
     return (
         <>
             <ConfirmModal
@@ -389,6 +415,15 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                 {isVideoLoading || localLoading.video ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
                             </button>
                         )}
+
+                        {/* Asset Library Button */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsAssetLibraryOpen(true); }}
+                            className="bg-black/60 hover:bg-emerald-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm cursor-pointer hover:scale-105"
+                            title={t('asset_library.open', 'Abrir biblioteca de similares')}
+                        >
+                            <Library className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                 </div >
 
@@ -502,6 +537,13 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     </div>
                 </div >
             </div >
+            <AssetLibraryModal
+                isOpen={isAssetLibraryOpen}
+                onClose={() => setIsAssetLibraryOpen(false)}
+                sceneDescription={scene.visualDescription}
+                assetType={scene.mediaType?.toUpperCase() as any || 'VIDEO'}
+                onSelectAsset={handleSelectLibraryAsset}
+            />
         </>
     );
 };
