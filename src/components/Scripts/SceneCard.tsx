@@ -48,6 +48,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
 
     // Drag and drop states
     const [isDraggingOver, setIsDraggingOver] = useState(false);
+    const [dragCounter, setDragCounter] = useState(0);
     const { uploadAsset, isUploading, uploadProgress, error: uploadError } = useAssetUpload();
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -257,20 +258,24 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
         onUpdateScene(sceneIndex, { characters: [] });
     };
 
-    // Drag and drop handlers
+    // Drag and drop handlers with counter to prevent stuck state
     const handleDragEnter = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        setDragCounter(prev => prev + 1);
         setIsDraggingOver(true);
     };
 
     const handleDragLeave = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        // Only set to false if leaving the entire drop zone
-        if (e.currentTarget === e.target) {
-            setIsDraggingOver(false);
-        }
+        setDragCounter(prev => {
+            const newCount = prev - 1;
+            if (newCount === 0) {
+                setIsDraggingOver(false);
+            }
+            return newCount;
+        });
     };
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -281,6 +286,9 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
+        // Always reset drag state completely
+        setDragCounter(0);
         setIsDraggingOver(false);
 
         if (!scene.id) {
@@ -317,13 +325,15 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     updates.videoUrl = result.url;
                     updates.videoStatus = 'completed';
                     updates.mediaType = 'video';
-                    setMediaData(prev => ({ ...prev, videoUrl: result.url }));
+                    // Force immediate update with cache busting for reload
+                    setMediaData(prev => ({ ...prev, videoUrl: result.url + '?t=' + Date.now() }));
                     setShowVideo(true);
                 } else {
                     updates.imageUrl = result.url;
                     updates.imageStatus = 'completed';
                     updates.mediaType = 'image';
-                    setMediaData(prev => ({ ...prev, imageUrl: result.url }));
+                    // Force immediate update with cache busting for reload
+                    setMediaData(prev => ({ ...prev, imageUrl: result.url + '?t=' + Date.now() }));
                     setShowVideo(false);
                 }
 
