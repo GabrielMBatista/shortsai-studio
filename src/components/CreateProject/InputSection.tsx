@@ -122,7 +122,10 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
             ...s,
             visualDescription: s.visualDescription || s.visual || s.imagePrompt || s.desc || "Scene visual",
             narration: s.narration || s.audio || s.text || s.speech || "",
-            sceneNumber: s.sceneNumber || s.scene || (idx + 1)
+            sceneNumber: s.sceneNumber || s.scene || (idx + 1),
+            // Ensure asset reuse fields are preserved
+            assetId: s.assetId,
+            assetType: s.assetType
         }));
         return {
             ...p,

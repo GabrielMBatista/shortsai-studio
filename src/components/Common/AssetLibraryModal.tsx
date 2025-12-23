@@ -8,6 +8,7 @@ import { apiFetch } from '../../services/api';
 interface AssetMatch {
     id: string;
     url: string;
+    type: 'VIDEO' | 'IMAGE' | 'AUDIO';
     similarity: number;
     description: string;
     tags: string[];
@@ -41,13 +42,45 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
         }
     }, [isOpen, sceneDescription, assetType]);
 
+    const [visibleCount, setVisibleCount] = useState(12);
+
+    // Reset visible count when assets reload
+    useEffect(() => {
+        setVisibleCount(12);
+    }, [assets]);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+        if (scrollHeight - scrollTop <= clientHeight + 300) {
+            setVisibleCount(prev => prev + 12);
+        }
+    };
+
     const fetchAssets = async () => {
         setLoading(true);
         try {
-            const data = await apiFetch(`/assets/search?description=${encodeURIComponent(sceneDescription)}&type=${assetType}`);
-            if (data.matches) {
-                setAssets(data.matches);
-            }
+            const typesToFetch = assetType === 'AUDIO' ? ['AUDIO'] : ['VIDEO', 'IMAGE'];
+
+            const promises = typesToFetch.map(type =>
+                apiFetch(`/assets/search?description=${encodeURIComponent(sceneDescription)}&type=${type}&minSimilarity=0.0`)
+            );
+
+            const results = await Promise.all(promises);
+
+            let allMatches: AssetMatch[] = [];
+            results.forEach((data, index) => {
+                if (data.matches) {
+                    // Ensure type is set if backend misses it
+                    const type = typesToFetch[index];
+                    const matchesWithType = data.matches.map((m: any) => ({ ...m, type: m.type || type }));
+                    allMatches = [...allMatches, ...matchesWithType];
+                }
+            });
+
+            // Sort by similarity descending
+            allMatches.sort((a, b) => b.similarity - a.similarity);
+
+            setAssets(allMatches);
         } catch (error) {
             console.error('Failed to fetch assets:', error);
         } finally {
@@ -78,7 +111,7 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                     <div>
                         <h2 className="text-xl font-bold text-white flex items-center gap-2">
                             <span className="p-1.5 bg-indigo-500/20 rounded-lg text-indigo-400">
-                                {assetType === 'VIDEO' ? '🎬' : assetType === 'IMAGE' ? '🖼️' : '🎵'}
+                                🔍
                             </span>
                             {t('asset_library.title', 'Biblioteca de Ativos')}
                         </h2>
@@ -95,7 +128,10 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6">
+                <div
+                    className="flex-1 overflow-y-auto p-6"
+                    onScroll={handleScroll}
+                >
                     {loading ? (
                         <div className="h-64 flex flex-col items-center justify-center gap-4 text-zinc-400">
                             <div className="animate-spin text-4xl text-indigo-500">⏳</div>
@@ -103,16 +139,16 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                         </div>
                     ) : assets.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {assets.map((asset) => (
+                            {assets.slice(0, visibleCount).map((asset) => (
                                 <div
                                     key={asset.id}
                                     className="group relative bg-zinc-800/30 border border-zinc-700/50 rounded-xl overflow-hidden hover:border-indigo-500/50 transition-all hover:shadow-lg hover:shadow-indigo-500/5"
                                 >
                                     {/* Asset Preview */}
                                     <div className="aspect-video bg-black relative overflow-hidden">
-                                        {assetType === 'VIDEO' ? (
+                                        {asset.type === 'VIDEO' ? (
                                             <SafeVideo src={asset.url} />
-                                        ) : assetType === 'IMAGE' ? (
+                                        ) : asset.type === 'IMAGE' ? (
                                             <SafeImage src={asset.url} />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center bg-zinc-800">
@@ -120,11 +156,16 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                                             </div>
                                         )}
 
+                                        {/* Type Badge */}
+                                        <div className="absolute top-2 left-2 px-2 py-1 rounded bg-black/60 border border-white/10 text-[10px] uppercase font-bold text-white flex items-center gap-1">
+                                            {asset.type === 'VIDEO' ? '🎥 VIDEO' : asset.type === 'IMAGE' ? '🖼️ IMAGE' : '🎵 AUDIO'}
+                                        </div>
+
                                         {/* Score Badge */}
                                         <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1.5">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${asset.similarity > 80 ? 'bg-green-400' : 'bg-yellow-400'} animate-pulse`}></div>
                                             <span className="text-xs font-bold text-white">
-                                                {asset.similarity}% match
+                                                {asset.similarity}%
                                             </span>
                                         </div>
 

@@ -122,6 +122,10 @@ export const patchScene = async (projectId: string, scene: Partial<Scene> & { sc
     if (scene.mediaType !== undefined) payload.media_type = scene.mediaType;
     if (scene.characters !== undefined) payload.characterIds = scene.characters.map(c => c.id);
 
+    // Pass generic extensions passed via 'any' 
+    if ((scene as any).assetId) payload.assetId = (scene as any).assetId;
+    if ((scene as any).assetType) payload.assetType = (scene as any).assetType;
+
     if (Object.keys(payload).length > 0) {
         try {
             const res = await apiFetch(`/scenes/${targetScene.id}`, {

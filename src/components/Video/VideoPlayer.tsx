@@ -6,6 +6,7 @@ import SubtitleOverlay from './SubtitleOverlay';
 import { useTranslation } from 'react-i18next';
 import { getSceneMedia } from '../../services/scenes';
 import { SafeImage } from '../Common/SafeImage';
+import { SafeVideo } from '../Common/SafeVideo';
 import { ScheduleUploadModal } from './ScheduleUploadModal';
 
 interface VideoPlayerProps {
@@ -33,7 +34,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
   // Use useMemo to ensure validScenes is recalculated when scenes prop changes
   const validScenes = React.useMemo(() => {
-    return scenes.filter(s => s.imageStatus === 'completed');
+    // Include scenes that have EITHER completed image OR completed video
+    return scenes.filter(s =>
+      s.imageStatus === 'completed' ||
+      (s.videoStatus === 'completed' && s.videoUrl)
+    );
   }, [scenes]);
 
   // Use useMemo to ensure activeScene is always fresh from validScenes
@@ -84,19 +89,46 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     loadMedia();
   }, [activeScene]);
 
-  // Preload next scene media to prevent stuttering
+  const [preloadProgress, setPreloadProgress] = useState(0);
+  const [isPreloading, setIsPreloading] = useState(true);
+
+  // Preload ALL scenes media AGGRESSIVELY to avoid stuttering
   useEffect(() => {
-    const nextIndex = currentSceneIndex + 1;
-    if (nextIndex < validScenes.length) {
-      const nextScene = validScenes[nextIndex];
-      if (nextScene.id) {
-        // Just trigger the fetch and let it populate the cache in the service
-        getSceneMedia(nextScene.id).catch(err =>
-          console.warn(`[VideoPlayer] Failed to preload scene ${nextIndex}:`, err)
-        );
+    let mounted = true;
+    const preloadAll = async () => {
+      setIsPreloading(true);
+      setPreloadProgress(0);
+      let loaded = 0;
+      const total = validScenes.length;
+
+      if (total === 0) {
+        setIsPreloading(false);
+        return;
       }
-    }
-  }, [currentSceneIndex, validScenes]);
+
+      // Load in batches for better performance
+      // Increased batch size for faster preloading
+      const batchSize = 5;
+      for (let i = 0; i < total; i += batchSize) {
+        if (!mounted) return;
+        const batch = validScenes.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (scene) => {
+          if (scene.id) {
+            try {
+              await getSceneMedia(scene.id);
+            } catch (e) { console.warn("Preload fail", e); }
+          }
+          loaded++;
+          if (mounted) setPreloadProgress((loaded / total) * 100);
+        }));
+      }
+
+      if (mounted) setIsPreloading(false);
+    };
+
+    preloadAll();
+    return () => { mounted = false; };
+  }, [validScenes]);
 
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -307,10 +339,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       {/* Main Player Container */}
       <div id="video-preview-player" className="relative h-[80vh] max-w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
 
-        {isLoadingMedia && (
+        {(isLoadingMedia || isPreloading) && (
           <div className="absolute inset-0 z-20 bg-slate-900/50 backdrop-blur-sm flex flex-col items-center justify-center animate-fade-in">
             <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-3" />
-            <span className="text-xs font-semibold text-slate-300 tracking-wider uppercase">{t('common.loading')}</span>
+            <span className="text-xs font-semibold text-slate-300 tracking-wider uppercase">
+              {isPreloading ? `BUFFERING ${Math.round(preloadProgress)}%` : t('common.loading')}
+            </span>
           </div>
         )}
 
@@ -324,7 +358,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
 
           return shouldUseVideo ? (
-            <video
+            <SafeVideo
               key={`video-${currentSceneIndex}-${videoSrc}`}
               ref={videoRef}
               src={videoSrc}
@@ -333,6 +367,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
               muted={true}
               playsInline
               preload="auto"
+              lazyLoad={false}
               onEnded={() => setVideoEnded(true)}
               onError={(e) => {
                 // Only log real errors, not aborts/empties

@@ -246,6 +246,13 @@ class WorkflowClient {
         }
 
         const { status } = data;
+
+        // Guard: Only update if status actually changed to prevent infinite loops
+        if (this.lastState.projectStatus === status) {
+            console.log('[WorkflowClient] Ignoring duplicate project status update:', status);
+            return;
+        }
+
         this.updateLocalState({
             ...this.lastState,
             projectStatus: status

@@ -32,7 +32,7 @@ export const SafeImage: React.FC<SafeImageProps> = ({
                 }
             },
             {
-                rootMargin: '50px', // Only load when close to viewport
+                rootMargin: '200px', // Aggressive preload
                 threshold: 0.01
             }
         );
@@ -57,26 +57,21 @@ export const SafeImage: React.FC<SafeImageProps> = ({
         setHasError(false);
         setIsLoading(true);
 
-        // Queue the load via Global Resource Queue with DEBOUNCE
-        // This prevents rapid scrolling from queuing hundreds of images
+        // Queue immediately via Global Resource Queue (no debounce for preview)
         let cancelQueue: (() => void) | undefined;
-        let debounceTimer: NodeJS.Timeout | undefined;
 
         const loadTask = () => {
             setImgSrc(src);
         };
 
-        // Wait 100ms before queueing. If user scrolls past quickly, we cancel before queueing.
-        debounceTimer = setTimeout(() => {
-            cancelQueue = resourceQueue.enqueue(loadTask);
-        }, 100);
+        // Enqueue immediately when visible
+        cancelQueue = resourceQueue.enqueue(loadTask);
 
         return () => {
-            clearTimeout(debounceTimer);
             if (cancelQueue) cancelQueue();
         };
 
-    }, [src, isVisible]); // Removed fallbackSrc from dependency to avoid re-queueing on prop change if src is same
+    }, [src, isVisible, fallbackSrc]);
 
     const handleError = () => {
         if (hasError) {

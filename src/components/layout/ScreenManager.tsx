@@ -68,6 +68,7 @@ interface ScreenManagerProps {
     regenerateSceneAudio: (idx: number, force: boolean, overrides?: { voice?: string, provider?: TTSProvider, language?: string }) => Promise<void>;
     regenerateSceneVideo: (idx: number, force: boolean) => void;
     updateScene: (index: number, updates: Partial<Scene>) => Promise<void>;
+    updateScenes: (updates: Array<{ index: number, updates: Partial<Scene> }>) => Promise<void>;
     cancelGeneration: () => void;
     resumeGeneration: () => Promise<void>;
     skipCurrentScene: () => void;
@@ -131,6 +132,7 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
     regenerateSceneAudio,
     regenerateSceneVideo,
     updateScene,
+    updateScenes,
     cancelGeneration,
     resumeGeneration,
     skipCurrentScene,
@@ -241,6 +243,7 @@ const ScreenManager: React.FC<ScreenManagerProps> = ({
                         onRegenerateSceneAudio={regenerateSceneAudio}
                         onRegenerateSceneVideo={regenerateSceneVideo}
                         onUpdateScene={updateScene}
+                        onUpdateScenes={updateScenes}
                         isGeneratingImages={isGenerating || step === AppStep.GENERATING_IMAGES}
                         onCancelGeneration={() => { cancelGeneration(); showToast(t('script.generation_cancelled'), 'info'); }}
                         canPreview={Array.isArray(project.scenes) && project.scenes.some(s => s.imageStatus === 'completed')}

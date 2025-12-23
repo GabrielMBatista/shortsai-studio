@@ -63,7 +63,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     });
     const [isLoadingMedia, setIsLoadingMedia] = useState(false);
 
-    const { targetRef, isIntersecting } = useIntersectionObserver({ rootMargin: '200px' });
+    const { targetRef, isIntersecting } = useIntersectionObserver({ rootMargin: '400px' });
     const [hasBeenVisible, setHasBeenVisible] = useState(false);
 
     useEffect(() => {
@@ -82,7 +82,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
         const loadMedia = async () => {
             const missingImage = scene.imageStatus === 'completed' && !scene.imageUrl && !mediaData.imageUrl;
             const missingAudio = scene.audioStatus === 'completed' && !scene.audioUrl && !mediaData.audioUrl;
-            const missingVideo = scene.videoStatus === 'completed' && !scene.videoUrl && !mediaData.videoUrl;
+            const missingVideo = (scene.videoStatus === 'completed' || showVideo) && !scene.videoUrl && !mediaData.videoUrl;
 
             if ((missingImage || missingAudio || missingVideo) && scene.id) {
                 setIsLoadingMedia(true);
@@ -165,7 +165,9 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     const isVideoLoading = isVideoCompleted ? false : (isVideoPending || isVideoLoadingFromStatus);
 
     // Check if both video and image are available for toggle
-    const hasVideo = scene.videoStatus === 'completed' && (scene.videoUrl || mediaData.videoUrl);
+    // Consider video as "has" if status is completed AND (URL exists OR still loading media data)
+    const hasVideoUrl = !!(scene.videoUrl || mediaData.videoUrl);
+    const hasVideo = scene.videoStatus === 'completed' && (hasVideoUrl || isLoadingMedia);
     const hasImage = scene.imageStatus === 'completed' && (scene.imageUrl || mediaData.imageUrl);
     const canToggle = (hasVideo || isVideoLoading) && hasImage;
 
@@ -258,13 +260,42 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
             });
 
             if (data && (data.success || data.id)) {
-                // Atualiza o estado local para refletir a mudança imediatamente
-                onUpdateScene(sceneIndex, {
-                    videoUrl: scene.mediaType === 'video' ? asset.url : scene.videoUrl,
-                    imageUrl: scene.mediaType === 'video' ? scene.imageUrl : asset.url,
-                    videoStatus: scene.mediaType === 'video' ? 'completed' : scene.videoStatus,
-                    imageStatus: scene.mediaType === 'video' ? scene.imageStatus : 'completed'
-                });
+                // Determine updates based on the ASSET type, not the current scene type
+                const isVideo = asset.type === 'VIDEO';
+                const isImage = asset.type === 'IMAGE';
+                const isAudio = asset.type === 'AUDIO';
+
+                const updates: Partial<Scene> = {};
+
+                if (isVideo) {
+                    updates.videoUrl = asset.url;
+                    updates.videoStatus = 'completed';
+                    updates.mediaType = 'video';
+
+                    // Force immediate local update
+                    setMediaData(prev => ({
+                        ...prev,
+                        videoUrl: asset.url
+                    }));
+                    setShowVideo(true);
+                } else if (isImage) {
+                    updates.imageUrl = asset.url;
+                    updates.imageStatus = 'completed';
+                    updates.mediaType = 'image';
+
+                    // Force immediate local update
+                    setMediaData(prev => ({
+                        ...prev,
+                        imageUrl: asset.url
+                    }));
+                    setShowVideo(false);
+                } else if (isAudio) {
+                    updates.audioUrl = asset.url;
+                    updates.audioStatus = 'completed';
+                    setMediaData(prev => ({ ...prev, audioUrl: asset.url }));
+                }
+
+                onUpdateScene(sceneIndex, updates);
             }
         } catch (error) {
             console.error('Failed to apply asset:', error);
@@ -300,6 +331,17 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                 <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
                             </div>
                             <span className="text-xs font-medium animate-pulse text-indigo-300">{t('scene.generating_video')}</span>
+                        </div>
+                    ) : showVideo ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-slate-900/80">
+                            <Video className="w-8 h-8 mb-2 opacity-50" />
+                            <span className="text-xs">{t('scene.video_missing', 'Video unavailable')}</span>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setHasBeenVisible(false); setTimeout(() => setHasBeenVisible(true), 10); }}
+                                className="mt-2 text-[10px] text-indigo-400 hover:text-indigo-300 underline"
+                            >
+                                Retry Load
+                            </button>
                         </div>
                     ) : hasImage ? (
                         <SafeImage

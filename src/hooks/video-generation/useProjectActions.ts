@@ -30,9 +30,16 @@ export const useProjectActions = (
 
                 // If backend returned updated data, sync local state with it
                 if (updatedScene) {
-                    const syncedScenes = [...project.scenes];
-                    syncedScenes[index] = { ...syncedScenes[index], ...updatedScene };
-                    setProject({ ...project, scenes: syncedScenes });
+                    setProject(prev => {
+                        if (!prev) return null;
+                        const syncedScenes = [...prev.scenes];
+                        // Find index again in case it shifted (unlikely during this operation but safe)
+                        const idx = syncedScenes.findIndex(s => s.id === updatedScene.id);
+                        if (idx !== -1) {
+                            syncedScenes[idx] = { ...syncedScenes[idx], ...updatedScene };
+                        }
+                        return { ...prev, scenes: syncedScenes };
+                    });
                 }
             } catch (e) {
                 console.error("Failed to update scene", e);
@@ -41,6 +48,60 @@ export const useProjectActions = (
                 setProject({ ...project });
             }
         }
+    };
+
+    const updateScenes = async (updatesList: Array<{ index: number, updates: Partial<Scene> }>) => {
+        if (!project) return;
+
+        // 1. Bulk Optimistic Update
+        const newScenes = [...project.scenes];
+        const promises = [];
+
+        updatesList.forEach(({ index, updates }) => {
+            if (newScenes[index]) {
+                newScenes[index] = { ...newScenes[index], ...updates };
+
+                // Prepare backend request
+                if (!isMock && newScenes[index].id) {
+                    promises.push(
+                        patchScene(project.id, { sceneNumber: newScenes[index].sceneNumber, ...updates })
+                            .then(updatedScene => ({ index, updatedScene }))
+                            .catch(e => {
+                                console.error(`Failed to patch scene index ${index}`, e);
+                                return { index, error: e };
+                            })
+                    );
+                }
+            }
+        });
+
+        setProject({ ...project, scenes: newScenes });
+
+        if (isMock || promises.length === 0) return;
+
+        // 2. Execute Backend Requests in Parallel
+        const results = await Promise.all(promises);
+
+        // 3. Sync Responses
+        setProject(prev => {
+            if (!prev) return null;
+            const syncedScenes = [...prev.scenes];
+            let changed = false;
+
+            results.forEach(res => {
+                if (res && (res as any).updatedScene) {
+                    const updated = (res as any).updatedScene;
+                    // Match by ID is safest
+                    const idx = syncedScenes.findIndex(s => s.id === updated.id);
+                    if (idx !== -1) {
+                        syncedScenes[idx] = { ...syncedScenes[idx], ...updated };
+                        changed = true;
+                    }
+                }
+            });
+
+            return changed ? { ...prev, scenes: syncedScenes } : prev;
+        });
     };
 
     const removeScene = async (index: number) => {
@@ -180,6 +241,7 @@ export const useProjectActions = (
 
     return {
         updateScene,
+        updateScenes,
         removeScene,
         addScene,
         reorderScenes,

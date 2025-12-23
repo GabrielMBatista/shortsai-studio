@@ -19,7 +19,15 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     // However, we assume API_BASE_URL is configured correctly (e.g. http://localhost:3333/api).
     // If VITE_API_URL is missing, it defaults to '/api'.
 
-    const url = `${API_BASE_URL}${normalizedEndpoint}`;
+    // Fix: If API_BASE_URL ends with /api and endpoint starts with /api, remove one /api
+    let finalBase = API_BASE_URL;
+    let finalEndpoint = normalizedEndpoint;
+
+    if (finalBase.endsWith('/api') && finalEndpoint.startsWith('/api/')) {
+        finalEndpoint = finalEndpoint.substring(4); // Remove leading /api
+    }
+
+    const url = `${finalBase}${finalEndpoint}`;
 
     try {
         const res = await fetch(url, {
