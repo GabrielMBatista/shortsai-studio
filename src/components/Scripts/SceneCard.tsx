@@ -325,15 +325,15 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     updates.videoUrl = result.url;
                     updates.videoStatus = 'completed';
                     updates.mediaType = 'video';
-                    // Force immediate update with cache busting for reload
-                    setMediaData(prev => ({ ...prev, videoUrl: result.url + '?t=' + Date.now() }));
+                    // Update state to trigger reload
+                    setMediaData(prev => ({ ...prev, videoUrl: result.url }));
                     setShowVideo(true);
                 } else {
                     updates.imageUrl = result.url;
                     updates.imageStatus = 'completed';
                     updates.mediaType = 'image';
-                    // Force immediate update with cache busting for reload
-                    setMediaData(prev => ({ ...prev, imageUrl: result.url + '?t=' + Date.now() }));
+                    // Update state to trigger reload
+                    setMediaData(prev => ({ ...prev, imageUrl: result.url }));
                     setShowVideo(false);
                 }
 
