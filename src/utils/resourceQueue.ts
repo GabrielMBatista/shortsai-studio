@@ -6,7 +6,7 @@ type Task = () => void;
 
 const queue: Task[] = [];
 let activeRequests = 0;
-const MAX_CONCURRENT_REQUESTS = 6; // Browser typical limit per domain is 6. We stick to this globally for R2.
+const MAX_CONCURRENT_REQUESTS = 3; // Reduzido para evitar bloqueio do R2 (ERR_CONNECTION_CLOSED)
 
 export const resourceQueue = {
     enqueue: (task: Task) => {

@@ -75,8 +75,22 @@ export const SafeVideo = forwardRef<HTMLVideoElement, SafeVideoProps>((
 
         let cancelQueue: (() => void) | undefined;
 
-        const loadTask = () => {
-            setVideoSrc(src);
+        const loadTask = async () => {
+            try {
+                // 🚀 Try to fetch from cache first, or fetch and cache
+                if (src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('blob:')) {
+                    const { mediaCache } = await import('../../utils/mediaCache');
+                    const cachedUrl = await mediaCache.fetchAndCache(src, 'video');
+                    setVideoSrc(cachedUrl);
+                } else {
+                    // For data URIs, blob URLs, or local files, use directly
+                    setVideoSrc(src);
+                }
+            } catch (e) {
+                console.error('[SafeVideo] Failed to load from cache:', e);
+                // Fallback to direct src
+                setVideoSrc(src);
+            }
         };
 
         cancelQueue = resourceQueue.enqueue(loadTask);

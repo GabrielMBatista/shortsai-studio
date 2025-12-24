@@ -450,7 +450,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
 
                     {showVideo && hasVideo ? (
                         <SafeVideo
-                            src={`${mediaData.videoUrl || scene.videoUrl || ''}${(mediaData.videoUrl || scene.videoUrl)?.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                            src={mediaData.videoUrl || scene.videoUrl || ''}
                             poster={mediaData.imageUrl || scene.imageUrl || undefined}
                             className="w-full h-full object-cover"
                             autoPlay
@@ -494,7 +494,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                         </div>
                     ) : hasImage ? (
                         <SafeImage
-                            src={`${mediaData.imageUrl || scene.imageUrl || ''}${(mediaData.imageUrl || scene.imageUrl)?.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                            src={mediaData.imageUrl || scene.imageUrl || ''}
                             alt={`Scene ${scene.sceneNumber}`}
                             className="w-full h-full object-cover"
                         />

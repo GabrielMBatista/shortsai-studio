@@ -60,8 +60,22 @@ export const SafeImage: React.FC<SafeImageProps> = ({
         // Queue immediately via Global Resource Queue (no debounce for preview)
         let cancelQueue: (() => void) | undefined;
 
-        const loadTask = () => {
-            setImgSrc(src);
+        const loadTask = async () => {
+            try {
+                // 🚀 Try to fetch from cache first, or fetch and cache
+                if (src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('blob:')) {
+                    const { mediaCache } = await import('../../utils/mediaCache');
+                    const cachedUrl = await mediaCache.fetchAndCache(src, 'image');
+                    setImgSrc(cachedUrl);
+                } else {
+                    // For data URIs, blob URLs, or local files, use directly
+                    setImgSrc(src);
+                }
+            } catch (e) {
+                console.error('[SafeImage] Failed to load from cache:', e);
+                // Fallback to direct src
+                setImgSrc(src);
+            }
         };
 
         // Enqueue immediately when visible

@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Loader2, AlertCircle, Volume2, Play, Square } from 'lucide-react';
-import { useGlobalAudioManager } from '../../hooks/useGlobalAudioManager';
 
 interface AudioPlayerButtonProps {
     audioUrl?: string;
@@ -11,77 +10,93 @@ interface AudioPlayerButtonProps {
 
 const AudioPlayerButton: React.FC<AudioPlayerButtonProps> = ({ audioUrl, status, label = "Listen", icon }) => {
     const [isPlaying, setIsPlaying] = useState(false);
-    const { play, stop, isPlaying: checkIsPlaying } = useGlobalAudioManager();
-    const audioKeyRef = useRef<string>('');
-
-    // Gerar chave única para este botão
-    useEffect(() => {
-        audioKeyRef.current = `audio-${Math.random().toString(36).substr(2, 9)}`;
-    }, []);
-
-    // Sincronizar estado local com o manager global
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const playing = checkIsPlaying(audioKeyRef.current);
-            if (playing !== isPlaying) {
-                setIsPlaying(playing);
-            }
-        }, 100);
-
-        return () => clearInterval(interval);
-    }, [isPlaying, checkIsPlaying]);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const toggleAudio = async (e: React.MouseEvent) => {
         e.stopPropagation();
         if (!audioUrl) return;
 
-        if (isPlaying) {
-            stop();
-            setIsPlaying(false);
-            return;
-        }
+        // Initialize Audio on first click (Lazy Load)
+        if (!audioRef.current) {
+            try {
+                let resolvedUrl = audioUrl;
 
-        try {
-            let resolvedUrl = audioUrl;
-
-            // Convert data URI to Blob URL for compatibility
-            if (audioUrl.startsWith('data:audio/')) {
-                const [header, base64Data] = audioUrl.split(',');
-                if (base64Data) {
-                    const mimeMatch = header.match(/data:(.*?);/);
-                    const mimeType = mimeMatch ? mimeMatch[1] : 'audio/wav';
+                // 🚀 Try to fetch from cache for R2 URLs
+                if (audioUrl.startsWith('http') && !audioUrl.startsWith('data:') && !audioUrl.startsWith('blob:')) {
                     try {
-                        const binaryString = atob(base64Data);
-                        const bytes = new Uint8Array(binaryString.length);
-                        for (let i = 0; i < binaryString.length; i++) {
-                            bytes[i] = binaryString.charCodeAt(i);
-                        }
-                        const blob = new Blob([bytes], { type: mimeType });
-                        resolvedUrl = URL.createObjectURL(blob);
-                    } catch (err) {
-                        console.error("Failed to convert data URI to Blob:", err);
-                        return;
+                        const { mediaCache } = await import('../../utils/mediaCache');
+                        resolvedUrl = await mediaCache.fetchAndCache(audioUrl, 'audio');
+                    } catch (cacheErr) {
+                        console.warn('[AudioPlayerButton] Cache failed, using direct URL:', cacheErr);
+                        resolvedUrl = audioUrl; // Fallback to direct
                     }
                 }
-            }
+                // Convert data URI to Blob URL for compatibility
+                else if (audioUrl.startsWith('data:audio/')) {
+                    const [header, base64Data] = audioUrl.split(',');
+                    if (base64Data) {
+                        const mimeMatch = header.match(/data:(.*?);/);
+                        const mimeType = mimeMatch ? mimeMatch[1] : 'audio/wav';
+                        try {
+                            const binaryString = atob(base64Data);
+                            const bytes = new Uint8Array(binaryString.length);
+                            for (let i = 0; i < binaryString.length; i++) {
+                                bytes[i] = binaryString.charCodeAt(i);
+                            }
+                            const blob = new Blob([bytes], { type: mimeType });
+                            resolvedUrl = URL.createObjectURL(blob);
+                        } catch (err) {
+                            console.error("Failed to convert data URI to Blob:", err);
+                            return;
+                        }
+                    }
+                }
 
-            setIsPlaying(true);
-            await play(resolvedUrl, audioKeyRef.current);
+                const audio = new Audio(resolvedUrl);
+                audio.onended = () => setIsPlaying(false);
+                audio.onpause = () => setIsPlaying(false);
+                audio.onerror = (e) => {
+                    console.error("Audio playback error:", audio.error);
+                    setIsPlaying(false);
+                };
+
+                audioRef.current = audio;
+            } catch (e) {
+                console.error("Audio initialization error:", e);
+                return;
+            }
+        }
+
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        if (isPlaying) {
+            audio.pause();
+            audio.currentTime = 0;
             setIsPlaying(false);
-        } catch (e) {
-            console.warn("Playback failed/prevented", e);
-            setIsPlaying(false);
+        } else {
+            try {
+                await audio.play();
+                setIsPlaying(true);
+            } catch (e) {
+                console.warn("Playback failed/prevented", e);
+                setIsPlaying(false);
+            }
         }
     };
 
-    // Cleanup on unmount - stop if this button's audio is playing
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (checkIsPlaying(audioKeyRef.current)) {
-                stop();
+            if (audioRef.current) {
+                audioRef.current.pause();
+                const src = audioRef.current.src;
+                audioRef.current.src = '';
+                if (src.startsWith('blob:')) URL.revokeObjectURL(src);
+                audioRef.current = null;
             }
         };
-    }, [stop, checkIsPlaying]);
+    }, []);
 
     // Show loader for any processing state
     const isLoading = ['pending', 'queued', 'processing', 'loading'].includes(status);
