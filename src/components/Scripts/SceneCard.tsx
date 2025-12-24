@@ -450,7 +450,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
 
                     {showVideo && hasVideo ? (
                         <SafeVideo
-                            src={mediaData.videoUrl || scene.videoUrl || ''}
+                            src={`${mediaData.videoUrl || scene.videoUrl || ''}${(mediaData.videoUrl || scene.videoUrl)?.includes('?') ? '&' : '?'}t=${Date.now()}`}
                             poster={mediaData.imageUrl || scene.imageUrl || undefined}
                             className="w-full h-full object-cover"
                             autoPlay
@@ -470,15 +470,31 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                             <Video className="w-8 h-8 mb-2 opacity-50" />
                             <span className="text-xs">{t('scene.video_missing', 'Video unavailable')}</span>
                             <button
-                                onClick={(e) => { e.stopPropagation(); setHasBeenVisible(false); setTimeout(() => setHasBeenVisible(true), 10); }}
-                                className="mt-2 text-[10px] text-indigo-400 hover:text-indigo-300 underline"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    // Clear local cache
+                                    setMediaData(prev => ({ ...prev, videoUrl: null }));
+                                    // Force refetch from server
+                                    if (scene.id) {
+                                        setIsLoadingMedia(true);
+                                        const data = await getSceneMedia(scene.id);
+                                        if (data) {
+                                            setMediaData(prev => ({
+                                                ...prev,
+                                                videoUrl: data.video_base64
+                                            }));
+                                        }
+                                        setIsLoadingMedia(false);
+                                    }
+                                }}
+                                className="mt-2 px-3 py-1 text-[10px] text-white bg-indigo-600 hover:bg-indigo-500 rounded transition-colors"
                             >
                                 Retry Load
                             </button>
                         </div>
                     ) : hasImage ? (
                         <SafeImage
-                            src={mediaData.imageUrl || scene.imageUrl || ''}
+                            src={`${mediaData.imageUrl || scene.imageUrl || ''}${(mediaData.imageUrl || scene.imageUrl)?.includes('?') ? '&' : '?'}t=${Date.now()}`}
                             alt={`Scene ${scene.sceneNumber}`}
                             className="w-full h-full object-cover"
                         />

@@ -355,6 +355,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             (!activeScene.mediaType && activeScene.videoUrl && activeScene.videoStatus === 'completed');
           const videoSrc = activeMedia.videoUrl || activeScene.videoUrl || '';
           const imageSrc = activeMedia.imageUrl || activeScene.imageUrl || '';
+          // Add cache busters to force reload after upload
+          const videoSrcWithCache = videoSrc ? `${videoSrc}${videoSrc.includes('?') ? '&' : '?'}t=${Date.now()}` : '';
+          const imageSrcWithCache = imageSrc ? `${imageSrc}${imageSrc.includes('?') ? '&' : '?'}t=${Date.now()}` : '';
 
           if (shouldUseVideo && videoSrc) {
             // Render BOTH video and image as native elements for proper layering
@@ -362,11 +365,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
               <>
                 {/* Image Layer (underneath) - fades in when video ends */}
                 <img
-                  src={imageSrc}
+                  src={imageSrcWithCache}
                   alt={`Scene ${currentSceneIndex + 1} background`}
                   className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out ${videoEnded
-                      ? 'opacity-100 scale-110 duration-[20s]' // Fade in + zoom when video ends
-                      : 'opacity-0 scale-100' // Hidden while video plays
+                    ? 'opacity-100 scale-110 duration-[20s]' // Fade in + zoom when video ends
+                    : 'opacity-0 scale-100' // Hidden while video plays
                     }`}
                 />
 
@@ -374,8 +377,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                 <video
                   key={`video-${currentSceneIndex}-${videoSrc}`}
                   ref={videoRef}
-                  src={videoSrc}
-                  poster={imageSrc}
+                  src={videoSrcWithCache}
+                  poster={imageSrcWithCache}
                   className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${videoEnded ? 'opacity-0' : 'opacity-100' // Fade out when video ends
                     }`}
                   muted
@@ -402,7 +405,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             // Image-only scene
             return (
               <SafeImage
-                src={imageSrc}
+                src={imageSrcWithCache}
                 alt={`Scene ${currentSceneIndex + 1}`}
                 className={`w-full h-full object-cover transition-transform duration-[20s] ease-linear ${isPlaying ? 'scale-110' : 'scale-100'}`}
               />
@@ -413,7 +416,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         {/* Audio Elements */}
         <audio
           ref={audioRef}
-          src={activeMedia.audioUrl || activeScene.audioUrl || ''}
+          src={`${activeMedia.audioUrl || activeScene.audioUrl || ''}${(activeMedia.audioUrl || activeScene.audioUrl)?.includes('?') ? '&' : '?'}t=${Date.now()}`}
           onEnded={handleAudioEnded}
           onTimeUpdate={handleTimeUpdate}
           autoPlay={isPlaying}

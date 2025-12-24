@@ -14,6 +14,7 @@ interface AssetMatch {
     tags: string[];
     category: string | null;
     duration: number | null;
+    isRecentlyUsed?: boolean;  // Indica se foi usado recentemente neste canal
 }
 
 interface AssetLibraryModalProps {
@@ -224,6 +225,15 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                                                 {asset.similarity}%
                                             </span>
                                         </div>
+
+                                        {/* Recently Used Badge */}
+                                        {asset.isRecentlyUsed && (
+                                            <div className="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-blue-500/80 backdrop-blur-md border border-blue-400/30 flex items-center gap-1.5">
+                                                <span className="text-xs font-semibold text-white flex items-center gap-1">
+                                                    🕐 Usado Recentemente
+                                                </span>
+                                            </div>
+                                        )}
 
                                         {/* Hover Overlay */}
                                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
