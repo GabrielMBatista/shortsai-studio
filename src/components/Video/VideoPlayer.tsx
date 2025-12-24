@@ -67,14 +67,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
 
     const loadMedia = async () => {
       setIsLoadingMedia(true);
-      let { imageUrl, audioUrl, videoUrl } = activeScene;
 
-      // Fetch if missing and scene has ID
+      // Get base URLs
+      let imageUrl = activeScene.imageUrl;
+      let audioUrl = activeScene.audioUrl;
+      let videoUrl = activeScene.videoUrl;
+
+      // Fetch full details if missing content (e.g. from list vs detail view)
       if ((!imageUrl || !audioUrl || (!videoUrl && activeScene.videoStatus === 'completed')) && activeScene.id) {
         try {
           const media = await getSceneMedia(activeScene.id);
           if (media) {
-            if (!imageUrl) imageUrl = media.image_base64;
+            if (!imageUrl) imageUrl = media.image_base64; // Fallback or real url
             if (!audioUrl) audioUrl = media.audio_base64;
             if (!videoUrl) videoUrl = media.video_base64;
           }
@@ -82,7 +86,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           console.error("Failed to load scene media for player", e);
         }
       }
-      setActiveMedia({ imageUrl, audioUrl, videoUrl });
+
+      // PROCESS URLs THROUGH MEDIA CACHE (Proxies for Video/Audio, Blob for Images)
+      // This is crucial for fixing CORS and Streaming issues
+      try {
+        const { mediaCache } = await import('../../utils/mediaCache');
+
+        const [processedImage, processedAudio, processedVideo] = await Promise.all([
+          imageUrl && imageUrl.startsWith('http') ? mediaCache.fetchAndCache(imageUrl, 'image') : Promise.resolve(imageUrl),
+          audioUrl && audioUrl.startsWith('http') ? mediaCache.fetchAndCache(audioUrl, 'audio') : Promise.resolve(audioUrl),
+          videoUrl && videoUrl.startsWith('http') ? mediaCache.fetchAndCache(videoUrl, 'video') : Promise.resolve(videoUrl)
+        ]);
+
+        setActiveMedia({
+          imageUrl: processedImage,
+          audioUrl: processedAudio,
+          videoUrl: processedVideo
+        });
+
+      } catch (e) {
+        console.warn("[VideoPlayer] Error processing media cache:", e);
+        // Fallback to originals if cache system fails
+        setActiveMedia({ imageUrl, audioUrl, videoUrl });
+      }
+
       setIsLoadingMedia(false);
     };
 
@@ -107,17 +134,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       }
 
       // Load in batches for better performance
-      // Increased batch size for faster preloading
-      const batchSize = 5;
+      const { mediaCache } = await import('../../utils/mediaCache');
+      const batchSize = 3; // Reduced batch size for stability with global limit
+
       for (let i = 0; i < total; i += batchSize) {
         if (!mounted) return;
         const batch = validScenes.slice(i, i + batchSize);
+
         await Promise.all(batch.map(async (scene) => {
-          if (scene.id) {
-            try {
-              await getSceneMedia(scene.id);
-            } catch (e) { console.warn("Preload fail", e); }
-          }
+          try {
+            // Preload image (blob cache) and ensure video connection is warm (proxy)
+            if (scene.imageUrl?.startsWith('http')) await mediaCache.fetchAndCache(scene.imageUrl, 'image');
+            // For video, 'fetchAndCache' just returns the proxy URL, extremely fast, so no heavy download here
+            if (scene.videoUrl?.startsWith('http')) await mediaCache.fetchAndCache(scene.videoUrl, 'video');
+          } catch (e) { console.warn("Preload fail", e); }
+
           loaded++;
           if (mounted) setPreloadProgress((loaded / total) * 100);
         }));
@@ -191,6 +222,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   }, [currentSceneIndex]);
 
   // Handle audio playback and scene progression
+  // Handle audio playback and scene progression
   useEffect(() => {
     if (!activeScene) return;
 
@@ -213,13 +245,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           }
         });
       }
-      // Play video if available and paused
-      if (videoRef.current && videoRef.current.paused) {
-        const playPromise = videoRef.current.play();
-        if (playPromise) {
-          playPromise.catch(e => {
-            // Ignore AbortError which happens when pausing quickly after playing
-            if (e.name !== 'AbortError') console.error("Video play error:", e);
+
+      // Play video if available - Robust connect
+      // Added activeMedia.videoUrl to dependency array to ensure play triggers when URL resolves
+      if (videoRef.current) {
+        const p = videoRef.current.play();
+        if (p) {
+          p.catch(e => {
+            if (e.name !== 'AbortError') console.warn("[VideoPlayer] Play prevented/aborted:", e);
           });
         }
       }
@@ -235,7 +268,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         videoRef.current.pause();
       }
     }
-  }, [isPlaying, activeScene]);
+  }, [isPlaying, activeScene, activeMedia.videoUrl]);
 
   // Reset video element when changing scenes
   useEffect(() => {
@@ -355,9 +388,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             (!activeScene.mediaType && activeScene.videoUrl && activeScene.videoStatus === 'completed');
           const videoSrc = activeMedia.videoUrl || activeScene.videoUrl || '';
           const imageSrc = activeMedia.imageUrl || activeScene.imageUrl || '';
-          // Add cache busters to force reload after upload
-          const videoSrcWithCache = videoSrc ? `${videoSrc}${videoSrc.includes('?') ? '&' : '?'}t=${Date.now()}` : '';
-          const imageSrcWithCache = imageSrc ? `${imageSrc}${imageSrc.includes('?') ? '&' : '?'}t=${Date.now()}` : '';
+
+          // Add cache busters ONLY for network URLs (http/https). 
+          // NEVER add to blob: URLs as it breaks the internal reference (ERR_FILE_NOT_FOUND).
+          const addCacheBuster = (url: string) => {
+            if (!url) return '';
+            if (url.startsWith('blob:') || url.startsWith('data:')) return url;
+            return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+          };
+
+          const videoSrcWithCache = addCacheBuster(videoSrc);
+          const imageSrcWithCache = addCacheBuster(imageSrc);
 
           if (shouldUseVideo && videoSrc) {
             // Render BOTH video and image as native elements for proper layering
@@ -414,13 +455,23 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         })()}
 
         {/* Audio Elements */}
-        <audio
-          ref={audioRef}
-          src={`${activeMedia.audioUrl || activeScene.audioUrl || ''}${(activeMedia.audioUrl || activeScene.audioUrl)?.includes('?') ? '&' : '?'}t=${Date.now()}`}
-          onEnded={handleAudioEnded}
-          onTimeUpdate={handleTimeUpdate}
-          autoPlay={isPlaying}
-        />
+        {(() => {
+          const audioUrlOriginal = activeMedia.audioUrl || activeScene.audioUrl || '';
+          // Don't add cache buster to blobs
+          const audioSrc = (audioUrlOriginal.startsWith('blob:') || audioUrlOriginal.startsWith('data:'))
+            ? audioUrlOriginal
+            : (audioUrlOriginal ? `${audioUrlOriginal}${audioUrlOriginal.includes('?') ? '&' : '?'}t=${Date.now()}` : '');
+
+          return (
+            <audio
+              ref={audioRef}
+              src={audioSrc}
+              onEnded={handleAudioEnded}
+              onTimeUpdate={handleTimeUpdate}
+              autoPlay={isPlaying}
+            />
+          );
+        })()}
         {bgMusicUrl && (
           <audio
             ref={musicRef}

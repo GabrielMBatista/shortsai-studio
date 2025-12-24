@@ -1,50 +1,114 @@
 
 // Global Queue Manager for R2/Media Resources
-// Prevents flooding the browser/CDN with too many concurrent download requests (ERR_CONNECTION_CLOSED)
+// Optimized: Separate queues but SHARED concurrency limit
+// Prevents flooding even with multiple queue types
 
-type Task = () => void;
+type Task = () => Promise<void> | void;
 
-const queue: Task[] = [];
-let activeRequests = 0;
-const MAX_CONCURRENT_REQUESTS = 3; // Reduzido para evitar bloqueio do R2 (ERR_CONNECTION_CLOSED)
+// GLOBAL CONCURRENCY LIMIT (Total open connections)
+// Safe limit for browsers: 6. We use 5 to leave 1 spare for high priority/api calls.
+const MAX_GLOBAL_CONCURRENT = 5;
+let globalActiveRequests = 0;
 
-export const resourceQueue = {
-    enqueue: (task: Task) => {
-        queue.push(task);
-        processQueue();
+class Queue {
+    private queue: Task[] = [];
+    private name: string;
 
-        // Return a cleanup function in case component unmounts before starting
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    enqueue(task: Task) {
+        this.queue.push(task);
+        this.process();
+
+        // Return cleanup function
         return () => {
-            const idx = queue.indexOf(task);
-            if (idx > -1) queue.splice(idx, 1);
+            const idx = this.queue.indexOf(task);
+            if (idx > -1) this.queue.splice(idx, 1);
         };
-    },
+    }
 
-    release: () => {
-        if (activeRequests > 0) activeRequests--;
-        processQueue();
-    },
+    // Tries to process the next item in THIS queue
+    process() {
+        // 1. Check Global Limit
+        if (globalActiveRequests >= MAX_GLOBAL_CONCURRENT) {
+            return; // System busy
+        }
 
-    // Debug info
-    getStatus: () => ({ active: activeRequests, queued: queue.length })
-};
+        // 2. Check Queue Empty
+        if (this.queue.length === 0) return;
 
-function processQueue() {
-    if (activeRequests >= MAX_CONCURRENT_REQUESTS) return; // Busy
-    if (queue.length === 0) return; // Empty
+        // 3. Start Task
+        const nextTask = this.queue.shift();
+        if (nextTask) {
+            globalActiveRequests++;
+            // console.debug(`[Queue:${this.name}] Start. Global Active: ${globalActiveRequests}/${MAX_GLOBAL_CONCURRENT}`);
 
-    const nextTask = queue.shift();
-    if (nextTask) {
-        activeRequests++;
-        console.debug(`[ResourceQueue] Starting task. Active: ${activeRequests}, Queued: ${queue.length}`);
-
-        // Execute carefully
-        try {
-            nextTask();
-        } catch (e) {
-            console.error("[ResourceQueue] Task execution failed immediately", e);
-            // If task crashed synchronously, release the slot immediately
-            resourceQueue.release();
+            try {
+                const result = nextTask();
+                if (result instanceof Promise) {
+                    result
+                        .then(() => {
+                            this.release();
+                        })
+                        .catch(e => {
+                            console.error(`[Queue:${this.name}] Error:`, e);
+                            this.release();
+                        });
+                } else {
+                    // Sync task: release immediately
+                    this.release();
+                }
+            } catch (e) {
+                console.error(`[Queue:${this.name}] Sync Error:`, e);
+                this.release();
+            }
         }
     }
+
+    // Called when a task finishes
+    release() {
+        if (globalActiveRequests > 0) globalActiveRequests--;
+
+        // Trigger processing for ALL queues to fill the slot
+        // Prioritize Images over Media
+        resourceQueue.processAll();
+    }
 }
+
+// Instantiate Queues
+const imageQueue = new Queue('Images');
+const mediaQueue = new Queue('Media');
+
+export const resourceQueue = {
+    enqueue: (task: Task, type: 'image' | 'video' | 'audio' = 'image') => {
+        if (type === 'image') {
+            return imageQueue.enqueue(task);
+        } else {
+            return mediaQueue.enqueue(task);
+        }
+    },
+
+    release: (_type: any) => {
+        // Manually decrement if needed (mostly internal use now)
+        if (globalActiveRequests > 0) globalActiveRequests--;
+        resourceQueue.processAll();
+    },
+
+    processAll: () => {
+        // Strategy: Give priority to images (fast imports)
+        // If slots available, imageQueue takes them first
+        imageQueue.process();
+
+        // Only if slots still available, mediaQueue runs
+        if (globalActiveRequests < MAX_GLOBAL_CONCURRENT) {
+            mediaQueue.process();
+        }
+    },
+
+    getDebug: () => ({
+        globalActive: globalActiveRequests,
+        max: MAX_GLOBAL_CONCURRENT
+    })
+};

@@ -21,15 +21,10 @@ const AudioPlayerButton: React.FC<AudioPlayerButtonProps> = ({ audioUrl, status,
             try {
                 let resolvedUrl = audioUrl;
 
-                // 🚀 Try to fetch from cache for R2 URLs
-                if (audioUrl.startsWith('http') && !audioUrl.startsWith('data:') && !audioUrl.startsWith('blob:')) {
-                    try {
-                        const { mediaCache } = await import('../../utils/mediaCache');
-                        resolvedUrl = await mediaCache.fetchAndCache(audioUrl, 'audio');
-                    } catch (cacheErr) {
-                        console.warn('[AudioPlayerButton] Cache failed, using direct URL:', cacheErr);
-                        resolvedUrl = audioUrl; // Fallback to direct
-                    }
+                // Use proxy for R2 URLs to avoid CORS/flooding
+                if (audioUrl.startsWith('http') && !audioUrl.startsWith('data:') && !audioUrl.startsWith('blob:') && !audioUrl.includes('/assets?url=')) {
+                    const { getProxyUrl } = await import('../../utils/urlUtils');
+                    resolvedUrl = getProxyUrl(audioUrl);
                 }
                 // Convert data URI to Blob URL for compatibility
                 else if (audioUrl.startsWith('data:audio/')) {

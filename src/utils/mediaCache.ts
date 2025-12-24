@@ -1,11 +1,16 @@
 /**
- * Sistema de Cache para Mídia (Imagens/Vídeos) do R2
- * Usa Cache API + SessionStorage para evitar re-downloads
+ * Sistema de Cache para Mídia (Imagens) e Streaming Seguro (Vídeo/Áudio)
+ * Otimizado: Imagens -> Cache Local (Blob)
+ *            Vídeos/Áudio -> Streaming via Proxy (Sem Cache Local, apenas navegador)
  */
+
+import { resourceQueue } from './resourceQueue';
+import { getProxyUrl } from './urlUtils';
 
 const CACHE_NAME = 'shortsai-media-cache-v1';
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos
-const MAX_CACHE_SIZE_MB = 50; // Limita cache a 50MB
+const MAX_CACHE_SIZE_MB = 50; // Limita cache a 50MB por arquivo (imagens)
+const MAX_CACHE_ENTRIES = 100; // Limite de entradas para evitar exceder localStorage quota
 
 interface CacheMetadata {
     url: string;
@@ -19,6 +24,7 @@ class MediaCache {
     private metadata: Map<string, CacheMetadata> = new Map();
 
     async init() {
+        if (typeof window === 'undefined') return;
         try {
             this.cache = await caches.open(CACHE_NAME);
             this.loadMetadata();
@@ -30,7 +36,7 @@ class MediaCache {
 
     private loadMetadata() {
         try {
-            const stored = sessionStorage.getItem('media-cache-metadata');
+            const stored = localStorage.getItem('media-cache-metadata');
             if (stored) {
                 const data = JSON.parse(stored);
                 this.metadata = new Map(Object.entries(data));
@@ -43,8 +49,9 @@ class MediaCache {
 
     private saveMetadata() {
         try {
+            // Convert Map to Object for JSON storage
             const data = Object.fromEntries(this.metadata);
-            sessionStorage.setItem('media-cache-metadata', JSON.stringify(data));
+            localStorage.setItem('media-cache-metadata', JSON.stringify(data));
         } catch (e) {
             console.warn('[MediaCache] Failed to save metadata:', e);
         }
@@ -82,7 +89,7 @@ class MediaCache {
             if (response) {
                 const blob = await response.blob();
                 const objectUrl = URL.createObjectURL(blob);
-                console.log('[MediaCache] HIT:', url.substring(0, 50));
+                // console.log('[MediaCache] HIT:', url.substring(0, 50));
                 return objectUrl;
             }
         } catch (e) {
@@ -99,8 +106,23 @@ class MediaCache {
             // Check cache size limit
             const estimatedSize = blob.size / (1024 * 1024); // MB
             if (estimatedSize > MAX_CACHE_SIZE_MB) {
-                console.warn('[MediaCache] File too large to cache:', estimatedSize.toFixed(2), 'MB');
+                console.debug('[MediaCache] File too large to cache:', estimatedSize.toFixed(2), 'MB');
                 return;
+            }
+
+            // LRU: Remove oldest entries if exceeding limit
+            if (this.metadata.size >= MAX_CACHE_ENTRIES) {
+                const sortedEntries = Array.from(this.metadata.entries())
+                    .sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+                // Remove oldest 20%
+                const toRemove = Math.ceil(MAX_CACHE_ENTRIES * 0.2);
+                for (let i = 0; i < toRemove; i++) {
+                    const [oldUrl] = sortedEntries[i];
+                    this.metadata.delete(oldUrl);
+                    this.cache.delete(oldUrl);
+                }
+                console.log(`[MediaCache] LRU clean: ${toRemove} items removed`);
             }
 
             // Store in cache
@@ -115,34 +137,71 @@ class MediaCache {
                 type
             });
             this.saveMetadata();
-
-            console.log('[MediaCache] STORED:', url.substring(0, 50), estimatedSize.toFixed(2), 'MB');
         } catch (e) {
             console.warn('[MediaCache] Failed to cache:', e);
         }
     }
 
+    /**
+     * Main entry point
+     * - Images: Fetched, Cached (Blob), Returned as ObjectURL
+     * - Video/Audio: NOT Cached locally (Streaming), Returned as ProxyURL
+     */
     async fetchAndCache(url: string, type: 'image' | 'video' | 'audio'): Promise<string> {
+        if (!url) return '';
+
+        // 1. VIDEOS & AUDIO -> STREAMING STRATEGY
+        // Don't cache blobs for video/audio to allow seeking and fast playback
+        // Just return the proxy URL so browser handles range requests correctly
+        if (type === 'video' || type === 'audio') {
+            if (url.startsWith('http') && !url.includes('/assets?url=')) {
+                return getProxyUrl(url);
+            }
+            return url;
+        }
+
+        // 2. IMAGES -> CACHE STRATEGY
         // Check cache first
         const cached = await this.get(url);
         if (cached) return cached;
 
-        // Fetch from network
-        console.log('[MediaCache] MISS, fetching:', url.substring(0, 50));
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch: ${response.status}`);
-        }
+        // Fetch from network with resource queue control
+        // console.log('[MediaCache] MISS, fetching:', url.substring(0, 50));
 
-        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            // Enqueue using specific type queue (images have higher concurrency)
+            const cancelQueue = resourceQueue.enqueue(async () => {
+                try {
+                    // Always use Proxy for external R2 URLs to avoid CORS
+                    let fetchUrl = url;
+                    if (url.startsWith('http') && !url.includes('/assets?url=')) {
+                        fetchUrl = getProxyUrl(url);
+                    }
 
-        // Cache it (don't await to avoid blocking)
-        this.set(url, blob, type).catch(e => {
-            console.warn('[MediaCache] Failed to cache after fetch:', e);
+                    const response = await fetch(fetchUrl);
+                    if (!response.ok) {
+                        resourceQueue.release(type);
+                        reject(new Error(`Failed to fetch: ${response.status}`));
+                        return;
+                    }
+
+                    const blob = await response.blob();
+
+                    // Cache it (fire and forget)
+                    this.set(url, blob, type).catch(e => {
+                        console.warn('[MediaCache] Failed to cache after fetch:', e);
+                    });
+
+                    // Return object URL immediately
+                    const objectUrl = URL.createObjectURL(blob);
+                    resourceQueue.release(type);
+                    resolve(objectUrl);
+                } catch (err) {
+                    resourceQueue.release(type);
+                    reject(err);
+                }
+            }, type);
         });
-
-        // Return object URL immediately
-        return URL.createObjectURL(blob);
     }
 
     async clear() {
@@ -152,36 +211,19 @@ class MediaCache {
                 await Promise.all(keys.map(request => this.cache!.delete(request)));
             }
             this.metadata.clear();
-            sessionStorage.removeItem('media-cache-metadata');
+            localStorage.removeItem('media-cache-metadata');
             console.log('[MediaCache] Cleared all cache');
         } catch (e) {
             console.warn('[MediaCache] Failed to clear cache:', e);
         }
     }
-
-    getStats() {
-        let totalSize = 0;
-        for (const meta of this.metadata.values()) {
-            totalSize += meta.size || 0;
-        }
-
-        return {
-            entries: this.metadata.size,
-            totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2)
-        };
-    }
 }
 
-// Singleton instance
 export const mediaCache = new MediaCache();
-
-// Initialize on module load
 mediaCache.init();
 
-// Cleanup on page unload
 if (typeof window !== 'undefined') {
     window.addEventListener('beforeunload', () => {
-        // Revoke all object URLs to prevent memory leaks
-        // Note: Cache API data persists, only object URLs are revoked
+        // Cleanup if needed
     });
 }
