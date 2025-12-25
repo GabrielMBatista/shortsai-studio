@@ -154,7 +154,7 @@ class MediaCache {
         // Don't cache blobs for video/audio to allow seeking and fast playback
         // Just return the proxy URL so browser handles range requests correctly
         if (type === 'video' || type === 'audio') {
-            if (url.startsWith('http') && !url.includes('/assets?url=')) {
+            if (url.startsWith('http') && !url.includes('/api/assets?url=')) {
                 return getProxyUrl(url);
             }
             return url;

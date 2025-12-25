@@ -22,6 +22,7 @@ interface VideoPlayerProps {
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, title = "shorts-ai-video", projectId, onStartTour, activeTour }) => {
   const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -46,125 +47,112 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     return validScenes[currentSceneIndex];
   }, [validScenes, currentSceneIndex]);
 
-  const [activeMedia, setActiveMedia] = useState<{ imageUrl?: string | null, audioUrl?: string | null, videoUrl?: string | null }>({});
-  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+  // --- SIMPLIFIED PLAYER STATE ---
+  const [activeMedia, setActiveMedia] = useState<{ imageUrl?: string, audioUrl?: string, videoUrl?: string }>({});
 
-  // Debug: Log mediaType when activeScene changes
-  useEffect(() => {
-    if (activeScene) {
-      console.log('[VideoPlayer] Active Scene:', {
-        sceneNumber: activeScene.sceneNumber,
-        mediaType: activeScene.mediaType,
-        hasVideo: !!activeScene.videoUrl,
-        hasImage: !!activeScene.imageUrl,
-        videoStatus: activeScene.videoStatus
-      });
-    }
-  }, [activeScene?.sceneNumber, activeScene?.mediaType, activeScene?.videoUrl]);
-
+  // 1. Scene Change & Media Loading (Simple & Direct)
   useEffect(() => {
     if (!activeScene) return;
 
-    const loadMedia = async () => {
-      setIsLoadingMedia(true);
-
-      // Get base URLs
+    const prepareMedia = async () => {
+      // Direct URLs from Proxy (Backend handles caching now)
+      // Images: Use cache if needed, but simple blob is fine
       let imageUrl = activeScene.imageUrl;
       let audioUrl = activeScene.audioUrl;
       let videoUrl = activeScene.videoUrl;
 
-      // Fetch full details if missing content (e.g. from list vs detail view)
-      if ((!imageUrl || !audioUrl || (!videoUrl && activeScene.videoStatus === 'completed')) && activeScene.id) {
+      // Handle missing details
+      if ((!imageUrl || !audioUrl) && activeScene.id) {
         try {
           const media = await getSceneMedia(activeScene.id);
           if (media) {
-            if (!imageUrl) imageUrl = media.image_base64; // Fallback or real url
-            if (!audioUrl) audioUrl = media.audio_base64;
-            if (!videoUrl) videoUrl = media.video_base64;
+            imageUrl = imageUrl || media.image_base64;
+            audioUrl = audioUrl || media.audio_base64;
+            videoUrl = videoUrl || media.video_base64;
           }
-        } catch (e) {
-          console.error("Failed to load scene media for player", e);
-        }
+        } catch (e) { console.warn("Fetch media detail fail:", e); }
       }
 
-      // PROCESS URLs THROUGH MEDIA CACHE (Proxies for Video/Audio, Blob for Images)
-      // This is crucial for fixing CORS and Streaming issues
-      try {
-        const { mediaCache } = await import('../../utils/mediaCache');
-
-        const [processedImage, processedAudio, processedVideo] = await Promise.all([
-          imageUrl && imageUrl.startsWith('http') ? mediaCache.fetchAndCache(imageUrl, 'image') : Promise.resolve(imageUrl),
-          audioUrl && audioUrl.startsWith('http') ? mediaCache.fetchAndCache(audioUrl, 'audio') : Promise.resolve(audioUrl),
-          videoUrl && videoUrl.startsWith('http') ? mediaCache.fetchAndCache(videoUrl, 'video') : Promise.resolve(videoUrl)
-        ]);
-
-        setActiveMedia({
-          imageUrl: processedImage,
-          audioUrl: processedAudio,
-          videoUrl: processedVideo
-        });
-
-      } catch (e) {
-        console.warn("[VideoPlayer] Error processing media cache:", e);
-        // Fallback to originals if cache system fails
-        setActiveMedia({ imageUrl, audioUrl, videoUrl });
+      // Image Optimization Only (Blob Cache for smooth slideshow)
+      if (imageUrl?.startsWith('http')) {
+        try {
+          const { mediaCache } = await import('../../utils/mediaCache');
+          imageUrl = await mediaCache.fetchAndCache(imageUrl, 'image');
+        } catch (e) {/* ignore */ }
       }
 
-      setIsLoadingMedia(false);
+      // Video/Audio: USE PROXY DIRECTLY.
+      // Do NOT try to fetch/cache blobs (too slow/heavy). 
+      // Do NOT try to bypass proxy (CORS/SSL issues).
+      // The backend proxy now has SSD Cache + Range Support. Best of both worlds.
+      if (videoUrl?.startsWith('http') && !videoUrl.includes('/api/assets')) {
+        const { getProxyUrl } = await import('../../utils/urlUtils');
+        videoUrl = getProxyUrl(videoUrl);
+      }
+      if (audioUrl?.startsWith('http') && !audioUrl.includes('/api/assets')) {
+        const { getProxyUrl } = await import('../../utils/urlUtils');
+        audioUrl = getProxyUrl(audioUrl);
+      }
+
+      setActiveMedia({ imageUrl, audioUrl, videoUrl });
     };
 
-    loadMedia();
+    prepareMedia();
   }, [activeScene]);
-
-  const [preloadProgress, setPreloadProgress] = useState(0);
-  const [isPreloading, setIsPreloading] = useState(true);
-
-  // Preload ALL scenes media AGGRESSIVELY to avoid stuttering
-  useEffect(() => {
-    let mounted = true;
-    const preloadAll = async () => {
-      setIsPreloading(true);
-      setPreloadProgress(0);
-      let loaded = 0;
-      const total = validScenes.length;
-
-      if (total === 0) {
-        setIsPreloading(false);
-        return;
-      }
-
-      // Load in batches for better performance
-      const { mediaCache } = await import('../../utils/mediaCache');
-      const batchSize = 3; // Reduced batch size for stability with global limit
-
-      for (let i = 0; i < total; i += batchSize) {
-        if (!mounted) return;
-        const batch = validScenes.slice(i, i + batchSize);
-
-        await Promise.all(batch.map(async (scene) => {
-          try {
-            // Preload image (blob cache) and ensure video connection is warm (proxy)
-            if (scene.imageUrl?.startsWith('http')) await mediaCache.fetchAndCache(scene.imageUrl, 'image');
-            // For video, 'fetchAndCache' just returns the proxy URL, extremely fast, so no heavy download here
-            if (scene.videoUrl?.startsWith('http')) await mediaCache.fetchAndCache(scene.videoUrl, 'video');
-          } catch (e) { console.warn("Preload fail", e); }
-
-          loaded++;
-          if (mounted) setPreloadProgress((loaded / total) * 100);
-        }));
-      }
-
-      if (mounted) setIsPreloading(false);
-    };
-
-    preloadAll();
-    return () => { mounted = false; };
-  }, [validScenes]);
-
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // 2. Playback Control (The "Just Works" Approach)
+  useEffect(() => {
+    const v = videoRef.current;
+    const a = audioRef.current;
+    const m = musicRef.current;
+
+    const playAll = async () => {
+      try {
+        if (v && v.paused) await v.play();
+        if (a && a.paused) {
+          // Basic Sync Attempt on Play
+          if (v) a.currentTime = v.currentTime;
+          await a.play();
+        }
+        if (m && m.paused) await m.play();
+      } catch (e) {
+        console.warn("Playback interrupted (user likely navigated away):", e);
+      }
+    };
+
+    const pauseAll = () => {
+      v?.pause();
+      a?.pause();
+      m?.pause();
+    };
+
+    if (activeScene && isPlaying) {
+      playAll();
+    } else {
+      pauseAll();
+    }
+
+  }, [isPlaying, activeMedia]); // Re-run if media changes while playing
+
+  // 3. Simple Scene Progression
+  const handleMediaEnded = () => {
+    // If video ends, next scene. 
+    // We rely on video 'ended' event mostly, or audio if video is missing.
+    if (currentSceneIndex < validScenes.length - 1) {
+      setCurrentSceneIndex(prev => prev + 1);
+      setProgress(0);
+      setVideoEnded(false);
+    } else {
+      setIsPlaying(false);
+      setCurrentSceneIndex(0);
+      setProgress(0);
+      setVideoEnded(false);
+    }
+  };
 
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [includeEndingVideo, setIncludeEndingVideo] = useState(false);
@@ -221,64 +209,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     setVideoEnded(false);
   }, [currentSceneIndex]);
 
-  // Handle audio playback and scene progression
-  // Handle audio playback and scene progression
-  useEffect(() => {
-    if (!activeScene) return;
-
-    if (isPlaying) {
-      // Play audio
-      if (audioRef.current) {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(e => {
-            if (e.name !== 'AbortError') {
-              console.error("Audio play error:", e);
-            }
-          });
-        }
-      }
-      if (musicRef.current) {
-        musicRef.current.play().catch(e => {
-          if (e.name !== 'AbortError') {
-            console.error("Music play error:", e);
-          }
-        });
-      }
-
-      // Play video if available - Robust connect
-      // Added activeMedia.videoUrl to dependency array to ensure play triggers when URL resolves
-      if (videoRef.current) {
-        const p = videoRef.current.play();
-        if (p) {
-          p.catch(e => {
-            if (e.name !== 'AbortError') console.warn("[VideoPlayer] Play prevented/aborted:", e);
-          });
-        }
-      }
-    } else {
-      // Pause audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      if (musicRef.current) {
-        musicRef.current.pause();
-      }
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-    }
-  }, [isPlaying, activeScene, activeMedia.videoUrl]);
-
-  // Reset video element when changing scenes
-  useEffect(() => {
-    // Reset video to beginning when scene changes
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.load(); // Force reload of new source
-    }
-  }, [currentSceneIndex, activeMedia.videoUrl]);
-
   // Set music volume
   useEffect(() => {
     if (musicRef.current) {
@@ -288,28 +218,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       audioRef.current.volume = volume;
     }
   }, [bgMusicUrl, volume]);
-
-  const handleAudioEnded = () => {
-    if (currentSceneIndex < validScenes.length - 1) {
-      setCurrentSceneIndex(prev => prev + 1);
-      setProgress(0);
-      setCurrentTime(0);
-    } else {
-      setIsPlaying(false);
-      setCurrentSceneIndex(0);
-      setProgress(0);
-      setCurrentTime(0);
-    }
-  };
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      const duration = audioRef.current.duration || 1;
-      const current = audioRef.current.currentTime;
-      setCurrentTime(current);
-      setProgress((current / duration) * 100);
-    }
-  };
 
   const startPlayback = () => setIsPlaying(true);
   const pausePlayback = () => setIsPlaying(false);
@@ -372,106 +280,63 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       {/* Main Player Container */}
       <div id="video-preview-player" className="relative h-[80vh] max-w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 group">
 
-        {(isLoadingMedia || isPreloading) && (
-          <div className="absolute inset-0 z-20 bg-slate-900/50 backdrop-blur-sm flex flex-col items-center justify-center animate-fade-in">
-            <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-3" />
-            <span className="text-xs font-semibold text-slate-300 tracking-wider uppercase">
-              {isPreloading ? `BUFFERING ${Math.round(preloadProgress)}%` : t('common.loading')}
-            </span>
-          </div>
-        )}
-
-        {/* Background Media */}
-        {/* Prefer video if: 1) mediaType is explicitly 'video', OR 2) no mediaType but video available */}
+        {/* Media Render (Clean) */}
         {(() => {
-          const shouldUseVideo = (activeScene.mediaType === 'video') ||
-            (!activeScene.mediaType && activeScene.videoUrl && activeScene.videoStatus === 'completed');
-          const videoSrc = activeMedia.videoUrl || activeScene.videoUrl || '';
-          const imageSrc = activeMedia.imageUrl || activeScene.imageUrl || '';
+          const vSrc = activeMedia.videoUrl;
+          const iSrc = activeMedia.imageUrl;
+          const aSrc = activeMedia.audioUrl;
 
-          // Add cache busters ONLY for network URLs (http/https). 
-          // NEVER add to blob: URLs as it breaks the internal reference (ERR_FILE_NOT_FOUND).
-          const addCacheBuster = (url: string) => {
-            if (!url) return '';
-            if (url.startsWith('blob:') || url.startsWith('data:')) return url;
-            return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
-          };
-
-          const videoSrcWithCache = addCacheBuster(videoSrc);
-          const imageSrcWithCache = addCacheBuster(imageSrc);
-
-          if (shouldUseVideo && videoSrc) {
-            // Render BOTH video and image as native elements for proper layering
+          // Video Layer
+          if (vSrc) {
             return (
               <>
-                {/* Image Layer (underneath) - fades in when video ends */}
-                <img
-                  src={imageSrcWithCache}
-                  alt={`Scene ${currentSceneIndex + 1} background`}
-                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out ${videoEnded
-                    ? 'opacity-100 scale-110 duration-[20s]' // Fade in + zoom when video ends
-                    : 'opacity-0 scale-100' // Hidden while video plays
-                    }`}
-                />
+                {/* Poster Image */}
+                <img src={iSrc} className={`absolute inset-0 w-full h-full object-cover ${videoEnded ? 'opacity-100' : 'opacity-0'}`} />
 
-                {/* Video Layer (on top) - fades out when video ends */}
+                {/* Video Element - Native Controls */}
                 <video
-                  key={`video-${currentSceneIndex}-${videoSrc}`}
                   ref={videoRef}
-                  src={videoSrcWithCache}
-                  poster={imageSrcWithCache}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${videoEnded ? 'opacity-0' : 'opacity-100' // Fade out when video ends
-                    }`}
-                  muted
+                  key={`vid-${currentSceneIndex}`} // Remount on scene change
+                  src={vSrc}
+                  className={`absolute inset-0 w-full h-full object-cover ${videoEnded ? 'opacity-0' : 'opacity-100'}`}
+                  crossOrigin="anonymous"
                   playsInline
-                  preload="auto"
+                  muted // IMPORTANT: Audio track is separate usually
+                  onEnded={handleMediaEnded}
                   onTimeUpdate={(e) => {
-                    // Start fade transition 0.8s before video ends for smooth crossfade
-                    const video = e.currentTarget;
-                    if (video.duration > 0 && (video.duration - video.currentTime) <= 0.8 && !videoEnded) {
+                    // Simple Progress Update
+                    if (e.currentTarget.duration) {
+                      const p = (e.currentTarget.currentTime / e.currentTarget.duration) * 100;
+                      setProgress(p);
+                      setCurrentTime(e.currentTarget.currentTime);
+                    }
+                    // Simple Fade Logic
+                    if (e.currentTarget.duration - e.currentTarget.currentTime < 0.5) {
                       setVideoEnded(true);
                     }
                   }}
-                  onEnded={() => setVideoEnded(true)}
-                  onError={(e) => {
-                    // Only log real errors, not aborts/empties
-                    if (e.currentTarget.error) {
-                      console.error('[VideoPlayer] Video error:', e.currentTarget.error);
-                    }
-                  }}
+                  onError={(e) => console.error("Video Error:", e.currentTarget.error)}
                 />
               </>
             );
           } else {
-            // Image-only scene
-            return (
-              <SafeImage
-                src={imageSrcWithCache}
-                alt={`Scene ${currentSceneIndex + 1}`}
-                className={`w-full h-full object-cover transition-transform duration-[20s] ease-linear ${isPlaying ? 'scale-110' : 'scale-100'}`}
-              />
-            );
+            // Image Only
+            return <img src={iSrc} className="w-full h-full object-cover animate-pulse-slow" />;
           }
         })()}
 
-        {/* Audio Elements */}
-        {(() => {
-          const audioUrlOriginal = activeMedia.audioUrl || activeScene.audioUrl || '';
-          // Don't add cache buster to blobs
-          const audioSrc = (audioUrlOriginal.startsWith('blob:') || audioUrlOriginal.startsWith('data:'))
-            ? audioUrlOriginal
-            : (audioUrlOriginal ? `${audioUrlOriginal}${audioUrlOriginal.includes('?') ? '&' : '?'}t=${Date.now()}` : '');
-
-          return (
-            <audio
-              ref={audioRef}
-              src={audioSrc}
-              onEnded={handleAudioEnded}
-              onTimeUpdate={handleTimeUpdate}
-              autoPlay={isPlaying}
-            />
-          );
-        })()}
+        {/* Audio Layer (Hidden) */}
+        {activeMedia.audioUrl && (
+          <audio
+            ref={audioRef}
+            key={`aud-${currentSceneIndex}`} // Remount on scene change
+            src={activeMedia.audioUrl}
+            onEnded={() => {
+              // Fallback: If video didn't trigger end (e.g. video shorter than audio), audio ends scene
+              if (!videoRef.current || videoRef.current.ended) handleMediaEnded();
+            }}
+          />
+        )}
         {bgMusicUrl && (
           <audio
             ref={musicRef}
