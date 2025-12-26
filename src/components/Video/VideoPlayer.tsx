@@ -299,6 +299,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                   key={`vid-${currentSceneIndex}`} // Remount on scene change
                   src={vSrc}
                   className={`absolute inset-0 w-full h-full object-cover ${videoEnded ? 'opacity-0' : 'opacity-100'}`}
+                  style={{ objectPosition: `${activeScene.videoCropConfig?.x ?? 50}% center` }}
                   crossOrigin="anonymous"
                   playsInline
                   muted // Video is visual only, audio track handles sound

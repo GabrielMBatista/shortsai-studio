@@ -114,7 +114,11 @@ export const drawFrame = (
             // Calculate crop: how much to cut from source
             const cropW = w / scale;  // Portion of source width to use
             const cropH = h / scale;  // Portion of source height to use
-            const cropX = (vw - cropW) / 2;  // Center X
+
+            // X-Framing (User Controlled)
+            const xPercent = (asset.videoCropConfig?.x ?? 50) / 100;
+            const cropX = (vw - cropW) * xPercent;
+
             const cropY = (vh - cropH) / 2;  // Center Y
 
             // Draw cropped portion scaled to fill canvas
@@ -138,7 +142,11 @@ export const drawFrame = (
         const scale = Math.max(w / iw, h / ih) * zoomScale;
         const cropW = w / scale;
         const cropH = h / scale;
-        const cropX = (iw - cropW) / 2;
+
+        // X-Framing (User Controlled)
+        const xPercent = (asset.videoCropConfig?.x ?? 50) / 100;
+        const cropX = (iw - cropW) * xPercent;
+
         const cropY = (ih - cropH) / 2;
 
         ctx.drawImage(
