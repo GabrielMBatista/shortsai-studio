@@ -207,7 +207,7 @@ class WorkflowClient {
         let fatalError = this.lastState.fatalError;
         if (error && (error.includes('Quota exceeded') || error.includes('429'))) {
             projectStatus = 'failed';
-            fatalError = "Quota exceeded. Please upgrade your plan.";
+            fatalError = `Provider Limit Reached: ${error}. Check your API keys or quotas.`;
         }
 
         this.updateLocalState({

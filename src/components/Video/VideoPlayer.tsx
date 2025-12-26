@@ -293,7 +293,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                 {/* Poster Image */}
                 <img src={iSrc} className={`absolute inset-0 w-full h-full object-cover ${videoEnded ? 'opacity-100' : 'opacity-0'}`} />
 
-                {/* Video Element - Native Controls */}
+                {/* Video Element - Master Clock when present */}
                 <video
                   ref={videoRef}
                   key={`vid-${currentSceneIndex}`} // Remount on scene change
@@ -301,14 +301,39 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                   className={`absolute inset-0 w-full h-full object-cover ${videoEnded ? 'opacity-0' : 'opacity-100'}`}
                   crossOrigin="anonymous"
                   playsInline
-                  muted // IMPORTANT: Audio track is separate usually
+                  muted // Video is visual only, audio track handles sound
                   onEnded={handleMediaEnded}
+                  onWaiting={() => {
+                    setIsBuffering(true);
+                    audioRef.current?.pause();
+                  }}
+                  onPlaying={() => {
+                    setIsBuffering(false);
+                    if (audioRef.current) {
+                      // SYNC: Snap audio to video time
+                      const diff = Math.abs(audioRef.current.currentTime - (videoRef.current?.currentTime || 0));
+                      if (diff > 0.2) {
+                        audioRef.current.currentTime = videoRef.current?.currentTime || 0;
+                      }
+                      audioRef.current.play().catch(() => { });
+                    }
+                  }}
+                  onPause={() => {
+                    audioRef.current?.pause();
+                  }}
                   onTimeUpdate={(e) => {
-                    // Simple Progress Update
+                    // Video drives the UI progress
                     if (e.currentTarget.duration) {
                       const p = (e.currentTarget.currentTime / e.currentTarget.duration) * 100;
                       setProgress(p);
                       setCurrentTime(e.currentTarget.currentTime);
+                    }
+                    // Sync check every tick (optional, but good for drift)
+                    if (audioRef.current && !audioRef.current.paused) {
+                      const diff = Math.abs(audioRef.current.currentTime - e.currentTarget.currentTime);
+                      if (diff > 0.3) {
+                        audioRef.current.currentTime = e.currentTarget.currentTime;
+                      }
                     }
                     // Simple Fade Logic
                     if (e.currentTarget.duration - e.currentTarget.currentTime < 0.5) {
@@ -325,15 +350,23 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           }
         })()}
 
-        {/* Audio Layer (Hidden) */}
+        {/* Audio Layer - Slave to Video (if video exists), Master if Image only */}
         {activeMedia.audioUrl && (
           <audio
             ref={audioRef}
             key={`aud-${currentSceneIndex}`} // Remount on scene change
             src={activeMedia.audioUrl}
             onEnded={() => {
-              // Fallback: If video didn't trigger end (e.g. video shorter than audio), audio ends scene
-              if (!videoRef.current || videoRef.current.ended) handleMediaEnded();
+              // If there is NO video, Audio end triggers scene change
+              if (!activeMedia.videoUrl) handleMediaEnded();
+            }}
+            onTimeUpdate={(e) => {
+              // If NO video, Audio drives UI progress
+              if (!activeMedia.videoUrl && e.currentTarget.duration) {
+                const p = (e.currentTarget.currentTime / e.currentTarget.duration) * 100;
+                setProgress(p);
+                setCurrentTime(e.currentTarget.currentTime);
+              }
             }}
           />
         )}

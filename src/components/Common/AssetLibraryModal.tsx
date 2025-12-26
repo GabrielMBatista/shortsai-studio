@@ -15,6 +15,7 @@ interface AssetMatch {
     category: string | null;
     duration: number | null;
     isRecentlyUsed?: boolean;  // Indica se foi usado recentemente neste canal
+    thumbnailUrl?: string | null;
 }
 
 interface AssetLibraryModalProps {
@@ -39,34 +40,32 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
     const [applying, setApplying] = useState<string | null>(null);
     const [totalStats, setTotalStats] = useState({ images: 0, videos: 0 });
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
+    // Debounce search query
     useEffect(() => {
-        if (isOpen && sceneDescription) {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Fetch assets when open, description changes, or *debounced* search query changes
+    useEffect(() => {
+        if (isOpen) {
             fetchAssets();
         }
-    }, [isOpen, sceneDescription, assetType]);
+    }, [isOpen, sceneDescription, assetType, debouncedSearchQuery]);
 
     const [visibleCount, setVisibleCount] = useState(12);
 
     // Reset visible count when assets reload
     useEffect(() => {
         setVisibleCount(12);
-    }, [filteredAssets]);
+    }, [assets]);
 
-    // Filter assets based on search query
-    useEffect(() => {
-        if (!searchQuery.trim()) {
-            setFilteredAssets(assets);
-        } else {
-            const query = searchQuery.toLowerCase();
-            const filtered = assets.filter(asset =>
-                asset.description.toLowerCase().includes(query) ||
-                asset.tags.some(tag => tag.toLowerCase().includes(query)) ||
-                (asset.category && asset.category.toLowerCase().includes(query))
-            );
-            setFilteredAssets(filtered);
-        }
-    }, [searchQuery, assets]);
+    // (Old client-side filtering removed)
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
@@ -78,7 +77,7 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
     const fetchAssets = async () => {
         setLoading(true);
         try {
-            // Buscar estatísticas totais
+            // Buscar estatísticas totais (apenas informativo)
             const statsResponse = await apiFetch('/assets/catalog/stats');
             if (statsResponse?.data) {
                 setTotalStats({
@@ -87,58 +86,65 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                 });
             }
 
-            // Buscar TODOS os assets do catálogo
-            const catalogResponse = await apiFetch('/assets/catalog?limit=1000');
+            let fetchedAssets: AssetMatch[] = [];
 
-            console.log('[AssetLibrary] RAW catalogResponse:', catalogResponse);
-            console.log('[AssetLibrary] catalogResponse.data:', catalogResponse?.data);
-            console.log('[AssetLibrary] catalogResponse.data.assets:', catalogResponse?.data?.assets);
+            // 1. Se houver termo de busca ou descrição de cena, usar busca OTIMIZADA do servidor
+            // A busca manual tem precedência sobre a descrição da cena
+            const term = debouncedSearchQuery.trim() || sceneDescription;
+            const useServerSearch = !!term;
 
-            if (!catalogResponse?.data?.assets) {
-                console.warn('[AssetLibrary] No assets returned from catalog');
-                setAssets([]);
-                return;
+            if (useServerSearch) {
+                console.log('[AssetLibrary] Using Server-Side Search for:', term.substring(0, 30));
+                // Se for busca manual, search query prevalece
+                const searchResponse = await apiFetch(`/assets/search?description=${encodeURIComponent(term)}&type=${assetType}&minSimilarity=0.0`);
+
+                if (searchResponse?.matches) {
+                    fetchedAssets = searchResponse.matches.map((m: any) => ({
+                        id: m.id,
+                        url: m.url,
+                        type: m.type,
+                        similarity: debouncedSearchQuery ? 0 : m.similarity, // Se for busca manual, ignorar similarity score visualmente ou n? Melhor manter 0 pois é keyword matching
+                        description: m.description,
+                        tags: m.tags || [],
+                        category: m.category,
+                        duration: m.duration,
+                        isRecentlyUsed: false,
+                        thumbnailUrl: m.thumbnail_url
+                    }));
+                }
+            } else {
+                // 2. Fallback: Se não tiver nada, busca os mais recentes
+                console.log('[AssetLibrary] Fetching recent catalog (Browse Mode)');
+                const catalogResponse = await apiFetch('/assets/catalog?limit=50&take=50');
+
+                if (catalogResponse?.data?.assets) {
+                    const rawAssets = catalogResponse.data.assets.filter((asset: any) =>
+                        asset.asset_type === assetType
+                    );
+
+                    fetchedAssets = rawAssets.map((asset: any) => ({
+                        id: asset.id,
+                        url: asset.url,
+                        type: asset.asset_type,
+                        similarity: 0,
+                        description: asset.description || '',
+                        tags: asset.tags || [],
+                        category: asset.category,
+                        duration: asset.duration_seconds,
+                        isRecentlyUsed: asset.last_used_in_channel ? true : false,
+                        thumbnailUrl: asset.thumbnail_url
+                    }));
+                }
             }
 
-            console.log('[AssetLibrary] Total assets from API:', catalogResponse.data.assets.length);
+            console.log(`[AssetLibrary] Loaded ${fetchedAssets.length} assets via ${useServerSearch ? 'Server Search' : 'Catalog Browse'}`);
 
-            // Filtrar apenas VIDEO e IMAGE (ignorar AUDIO sempre)
-            let allAssets = catalogResponse.data.assets.filter((asset: any) =>
-                asset.asset_type === 'VIDEO' || asset.asset_type === 'IMAGE'
-            );
+            setAssets(fetchedAssets);
+            // setFilteredAssets não é mais necessário pois fetch traz exatamente o que queremos
 
-            console.log('[AssetLibrary] After filtering VIDEO/IMAGE:', allAssets.length);
-            console.log('[AssetLibrary] Sample assets:', allAssets.slice(0, 3));
-
-            // Calcular similaridade com a descrição (se houver)
-            const allMatches: AssetMatch[] = allAssets.map((asset: any) => {
-                const similarity = sceneDescription
-                    ? calculateSimilarity(sceneDescription, asset.description || '')
-                    : 50; // Score neutro se não houver descrição
-
-                return {
-                    id: asset.id,
-                    url: asset.url,
-                    type: asset.asset_type,
-                    similarity,
-                    description: asset.description || '',
-                    tags: asset.tags || [],
-                    category: asset.category,
-                    duration: asset.duration_seconds,
-                    isRecentlyUsed: asset.last_used_in_channel ? true : false
-                };
-            });
-
-            // Ordenar por similaridade (maior primeiro)
-            allMatches.sort((a, b) => b.similarity - a.similarity);
-
-
-            console.log('[AssetLibrary] Fetched from catalog:', allAssets.length, 'assets');
-            console.log('[AssetLibrary] After similarity calc:', allMatches.length, 'matches');
-            console.log('[AssetLibrary] Stats:', statsResponse?.data);
-            setAssets(allMatches);
         } catch (error) {
             console.error('Failed to fetch assets:', error);
+            setAssets([]);
         } finally {
             setLoading(false);
         }
@@ -223,7 +229,7 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                     </div>
                     {searchQuery && (
                         <p className="text-xs text-zinc-500 mt-2">
-                            {filteredAssets.length} {t('asset_library.results', 'resultado(s)')}
+                            {assets.length} {t('asset_library.results', 'resultado(s)')}
                         </p>
                     )}
                 </div>
@@ -238,11 +244,11 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                             <div className="animate-spin text-4xl text-indigo-500">⏳</div>
                             <p>{t('asset_library.matching', 'Buscando melhores combinações...')}</p>
                         </div>
-                    ) : filteredAssets.length > 0 ? (
+                    ) : assets.length > 0 ? (
                         <>
-                            {console.log('[AssetLibrary] Rendering:', filteredAssets.length, 'filtered assets, showing', Math.min(visibleCount, filteredAssets.length))}
+                            {console.log('[AssetLibrary] Rendering:', assets.length, 'assets, showing', Math.min(visibleCount, assets.length))}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredAssets.slice(0, visibleCount).map((asset) => (
+                                {assets.slice(0, visibleCount).map((asset) => (
                                     <div
                                         key={asset.id}
                                         className="group relative bg-zinc-800/30 border border-zinc-700/50 rounded-xl overflow-hidden hover:border-indigo-500/50 transition-all hover:shadow-lg hover:shadow-indigo-500/5"
@@ -250,14 +256,28 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                                         {/* Asset Preview */}
                                         <div className="aspect-video bg-black relative overflow-hidden">
                                             {asset.type === 'VIDEO' ? (
-                                                <SafeVideo
-                                                    src={asset.url}
-                                                    className="w-full h-full object-cover"
-                                                    autoPlay
-                                                    loop
-                                                    muted
-                                                    playsInline
-                                                />
+                                                asset.thumbnailUrl ? (
+                                                    <div className="relative w-full h-full group/video">
+                                                        <SafeImage
+                                                            src={asset.thumbnailUrl}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/video:bg-black/40 transition-all">
+                                                            <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center backdrop-blur-sm border border-white/20 group-hover/video:scale-110 transition-transform">
+                                                                <span className="text-xl ml-1">▶️</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <SafeVideo
+                                                        src={asset.url}
+                                                        className="w-full h-full object-cover"
+                                                        autoPlay
+                                                        loop
+                                                        muted
+                                                        playsInline
+                                                    />
+                                                )
                                             ) : asset.type === 'IMAGE' ? (
                                                 <SafeImage
                                                     src={asset.url}
@@ -267,7 +287,8 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
                                                 <div className="w-full h-full flex items-center justify-center bg-zinc-800">
                                                     <span className="text-4xl">🎵</span>
                                                 </div>
-                                            )}
+                                            )
+                                            }
 
                                             {/* Type Badge */}
                                             <div className="absolute top-2 left-2 px-2 py-1 rounded bg-black/60 border border-white/10 text-[10px] uppercase font-bold text-white flex items-center gap-1">

@@ -170,37 +170,35 @@ class MediaCache {
 
         return new Promise((resolve, reject) => {
             // Enqueue using specific type queue (images have higher concurrency)
-            const cancelQueue = resourceQueue.enqueue(async () => {
-                try {
-                    // Always use Proxy for external R2 URLs to avoid CORS
-                    let fetchUrl = url;
-                    if (url.startsWith('http') && !url.includes('/assets?url=')) {
-                        fetchUrl = getProxyUrl(url);
-                    }
-
-                    const response = await fetch(fetchUrl);
-                    if (!response.ok) {
-                        resourceQueue.release(type);
-                        reject(new Error(`Failed to fetch: ${response.status}`));
-                        return;
-                    }
-
-                    const blob = await response.blob();
-
-                    // Cache it (fire and forget)
-                    this.set(url, blob, type).catch(e => {
-                        console.warn('[MediaCache] Failed to cache after fetch:', e);
-                    });
-
-                    // Return object URL immediately
-                    const objectUrl = URL.createObjectURL(blob);
-                    resourceQueue.release(type);
-                    resolve(objectUrl);
-                } catch (err) {
-                    resourceQueue.release(type);
-                    reject(err);
+            // Enqueue using specific type queue (images have higher concurrency)
+            /* const cancelQueue = */ resourceQueue.enqueue(async () => {
+            try {
+                // Always use Proxy for external R2 URLs to avoid CORS
+                let fetchUrl = url;
+                if (url.startsWith('http') && !url.includes('/assets?url=')) {
+                    fetchUrl = getProxyUrl(url);
                 }
-            }, type);
+
+                const response = await fetch(fetchUrl);
+                if (!response.ok) {
+                    reject(new Error(`Failed to fetch: ${response.status}`));
+                    return;
+                }
+
+                const blob = await response.blob();
+
+                // Cache it (fire and forget)
+                this.set(url, blob, type).catch(e => {
+                    console.warn('[MediaCache] Failed to cache after fetch:', e);
+                });
+
+                // Return object URL immediately
+                const objectUrl = URL.createObjectURL(blob);
+                resolve(objectUrl);
+            } catch (err) {
+                reject(err);
+            }
+        }, type);
         });
     }
 

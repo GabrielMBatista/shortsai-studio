@@ -80,6 +80,18 @@ const AudioPlayerButton: React.FC<AudioPlayerButtonProps> = ({ audioUrl, status,
         }
     };
 
+    // Reset audio when URL changes
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            const src = audioRef.current.src;
+            audioRef.current.src = '';
+            if (src.startsWith('blob:')) URL.revokeObjectURL(src);
+            audioRef.current = null;
+            setIsPlaying(false);
+        }
+    }, [audioUrl]);
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {

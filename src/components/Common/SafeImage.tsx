@@ -65,15 +65,23 @@ export const SafeImage: React.FC<SafeImageProps> = ({
                 // 🚀 Try to fetch from cache first, or fetch and cache
                 if (src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('blob:')) {
                     const { mediaCache } = await import('../../utils/mediaCache');
-                    const cachedUrl = await mediaCache.fetchAndCache(src, 'image');
+
+                    // Add timeout to prevent infinite spinners
+                    const timeoutPromise = new Promise<string>((_, reject) => {
+                        setTimeout(() => reject(new Error('Timeout loading image')), 15000);
+                    });
+
+                    const cachePromise = mediaCache.fetchAndCache(src, 'image');
+                    const cachedUrl = await Promise.race([cachePromise, timeoutPromise]);
+
                     setImgSrc(cachedUrl);
                 } else {
                     // For data URIs, blob URLs, or local files, use directly
                     setImgSrc(src);
                 }
             } catch (e) {
-                console.error('[SafeImage] Failed to load from cache:', e);
-                // Fallback to direct src
+                console.warn('[SafeImage] Failed to load (or timeout):', src, e);
+                // Fallback to direct src (browser might handle it) or error state
                 setImgSrc(src);
             }
         };
