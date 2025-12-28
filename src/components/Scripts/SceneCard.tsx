@@ -69,6 +69,24 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
         audioUrl: scene.audioUrl || null,
         videoUrl: scene.videoUrl || null
     });
+
+    // Optimistic status to handle UI updates before parent prop propagation
+    const [optimisticStatus, setOptimisticStatus] = useState<{
+        image?: string;
+        video?: string;
+        audio?: string;
+    }>({});
+
+    // Reset optimistic status when props update
+    useEffect(() => {
+        setOptimisticStatus(prev => ({ ...prev, image: undefined }));
+    }, [scene.imageStatus]);
+    useEffect(() => {
+        setOptimisticStatus(prev => ({ ...prev, audio: undefined }));
+    }, [scene.audioStatus]);
+    useEffect(() => {
+        setOptimisticStatus(prev => ({ ...prev, video: undefined }));
+    }, [scene.videoStatus]);
     const [isLoadingMedia, setIsLoadingMedia] = useState(false);
 
     const { targetRef, isIntersecting } = useIntersectionObserver({ rootMargin: '400px' });
@@ -165,18 +183,22 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     };
 
     // UI purely reflects backend state. No local 'isBusy' state.
-    const isImageLoading = ['pending', 'queued', 'processing', 'loading'].includes(scene.imageStatus);
-    const isAudioLoading = ['pending', 'queued', 'processing', 'loading'].includes(scene.audioStatus);
+    const currentImageStatus = optimisticStatus.image || scene.imageStatus;
+    const currentAudioStatus = optimisticStatus.audio || scene.audioStatus;
+    const currentVideoStatus = optimisticStatus.video || scene.videoStatus;
+
+    const isImageLoading = ['pending', 'queued', 'processing', 'loading'].includes(currentImageStatus);
+    const isAudioLoading = ['pending', 'queued', 'processing', 'loading'].includes(currentAudioStatus);
     // Video loading: check hook state BUT override if backend shows completed/failed
-    const isVideoLoadingFromStatus = scene.videoStatus ? ['pending', 'queued', 'processing', 'loading'].includes(scene.videoStatus) : false;
-    const isVideoCompleted = scene.videoStatus === 'completed' || scene.videoStatus === 'failed' || scene.videoStatus === 'error';
+    const isVideoLoadingFromStatus = currentVideoStatus ? ['pending', 'queued', 'processing', 'loading'].includes(currentVideoStatus) : false;
+    const isVideoCompleted = currentVideoStatus === 'completed' || currentVideoStatus === 'failed' || currentVideoStatus === 'error';
     const isVideoLoading = isVideoCompleted ? false : (isVideoPending || isVideoLoadingFromStatus);
 
     // Check if both video and image are available for toggle
     // Consider video as "has" if status is completed AND (URL exists OR still loading media data)
     const hasVideoUrl = !!(scene.videoUrl || mediaData.videoUrl);
-    const hasVideo = scene.videoStatus === 'completed' && (hasVideoUrl || isLoadingMedia);
-    const hasImage = scene.imageStatus === 'completed' && (scene.imageUrl || mediaData.imageUrl);
+    const hasVideo = currentVideoStatus === 'completed' && (hasVideoUrl || isLoadingMedia);
+    const hasImage = currentImageStatus === 'completed' && (scene.imageUrl || mediaData.imageUrl);
     const canToggle = (hasVideo || isVideoLoading) && hasImage;
 
     const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; type: 'image' | 'audio' | 'video' | null }>({ isOpen: false, type: null });
@@ -329,6 +351,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     updates.mediaType = 'video';
                     // Update state to trigger reload
                     setMediaData(prev => ({ ...prev, videoUrl: result.url }));
+                    setOptimisticStatus(prev => ({ ...prev, video: 'completed' }));
                     setShowVideo(true);
                 } else {
                     updates.imageUrl = result.url;
@@ -336,6 +359,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     updates.mediaType = 'image';
                     // Update state to trigger reload
                     setMediaData(prev => ({ ...prev, imageUrl: result.url }));
+                    setOptimisticStatus(prev => ({ ...prev, image: 'completed' }));
                     setShowVideo(false);
                 }
 
@@ -377,6 +401,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                         ...prev,
                         videoUrl: asset.url
                     }));
+                    setOptimisticStatus(prev => ({ ...prev, video: 'completed' }));
                     setShowVideo(true);
                 } else if (isImage) {
                     updates.imageUrl = asset.url;
@@ -388,11 +413,13 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                         ...prev,
                         imageUrl: asset.url
                     }));
+                    setOptimisticStatus(prev => ({ ...prev, image: 'completed' }));
                     setShowVideo(false);
                 } else if (isAudio) {
                     updates.audioUrl = asset.url;
                     updates.audioStatus = 'completed';
                     setMediaData(prev => ({ ...prev, audioUrl: asset.url }));
+                    setOptimisticStatus(prev => ({ ...prev, audio: 'completed' }));
                 }
 
                 onUpdateScene(sceneIndex, updates);
@@ -509,7 +536,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                         </div>
                     ) : isImageLoading ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-400 bg-slate-900/80 backdrop-blur-sm"><Loader2 className="w-8 h-8 animate-spin mb-2" /><span className="text-xs font-medium animate-pulse">{t('scene.generating_image')}</span></div>
-                    ) : scene.imageStatus === 'error' || scene.videoStatus === 'error' ? (
+                    ) : currentImageStatus === 'error' || currentVideoStatus === 'error' ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-red-400 p-4 text-center text-sm bg-slate-900/80"><AlertCircle className="w-8 h-8 mb-2 mx-auto opacity-80" /><span>{scene.errorMessage || t('scene.failed_load')}</span></div>
                     ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-slate-700 bg-slate-900"><ImageIcon className="w-16 h-16 opacity-10" /></div>
@@ -599,7 +626,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                             <RefreshCw className={`w-3.5 h-3.5 ${isImageLoading || localLoading.image ? 'animate-spin' : ''}`} />
                         </button>
 
-                        {onRegenerateVideo && scene.imageStatus === 'completed' && (
+                        {onRegenerateVideo && currentImageStatus === 'completed' && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleRegenClick('video'); }}
                                 className={`bg-black/60 hover:bg-purple-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm ${isVideoLoading || localLoading.video ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-105'}`}
@@ -683,7 +710,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                         <RefreshCw className={`w-3.5 h-3.5 ${isAudioLoading || localLoading.audio ? 'animate-spin' : ''}`} />
                                     </button>
                                 )}
-                                <AudioPlayerButton audioUrl={mediaData.audioUrl || scene.audioUrl} status={scene.audioStatus} />
+                                <AudioPlayerButton audioUrl={mediaData.audioUrl || scene.audioUrl} status={currentAudioStatus} />
                             </div>
                         </div>
 
