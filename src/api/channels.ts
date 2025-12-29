@@ -65,7 +65,7 @@ export const channelsApi = {
         });
         if (!res.ok) {
             const error = await res.json().catch(() => ({ error: 'Failed to sync channel' }));
-            throw new Error(error.error || 'Failed to sync channel');
+            throw new Error(error.message || error.error || 'Failed to sync channel');
         }
         return res.json();
     }

@@ -9,6 +9,7 @@ import { ChannelDetailsView } from './ChannelDetailsView';
 import { FavoriteChannelDashboard } from './FavoriteChannelDashboard';
 import { formatNumber } from '../../utils/format';
 import { Button, Card, Badge } from '../ui';
+import Toast, { ToastType } from '../Common/Toast';
 
 interface VideoAnalytics {
     id: string;
@@ -39,6 +40,7 @@ export default function ChannelsList({ onConnect, onImport }: ChannelsListProps 
     });
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
     const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
@@ -58,10 +60,15 @@ export default function ChannelsList({ onConnect, onImport }: ChannelsListProps 
             // Call API to sync channel data
             await channelsApi.sync(channel.id);
             await refetch(); // Refresh all channels local list
+            setToast({ message: `${channel.name} synced successfully`, type: 'success' });
             console.log('Synced channel:', channel.name);
-            console.log('Synced channel:', channel.name);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to sync channel:', error);
+            const isAuthError = error.message.includes('reconnect') || error.message.includes('expired');
+            setToast({
+                message: error.message || 'Failed to sync channel',
+                type: 'error'
+            });
         } finally {
             setSyncingIds(prev => {
                 const next = new Set(prev);
@@ -128,6 +135,14 @@ export default function ChannelsList({ onConnect, onImport }: ChannelsListProps 
 
     return (
         <div className="flex min-h-[calc(100vh-64px)]">
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
+
             {/* Sidebar */}
             <ChannelSidebarList
                 className="fixed md:sticky md:top-16 z-50 h-[calc(100vh-64px)]"
