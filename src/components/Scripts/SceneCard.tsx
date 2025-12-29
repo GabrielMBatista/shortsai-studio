@@ -45,6 +45,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
     const [isEditingPrompt, setIsEditingPrompt] = useState(false);
     const [promptText, setPromptText] = useState(scene.visualDescription);
     const [isAssetLibraryOpen, setIsAssetLibraryOpen] = useState(false);
+    const [isOptimizedPromptOpen, setIsOptimizedPromptOpen] = useState(false);
 
     // Drag and drop states
     const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -786,6 +787,26 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                     onBlur={handleSavePrompt}
                                     onKeyDown={handlePromptKeyDown}
                                 />
+                            </div>
+                        )}
+
+                        {/* Optimized Prompt Section */}
+                        {(scene.imagePromptOptimized || scene.videoPromptOptimized) && (
+                            <div className="border-t border-slate-700/50 pt-2 mt-2">
+                                <button
+                                    onClick={() => setIsOptimizedPromptOpen(!isOptimizedPromptOpen)}
+                                    className="flex items-center text-left text-[10px] uppercase tracking-wider text-purple-400 font-bold hover:text-purple-300 transition-colors w-full"
+                                >
+                                    <span>{t('scene.optimized_prompt', 'Prompt Otimizado')}</span>
+                                    {isOptimizedPromptOpen ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                                </button>
+                                {isOptimizedPromptOpen && (
+                                    <div className="mt-2 animate-fade-in-up">
+                                        <div className="text-xs text-purple-200/80 italic p-2.5 bg-purple-900/10 rounded border border-purple-500/20 leading-relaxed max-h-[150px] overflow-y-auto custom-scrollbar">
+                                            {showVideo && scene.videoPromptOptimized ? scene.videoPromptOptimized : scene.imagePromptOptimized}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

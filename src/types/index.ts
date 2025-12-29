@@ -136,6 +136,8 @@ export interface Scene {
   wordTimings?: { word: string; start: number; end: number }[];
   characters?: SavedCharacter[];
   videoCropConfig?: { x?: number; y?: number };
+  imagePromptOptimized?: string;
+  videoPromptOptimized?: string;
 }
 
 export type TTSProvider = 'gemini' | 'elevenlabs' | 'groq';

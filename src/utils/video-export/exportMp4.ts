@@ -35,18 +35,35 @@ const seekVideoElementsToTime = async (
             const timeInScene = time - accumTime;
             const asset = assets[i];
 
-            if (asset.video && asset.videoDuration > 0 && timeInScene < asset.videoDuration) {
-                const targetTime = timeInScene;
-                if (Math.abs(asset.video.currentTime - targetTime) > 0.01) {
+            // Only seek if we need the video element
+            // If frozen AND we have a lastFrameImg, we don't need the video element (drawFrame uses the image)
+            // This prevents stuttering at end of scene
+            const isFrozen = asset.videoDuration > 0 && timeInScene >= asset.videoDuration;
+            const canOptimizeFreeze = isFrozen && asset.lastFrameImg;
+
+            if (asset.video && asset.videoDuration > 0 && !canOptimizeFreeze) {
+                // Determine valid seek time. If past duration, clamp to end.
+                // We use duration - 0.05 to ensure we hit a valid frame before EOS
+                let targetTime = timeInScene;
+                if (timeInScene >= asset.videoDuration) {
+                    targetTime = Math.max(0, asset.videoDuration - 0.05);
+                }
+
+                if (Math.abs(asset.video.currentTime - targetTime) > 0.1) { // Increased threshold slightly
                     asset.video.currentTime = targetTime;
-                    await new Promise<void>((resolve) => {
-                        const handler = () => {
-                            asset.video.removeEventListener('seeked', handler);
-                            resolve();
-                        };
-                        asset.video.addEventListener('seeked', handler);
-                        setTimeout(resolve, 100);
-                    });
+
+                    // Only wait for seek if we moved significantly or it's not ready
+                    if (asset.video.readyState < 3) {
+                        await new Promise<void>((resolve) => {
+                            const handler = () => {
+                                asset.video.removeEventListener('seeked', handler);
+                                resolve();
+                            };
+                            asset.video.addEventListener('seeked', handler);
+                            // Safety timeout
+                            setTimeout(resolve, 200);
+                        });
+                    }
                 }
             }
             break;

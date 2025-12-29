@@ -290,20 +290,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           if (vSrc) {
             return (
               <>
-                {/* Poster Image */}
-                <img src={iSrc} className={`absolute inset-0 w-full h-full object-cover ${videoEnded ? 'opacity-100' : 'opacity-0'}`} />
+                {/* Poster Image - Hidden if video is active, serves as loading placeholder */}
+                <img src={iSrc} className={`absolute inset-0 w-full h-full object-cover ${activeMedia.videoUrl ? 'z-0' : 'z-10'}`} />
 
                 {/* Video Element - Master Clock when present */}
                 <video
                   ref={videoRef}
                   key={`vid-${currentSceneIndex}`} // Remount on scene change
                   src={vSrc}
-                  className={`absolute inset-0 w-full h-full object-cover ${videoEnded ? 'opacity-0' : 'opacity-100'}`}
-                  style={{ objectPosition: `${activeScene.videoCropConfig?.x ?? 50}% center` }}
+                  className={`absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-[10000ms] ease-linear`}
+                  style={{
+                    objectPosition: `${activeScene.videoCropConfig?.x ?? 50}% center`,
+                    transform: videoEnded ? 'scale(1.15)' : 'scale(1.0)' // Simulate Pan/Zoom on freeze
+                  }}
                   crossOrigin="anonymous"
                   playsInline
                   muted // Video is visual only, audio track handles sound
-                  onEnded={handleMediaEnded}
+                  onEnded={() => {
+                    setVideoEnded(true);
+                    // If audio is present and still playing, WAIT for audio to finish
+                    if (activeMedia.audioUrl && audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
+                      return;
+                    }
+                    handleMediaEnded();
+                  }}
                   onWaiting={() => {
                     setIsBuffering(true);
                     audioRef.current?.pause();
@@ -320,10 +330,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                     }
                   }}
                   onPause={() => {
-                    audioRef.current?.pause();
+                    // Only pause audio if we are NOT in the "Frozen Video" state (where video is paused but audio continues)
+                    if (!videoEnded) {
+                      audioRef.current?.pause();
+                    }
                   }}
                   onTimeUpdate={(e) => {
-                    // Video drives the UI progress
+                    // Video drives the UI progress UNLESS it has ended
                     if (e.currentTarget.duration) {
                       const p = (e.currentTarget.currentTime / e.currentTarget.duration) * 100;
                       setProgress(p);
@@ -336,8 +349,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                         audioRef.current.currentTime = e.currentTarget.currentTime;
                       }
                     }
-                    // Simple Fade Logic
-                    if (e.currentTarget.duration - e.currentTarget.currentTime < 0.5) {
+                    // Simple Fade Logic (Visual Only - trigger "Freeze" state)
+                    if (!videoEnded && e.currentTarget.duration - e.currentTarget.currentTime < 0.1) {
                       setVideoEnded(true);
                     }
                   }}
@@ -351,15 +364,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           }
         })()}
 
-        {/* Audio Layer - Slave to Video (if video exists), Master if Image only */}
+        {/* Audio Layer - Slave to Video (if video exists), Master if Image only OR Video Frozen */}
         {activeMedia.audioUrl && (
           <audio
             ref={audioRef}
             key={`aud-${currentSceneIndex}`} // Remount on scene change
             src={activeMedia.audioUrl}
             onEnded={() => {
-              // If there is NO video, Audio end triggers scene change
-              if (!activeMedia.videoUrl) handleMediaEnded();
+              // If there is NO video, OR video has already ended, Audio end triggers scene change
+              if (!activeMedia.videoUrl || videoEnded || videoRef.current?.ended) {
+                handleMediaEnded();
+              }
             }}
             onTimeUpdate={(e) => {
               // If NO video, Audio drives UI progress
@@ -367,6 +382,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                 const p = (e.currentTarget.currentTime / e.currentTarget.duration) * 100;
                 setProgress(p);
                 setCurrentTime(e.currentTarget.currentTime);
+              }
+              // IF VIDEO IS FROZEN (Ended), Audio drives the Extra Time progress
+              if (videoEnded && e.currentTarget.duration) {
+                // Logic to show progress during the "Frozen" extension could go here, 
+                // requires slightly more complex math (video duration + extra audio time).
+                // For now, keeping the progress bar at 100% of video is acceptable or we can just let it sit.
               }
             }}
           />

@@ -100,60 +100,78 @@ export const drawFrame = (
         asset.video.pause();
     }
 
-    if (isVideoActive) {
-        // Video is already seeked to correct time by seekVideoElementsToTime (for MP4)
-        // or playing naturally (for WebM). Just draw the current frame.
+    if (hasVideo) {
         const vw = asset.video.videoWidth;
         const vh = asset.video.videoHeight;
+
         if (vw > 0 && vh > 0) {
-            // object-cover: scale to fill, crop the excess
-            const scale = Math.max(w / vw, h / vh);
-            const sw = vw * scale;
-            const sh = vh * scale;
+            // Freeze Logic: behavior depends on whether we are past video duration
+            let zoomScale = 1.0;
 
-            // Calculate crop: how much to cut from source
-            const cropW = w / scale;  // Portion of source width to use
-            const cropH = h / scale;  // Portion of source height to use
+            if (isVideoFrozen) {
+                // Video ended, but scene continues (narration longer)
+                // Force video to last frame (effectively freezing it)
+                // Note: In drawFrame loop, we don't control playback (it's frame by frame), 
+                // but we rely on the video element being at the right time.
+                // For export, we might need to explicitly ensure the video is at the end.
+                // However, seeking HTML5 video is async and slow. 
+                // BETTER STRATEGY: The PrepareAssets step captured 'lastFrameImg'.
+                // If available, use it for performance. 
+                // If NOT (fallback), we might get a black frame if we try to draw a finished video.
 
-            // X-Framing (User Controlled)
-            const xPercent = (asset.videoCropConfig?.x ?? 50) / 100;
-            const cropX = (vw - cropW) * xPercent;
+                if (asset.lastFrameImg) {
+                    // Use captured frame for better performance/reliability than seeking video
+                    const frozenTime = timeInScene - asset.videoDuration;
+                    const frozenDuration = asset.renderDuration - asset.videoDuration;
+                    const frozenProgress = frozenTime / frozenDuration;
+                    zoomScale = 1.0 + (0.15 * frozenProgress);
 
-            const cropY = (vh - cropH) / 2;  // Center Y
+                    const iw = asset.lastFrameImg.width;
+                    const ih = asset.lastFrameImg.height;
 
-            // Draw cropped portion scaled to fill canvas
-            ctx.drawImage(
-                asset.video,
-                cropX, cropY, cropW, cropH,  // Source rectangle (crop from center)
-                0, 0, w, h                    // Destination (fill canvas)
-            );
+                    // object-cover with zoom
+                    const scale = Math.max(w / iw, h / ih) * zoomScale;
+                    const cropW = w / scale;
+                    const cropH = h / scale;
+
+                    const xPercent = (asset.videoCropConfig?.x ?? 50) / 100;
+                    const cropX = (iw - cropW) * xPercent;
+                    const cropY = (ih - cropH) / 2;
+
+                    ctx.drawImage(
+                        asset.lastFrameImg,
+                        cropX, cropY, cropW, cropH,
+                        0, 0, w, h
+                    );
+
+                    // Early exit for this branch since we drew the image
+                    // We skip the video drawing block below
+                } else {
+                    // Fallback if no lastFrameImg (rare): seek to end
+                    try {
+                        asset.video.currentTime = asset.videoDuration - 0.1;
+                    } catch (e) { }
+                    // Draw video below...
+                }
+            }
+
+            // Only draw VIDEO element if we didn't just draw the lastFrameImg
+            if (!isVideoFrozen || !asset.lastFrameImg) {
+                const scale = Math.max(w / vw, h / vh); // No zoom while playing normally
+                const cropW = w / scale;
+                const cropH = h / scale;
+
+                const xPercent = (asset.videoCropConfig?.x ?? 50) / 100;
+                const cropX = (vw - cropW) * xPercent;
+                const cropY = (vh - cropH) / 2;
+
+                ctx.drawImage(
+                    asset.video,
+                    cropX, cropY, cropW, cropH,
+                    0, 0, w, h
+                );
+            }
         }
-    } else if (isVideoFrozen && asset.lastFrameImg) {
-        // Video ended but narration continues: freeze last frame with pan/zoom
-        const frozenTime = timeInScene - asset.videoDuration;
-        const frozenDuration = asset.renderDuration - asset.videoDuration;
-        const frozenProgress = frozenTime / frozenDuration;
-        const zoomScale = 1.0 + (0.15 * frozenProgress);
-
-        const iw = asset.lastFrameImg.width;
-        const ih = asset.lastFrameImg.height;
-
-        // object-cover with zoom
-        const scale = Math.max(w / iw, h / ih) * zoomScale;
-        const cropW = w / scale;
-        const cropH = h / scale;
-
-        // X-Framing (User Controlled)
-        const xPercent = (asset.videoCropConfig?.x ?? 50) / 100;
-        const cropX = (iw - cropW) * xPercent;
-
-        const cropY = (ih - cropH) / 2;
-
-        ctx.drawImage(
-            asset.lastFrameImg,
-            cropX, cropY, cropW, cropH,
-            0, 0, w, h
-        );
     } else if (asset.img) {
         // Static image with pan/zoom
         const zoomProgress = timeInScene / asset.renderDuration;
