@@ -8,6 +8,8 @@ import { getSceneMedia } from '../../services/scenes';
 import { SafeImage } from '../Common/SafeImage';
 import { SafeVideo } from '../Common/SafeVideo';
 import { ScheduleUploadModal } from './ScheduleUploadModal';
+import { CinematicTextOverlay } from './CinematicTextOverlay';
+import { ParticleOverlay } from './ParticleOverlay';
 
 interface VideoPlayerProps {
   scenes: Scene[];
@@ -29,6 +31,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const [showSubtitles, setShowSubtitles] = useState(true);
   const [videoEnded, setVideoEnded] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [audioShouldPlay, setAudioShouldPlay] = useState(false); // For hookText delay
 
   // Detect mock projects
   const isMock = projectId === '__mock__-tour-project';
@@ -113,7 +116,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     const playAll = async () => {
       try {
         if (v && v.paused) await v.play();
-        if (a && a.paused) {
+        if (a && a.paused && audioShouldPlay) { // Only play if delay has passed
           // Basic Sync Attempt on Play
           if (v) a.currentTime = v.currentTime;
           await a.play();
@@ -136,7 +139,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
       pauseAll();
     }
 
-  }, [isPlaying, activeMedia]); // Re-run if media changes while playing
+  }, [isPlaying, activeMedia, audioShouldPlay]); // Re-run if media changes or audio delay completes
+
+  // 2b. Hook Text Audio Delay (1 second)
+  useEffect(() => {
+    if (!isPlaying || !activeScene) {
+      setAudioShouldPlay(false);
+      return;
+    }
+
+    // If scene has hookText, wait 1 second before allowing audio to play
+    const hasHookText = !!activeScene.hookText;
+    if (hasHookText) {
+      setAudioShouldPlay(false);
+      const timer = setTimeout(() => {
+        setAudioShouldPlay(true);
+      }, 1000); // 1 second delay
+      return () => clearTimeout(timer);
+    } else {
+      setAudioShouldPlay(true);
+    }
+  }, [isPlaying, currentSceneIndex, activeScene?.hookText]);
 
   // 3. Simple Scene Progression
   const handleMediaEnded = () => {
@@ -298,7 +321,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                   ref={videoRef}
                   key={`vid-${currentSceneIndex}`} // Remount on scene change
                   src={vSrc}
-                  className={`absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-[10000ms] ease-linear`}
+                  className={`absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-[5000ms] ease-linear`}
                   style={{
                     objectPosition: `${activeScene.videoCropConfig?.x ?? 50}% center`,
                     transform: videoEnded ? 'scale(1.15)' : 'scale(1.0)' // Simulate Pan/Zoom on freeze
@@ -371,10 +394,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             key={`aud-${currentSceneIndex}`} // Remount on scene change
             src={activeMedia.audioUrl}
             onEnded={() => {
-              // If there is NO video, OR video has already ended, Audio end triggers scene change
-              if (!activeMedia.videoUrl || videoEnded || videoRef.current?.ended) {
-                handleMediaEnded();
-              }
+              // Master Clock: Audio (Narration) dictates scene duration.
+              // If audio ends, the scene ends (cuts video if needed).
+              handleMediaEnded();
             }}
             onTimeUpdate={(e) => {
               // If NO video, Audio drives UI progress
@@ -400,6 +422,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           />
         )}
 
+        {/* Particle Overlay (Visual Effects) */}
+        {activeScene.particleOverlay && (
+          <ParticleOverlay
+            particleName={activeScene.particleOverlay}
+            show={isPlaying}
+          />
+        )}
+
         {/* Subtitles */}
         {showSubtitles && activeScene.narration && (
           <SubtitleOverlay
@@ -408,6 +438,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             currentTime={currentTime}
             show={true}
             wordTimings={activeScene.wordTimings}
+          />
+        )}
+
+        {/* Cinematic Text Overlay (Hook Text - primeiros 3s) */}
+        {activeScene.hookText && activeScene.textStyle && (
+          <CinematicTextOverlay
+            text={activeScene.hookText}
+            style={activeScene.textStyle}
+            currentTime={currentTime}
+            duration={3}
           />
         )}
 

@@ -34,7 +34,9 @@ export const mixAudio = async (
             source.connect(clipGain);
             clipGain.connect(masterGain);
 
-            const startT = currentAudioTime;
+            // Add 1 second delay if scene has hookText
+            const hookDelay = asset.hookText ? 1.0 : 0;
+            const startT = currentAudioTime + hookDelay;
             const duration = asset.renderDuration;
             const endT = startT + duration;
             const fadeTime = 0.01;

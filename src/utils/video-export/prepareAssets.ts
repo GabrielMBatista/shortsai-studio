@@ -69,13 +69,44 @@ export const prepareAssets = async (
 
         const dbDuration = Number(s.durationSeconds) || 0;
         const fallbackDuration = dbDuration > 0 ? dbDuration : 5;
-        const realDuration = (buffer && Number.isFinite(buffer.duration)) ? buffer.duration : fallbackDuration;
+
+        // CRITICAL: If audio is present, the scene duration MUST be the audio duration.
+        // This ensures video cuts when narration ends, or freezes if narration is longer.
+        let realDuration = fallbackDuration;
+
+        if (buffer && Number.isFinite(buffer.duration) && buffer.duration > 0) {
+            realDuration = buffer.duration;
+            // Pad slightly to avoid abrupt audio cutoff? 
+            // User requested strict "according to narration time", so we stick to exact duration or very slight padding (0.1s).
+            // Actually, keep it exact to avoid sync drift.
+        } else if (useVideo && videoDuration > 0) {
+            // Fallback: If no audio, but we have video, use video duration?
+            // User says "calculated according to narration". If no narration...
+            // We default to DB duration (which might be estimated).
+            // If DB duration is 0/invalid, use video duration as last resort.
+            if (realDuration <= 0.1) realDuration = videoDuration;
+        }
+
+        // Just in case
+        if (realDuration < 0.5) realDuration = 5;
+
+        // Load particle overlay video if specified
+        let particleVideo: HTMLVideoElement | null = null;
+        if (s.particleOverlay) {
+            try {
+                const particleUrl = `/cinematic-assets/overlays/${s.particleOverlay}.mp4`;
+                particleVideo = await loadVideo(particleUrl);
+                console.log(`Particle overlay loaded for scene ${s.sceneNumber}: ${s.particleOverlay}`);
+            } catch (e) {
+                console.warn(`Failed to load particle overlay for scene ${s.sceneNumber}:`, e);
+            }
+        }
 
         loadedAssetsCount++;
         const percent = Math.round((loadedAssetsCount / scenes.length) * 20); // 20% of total progress allocated to asset loading
         onProgress(percent);
 
-        return { ...s, img, video, videoDuration, lastFrameImg, buffer, renderDuration: realDuration };
+        return { ...s, img, video, videoDuration, lastFrameImg, buffer, renderDuration: realDuration, particleVideo };
     }));
 
     return assets;

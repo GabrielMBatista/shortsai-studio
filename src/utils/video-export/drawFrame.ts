@@ -105,72 +105,49 @@ export const drawFrame = (
         const vh = asset.video.videoHeight;
 
         if (vw > 0 && vh > 0) {
-            // Freeze Logic: behavior depends on whether we are past video duration
             let zoomScale = 1.0;
+            let source = asset.video;
+            let sourceW = vw;
+            let sourceH = vh;
 
+            // Handle Frozen State (Narration > Video)
             if (isVideoFrozen) {
-                // Video ended, but scene continues (narration longer)
-                // Force video to last frame (effectively freezing it)
-                // Note: In drawFrame loop, we don't control playback (it's frame by frame), 
-                // but we rely on the video element being at the right time.
-                // For export, we might need to explicitly ensure the video is at the end.
-                // However, seeking HTML5 video is async and slow. 
-                // BETTER STRATEGY: The PrepareAssets step captured 'lastFrameImg'.
-                // If available, use it for performance. 
-                // If NOT (fallback), we might get a black frame if we try to draw a finished video.
+                // Determine zoom: Gentle zoom matching static image feel (~3% per second)
+                const frozenTime = timeInScene - asset.videoDuration;
+                zoomScale = 1.0 + (0.03 * frozenTime);
 
+                // Prefer pre-captured last frame for performance
                 if (asset.lastFrameImg) {
-                    // Use captured frame for better performance/reliability than seeking video
-                    const frozenTime = timeInScene - asset.videoDuration;
-                    const frozenDuration = asset.renderDuration - asset.videoDuration;
-                    const frozenProgress = frozenTime / frozenDuration;
-                    zoomScale = 1.0 + (0.15 * frozenProgress);
-
-                    const iw = asset.lastFrameImg.width;
-                    const ih = asset.lastFrameImg.height;
-
-                    // object-cover with zoom
-                    const scale = Math.max(w / iw, h / ih) * zoomScale;
-                    const cropW = w / scale;
-                    const cropH = h / scale;
-
-                    const xPercent = (asset.videoCropConfig?.x ?? 50) / 100;
-                    const cropX = (iw - cropW) * xPercent;
-                    const cropY = (ih - cropH) / 2;
-
-                    ctx.drawImage(
-                        asset.lastFrameImg,
-                        cropX, cropY, cropW, cropH,
-                        0, 0, w, h
-                    );
-
-                    // Early exit for this branch since we drew the image
-                    // We skip the video drawing block below
+                    source = asset.lastFrameImg;
+                    sourceW = asset.lastFrameImg.width;
+                    sourceH = asset.lastFrameImg.height;
                 } else {
-                    // Fallback if no lastFrameImg (rare): seek to end
+                    // Fallback: Seek video to end if not already there
                     try {
-                        asset.video.currentTime = asset.videoDuration - 0.1;
+                        // Only seek if significantly off, to avoid stutter
+                        if (Math.abs(asset.video.currentTime - asset.videoDuration) > 0.5) {
+                            asset.video.currentTime = Math.max(0, asset.videoDuration - 0.1);
+                        }
                     } catch (e) { }
-                    // Draw video below...
                 }
             }
 
-            // Only draw VIDEO element if we didn't just draw the lastFrameImg
-            if (!isVideoFrozen || !asset.lastFrameImg) {
-                const scale = Math.max(w / vw, h / vh); // No zoom while playing normally
-                const cropW = w / scale;
-                const cropH = h / scale;
+            // Calculate framing with Zoom
+            // object-cover: scale to fill 
+            const scale = Math.max(w / sourceW, h / sourceH) * zoomScale;
+            const cropW = w / scale;
+            const cropH = h / scale;
 
-                const xPercent = (asset.videoCropConfig?.x ?? 50) / 100;
-                const cropX = (vw - cropW) * xPercent;
-                const cropY = (vh - cropH) / 2;
+            // Apply Video Crop Config (Framing) or Default Center
+            const xPercent = (asset.videoCropConfig?.x ?? 50) / 100;
+            const cropX = (sourceW - cropW) * xPercent;
+            const cropY = (sourceH - cropH) / 2;
 
-                ctx.drawImage(
-                    asset.video,
-                    cropX, cropY, cropW, cropH,
-                    0, 0, w, h
-                );
-            }
+            ctx.drawImage(
+                source,
+                cropX, cropY, cropW, cropH,
+                0, 0, w, h
+            );
         }
     } else if (asset.img) {
         // Static image with pan/zoom
@@ -184,6 +161,8 @@ export const drawFrame = (
         const scale = Math.max(w / iw, h / ih) * zoomScale;
         const cropW = w / scale;
         const cropH = h / scale;
+
+        // Static images default to center (unless we add cropConfig for them later)
         const cropX = (iw - cropW) / 2;
         const cropY = (ih - cropH) / 2;
 
@@ -201,6 +180,89 @@ export const drawFrame = (
     gradient.addColorStop(1, 'rgba(0,0,0,0.95)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
+
+    // Particle Overlay (Visual Effects)
+    if (asset.particleOverlay && asset.particleVideo) {
+        const pv = asset.particleVideo;
+        if (pv.videoWidth > 0 && pv.videoHeight > 0) {
+            // Use globalCompositeOperation 'screen' for blend mode
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            ctx.globalAlpha = 0.7;
+
+            // Draw particle video covering entire canvas
+            const pvScale = Math.max(w / pv.videoWidth, h / pv.videoHeight);
+            const pvW = pv.videoWidth * pvScale;
+            const pvH = pv.videoHeight * pvScale;
+            const pvX = (w - pvW) / 2;
+            const pvY = (h - pvH) / 2;
+
+            ctx.drawImage(pv, pvX, pvY, pvW, pvH);
+            ctx.restore();
+        }
+    }
+
+    // Cinematic Hook Text (primeiros 3s da cena)
+    if (asset.hookText && asset.textStyle && timeInScene < 3) {
+        const { font = 'bebas-neue', color = '#FFD700', position = 'center', size = 'large' } = asset.textStyle;
+
+        // Mapeamento de tamanhos para canvas
+        const fontSizes: Record<string, number> = {
+            small: Math.floor(w * 0.12),
+            medium: Math.floor(w * 0.15),
+            large: Math.floor(w * 0.18)
+        };
+
+        // Mapeamento de fontes
+        const fontFamilies: Record<string, string> = {
+            'bebas-neue': 'Impact, "Bebas Neue", sans-serif',
+            'anton': 'Impact, "Anton", sans-serif',
+            'bangers': 'Impact, "Bangers", cursive',
+            'righteous': 'Impact, "Righteous", cursive'
+        };
+
+        const fontSize = fontSizes[size] || fontSizes.large;
+        const fontFamily = fontFamilies[font] || fontFamilies['bebas-neue'];
+
+        // Configurar fonte
+        ctx.font = `900 ${fontSize}px ${fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Calcular posição Y
+        let yPosition = h / 2;
+        if (position === 'top') yPosition = h * 0.2;
+        else if (position === 'bottom') yPosition = h * 0.8;
+
+        // Desenhar sombra preta múltipla (efeito "stroke")
+        ctx.lineWidth = fontSize / 30;
+        ctx.strokeStyle = '#000';
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+
+        ctx.strokeText(asset.hookText, w / 2, yPosition);
+
+        // Sombra adicional para profundidade
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = fontSize / 10;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = fontSize / 20;
+
+        ctx.strokeText(asset.hookText, w / 2, yPosition);
+
+        // Desenhar texto principal
+        ctx.fillStyle = color;
+        ctx.shadowBlur = fontSize / 5;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+
+        ctx.fillText(asset.hookText, w / 2, yPosition);
+
+        // Reset shadow
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+    }
 
     if (showSubtitles && layout) {
         ctx.textAlign = 'center';

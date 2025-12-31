@@ -15,6 +15,8 @@ import { AssetLibraryModal } from '../Common/AssetLibraryModal';
 import { Library } from 'lucide-react';
 import { apiFetch } from '../../services/api';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
+import { CinematicTextEditor } from '../Common/CinematicTextEditor';
+import { AudioEffectsEditor } from '../Common/AudioEffectsEditor';
 
 interface SceneCardProps {
     scene: Scene;
@@ -757,6 +759,26 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                 </div>
                             </div>
                         )}
+
+                        {/* Cinematic Text Editor */}
+                        <div className="mb-4 flex gap-2 items-center">
+                            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mr-2">
+                                Cinematic
+                            </div>
+                            <CinematicTextEditor
+                                sceneIndex={sceneIndex}
+                                hookText={scene.hookText}
+                                textStyle={scene.textStyle}
+                                particleOverlay={scene.particleOverlay}
+                                onUpdate={(updates) => onUpdateScene(sceneIndex, updates)}
+                            />
+                            <AudioEffectsEditor
+                                sceneIndex={sceneIndex}
+                                sceneDuration={scene.durationSeconds || 5}
+                                audioEffects={scene.audioEffects as any}
+                                onUpdate={(updates) => onUpdateScene(sceneIndex, updates)}
+                            />
+                        </div>
 
                         <div className="flex items-center justify-between mb-2">
                             <button

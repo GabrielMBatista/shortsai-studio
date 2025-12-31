@@ -138,6 +138,17 @@ export interface Scene {
   videoCropConfig?: { x?: number; y?: number };
   imagePromptOptimized?: string;
   videoPromptOptimized?: string;
+
+  // Cinematic Engine
+  hookText?: string; // Texto "manchete" para primeiros 3s
+  audioEffects?: { type: string; timing: number; volume: number }[]; // Efeitos do Eden Pack
+  particleOverlay?: string; // Nome do arquivo de overlay
+  textStyle?: {
+    font?: string;
+    color?: string;
+    position?: 'top' | 'center' | 'bottom';
+    size?: 'small' | 'medium' | 'large';
+  }; // Config de estilo do texto
 }
 
 export type TTSProvider = 'gemini' | 'elevenlabs' | 'groq';

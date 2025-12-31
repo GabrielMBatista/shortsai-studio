@@ -1,85 +1,9 @@
 import * as Mp4Muxer from 'mp4-muxer';
 import { precomputeSubtitleLayouts } from './subtitleUtils';
 import { drawFrame } from './drawFrame';
+import { seekVideoElementsToTime } from './seekHelper';
 
-const seekVideoElementsToTime = async (
-    time: number,
-    assets: any[],
-    endingVideoElement: HTMLVideoElement | null,
-    totalScenesDuration: number
-) => {
-    // Ending Phase Seek
-    if (time >= totalScenesDuration && endingVideoElement) {
-        const endingTime = time - totalScenesDuration;
-        if (Math.abs(endingVideoElement.currentTime - endingTime) > 0.01) {
-            endingVideoElement.currentTime = endingTime;
-            await new Promise<void>((resolve) => {
-                const handler = () => {
-                    endingVideoElement!.removeEventListener('seeked', handler);
-                    resolve();
-                };
-                endingVideoElement!.addEventListener('seeked', handler);
-                setTimeout(resolve, 100);
-            });
-        }
-        return;
-    }
 
-    // Scenes Phase Seek
-    let accumTime = 0;
-    let foundScene = false;
-
-    for (let i = 0; i < assets.length; i++) {
-        if (time < accumTime + assets[i].renderDuration) {
-            foundScene = true;
-            const timeInScene = time - accumTime;
-            const asset = assets[i];
-
-            // Only seek if we need the video element
-            // If frozen AND we have a lastFrameImg, we don't need the video element (drawFrame uses the image)
-            // This prevents stuttering at end of scene
-            const isFrozen = asset.videoDuration > 0 && timeInScene >= asset.videoDuration;
-            const canOptimizeFreeze = isFrozen && asset.lastFrameImg;
-
-            if (asset.video && asset.videoDuration > 0 && !canOptimizeFreeze) {
-                // Determine valid seek time. If past duration, clamp to end.
-                // We use duration - 0.05 to ensure we hit a valid frame before EOS
-                let targetTime = timeInScene;
-                if (timeInScene >= asset.videoDuration) {
-                    targetTime = Math.max(0, asset.videoDuration - 0.05);
-                }
-
-                if (Math.abs(asset.video.currentTime - targetTime) > 0.1) { // Increased threshold slightly
-                    asset.video.currentTime = targetTime;
-
-                    // Only wait for seek if we moved significantly or it's not ready
-                    if (asset.video.readyState < 3) {
-                        await new Promise<void>((resolve) => {
-                            const handler = () => {
-                                asset.video.removeEventListener('seeked', handler);
-                                resolve();
-                            };
-                            asset.video.addEventListener('seeked', handler);
-                            // Safety timeout
-                            setTimeout(resolve, 200);
-                        });
-                    }
-                }
-            }
-            break;
-        }
-        accumTime += assets[i].renderDuration;
-    }
-
-    // If time is beyond all scenes, pause all scene videos
-    if (!foundScene) {
-        assets.forEach(asset => {
-            if (asset.video && !asset.video.paused) {
-                asset.video.pause();
-            }
-        });
-    }
-};
 
 export const exportMp4 = async (
     canvas: HTMLCanvasElement,
@@ -120,16 +44,21 @@ export const exportMp4 = async (
     });
 
     const is1080p = canvas.width >= 1080;
-    const baseBitrate = is1080p ? 10_000_000 : 5_500_000;
+    // MAX QUALITY: 25 Mbps for 1080p, 15 Mbps for 720p
+    const baseBitrate = is1080p ? 25_000_000 : 15_000_000;
+
+    // Scale bitrate based on FPS
     const bitrate = fps === 60 ? baseBitrate : Math.round(baseBitrate * 0.6);
 
     videoEncoder.configure({
-        codec: 'avc1.4d0028',
+        codec: 'avc1.4d002a', // High Profile, Level 4.2 (Max Quality)
         width: canvas.width,
         height: canvas.height,
         bitrate: bitrate,
         framerate: fps,
-        hardwareAcceleration: 'prefer-hardware'
+        hardwareAcceleration: 'prefer-hardware',
+        latencyMode: 'quality', // Offline render priority
+        avc: { format: 'annexb' } // Standard compatibility
     });
     console.log(`VideoEncoder configured with ${fps} FPS, ${canvas.width}x${canvas.height}, ${(bitrate / 1000000).toFixed(1)} Mbps`);
 
@@ -211,7 +140,7 @@ export const exportMp4 = async (
             timestamp: time * 1_000_000
         });
 
-        videoEncoder.encode(frame, { keyFrame: i % 60 === 0 });
+        videoEncoder.encode(frame, { keyFrame: i % fps === 0 });
         frame.close();
 
         if (videoEncoder.encodeQueueSize > 5) {

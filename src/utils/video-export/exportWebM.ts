@@ -1,5 +1,7 @@
+import { Muxer, ArrayBufferTarget } from 'webm-muxer';
 import { precomputeSubtitleLayouts } from './subtitleUtils';
 import { drawFrame } from './drawFrame';
+import { seekVideoElementsToTime } from './seekHelper';
 
 export const exportWebM = async (
     canvas: HTMLCanvasElement,
@@ -15,90 +17,138 @@ export const exportWebM = async (
     onProgress: (msg: string) => void,
     showSubtitles: boolean
 ): Promise<Blob | null> => {
-    console.log(`Starting WebM export with ${fps} FPS...`);
+    console.log("Starting WebM export (Offline Rendering)...");
 
-    if (typeof MediaRecorder === 'undefined') {
-        throw new Error("WebM export requires MediaRecorder API support. Please use a modern browser.");
-    }
-
-    let mimeType = 'video/webm;codecs=vp9,opus';
-    if (!MediaRecorder.isTypeSupported(mimeType)) {
-        console.warn("VP9 not supported, trying VP8...");
-        mimeType = 'video/webm;codecs=vp8,opus';
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-            throw new Error("WebM export is not supported in this browser. No VP9 or VP8 codec available.");
+    const muxer = new Muxer({
+        target: new ArrayBufferTarget(),
+        video: {
+            codec: 'V_VP9',
+            width: canvas.width,
+            height: canvas.height,
+            frameRate: fps
+        },
+        audio: {
+            codec: 'A_OPUS',
+            numberOfChannels: 2,
+            sampleRate: 48000
         }
-    }
-    console.log(`Using codec: ${mimeType}`);
+    });
 
-    const dest = audioCtx.createMediaStreamDestination();
-    const source = audioCtx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(dest);
+    const videoEncoder = new VideoEncoder({
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: (e) => {
+            console.error("VideoEncoder error", e);
+            throw new Error("WebM Video encoding failed: " + e.message);
+        }
+    });
 
-    const stream = canvas.captureStream(fps);
-    const audioTrack = dest.stream.getAudioTracks()[0];
-    if (audioTrack) stream.addTrack(audioTrack);
-
+    // High bitrate for premium quality
     const is1080p = canvas.width >= 1080;
-    const baseBitrate = is1080p ? 8_000_000 : 4_500_000;
-    const videoBitrate = fps === 60 ? baseBitrate : Math.round(baseBitrate * 0.7);
+    const baseBitrate = is1080p ? 12_000_000 : 6_000_000;
+    const bitrate = fps === 60 ? baseBitrate : Math.round(baseBitrate * 0.7);
 
-    const recorder = new MediaRecorder(stream, {
-        mimeType: mimeType,
-        videoBitsPerSecond: videoBitrate,
-        audioBitsPerSecond: 128000
+    videoEncoder.configure({
+        codec: 'vp09.00.10.08', // VP9 Profile 0, Level 1, BitDepth 8
+        width: canvas.width,
+        height: canvas.height,
+        bitrate: bitrate,
+        framerate: fps
     });
+    console.log(`VideoEncoder (WebM) configured with ${fps} FPS, ${bitrate / 1_000_000} Mbps`);
 
-    const chunks: Blob[] = [];
-    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-
-    const finished = new Promise<void>((resolve) => {
-        recorder.onstop = () => resolve();
-    });
-
-    recorder.start(1000);
-    source.start(0);
-
-    assets.forEach(asset => {
-        if (asset.video) {
-            asset.video.currentTime = 0;
-            asset.video.play().catch(e => console.warn("Failed to start video for WebM", e));
+    const audioEncoder = new AudioEncoder({
+        output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+        error: (e) => {
+            console.error("AudioEncoder error", e);
+            throw new Error("WebM Audio encoding failed: " + e.message);
         }
     });
 
-    if (endingVideoElement) {
-        endingVideoElement.currentTime = 0;
-        endingVideoElement.play().catch(e => console.warn("Failed to start ending video for WebM", e));
+    audioEncoder.configure({
+        codec: 'opus',
+        numberOfChannels: 2,
+        sampleRate: 48000,
+        bitrate: 128000 // 128 kbps Opus is very high quality
+    });
+
+    // --- Audio Encoding ---
+    onProgress("Encoding audio...");
+    const numberOfChannels = audioBuffer.numberOfChannels;
+    const length = audioBuffer.length;
+    const sampleRate = audioBuffer.sampleRate;
+
+    const interleaved = new Float32Array(length * numberOfChannels);
+    for (let channel = 0; channel < numberOfChannels; channel++) {
+        const channelData = audioBuffer.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+            interleaved[i * numberOfChannels + channel] = channelData[i];
+        }
     }
 
-    const startTime = Date.now();
+    const chunkSize = sampleRate; // 1 second chunks
+    for (let i = 0; i < length; i += chunkSize) {
+        const end = Math.min(i + chunkSize, length);
+        const frameCount = end - i;
+        const chunkData = interleaved.slice(i * numberOfChannels, end * numberOfChannels);
+
+        const audioData = new AudioData({
+            format: 'f32',
+            sampleRate: sampleRate,
+            numberOfFrames: frameCount,
+            numberOfChannels: numberOfChannels,
+            timestamp: (i / sampleRate) * 1_000_000, // microseconds
+            data: chunkData
+        });
+
+        audioEncoder.encode(audioData);
+        audioData.close();
+    }
+    await audioEncoder.flush();
+
+    // --- Video Encoding ---
+    const frameDuration = 1 / fps;
+    const totalFrames = Math.ceil(totalDuration * fps);
     const subtitleLayouts = precomputeSubtitleLayouts(ctx, assets, canvas.width);
 
-    const drawLoop = async () => {
-        if (!checkCancelled() || recorder.state === 'inactive') return;
+    console.log(`Starting Video Render: Total Frames=${totalFrames}, Duration=${totalDuration}s`);
 
-        const elapsedTime = (Date.now() - startTime) / 1000;
-        if (elapsedTime >= totalDuration) {
-            recorder.stop();
-            return;
+    for (let i = 0; i < totalFrames; i++) {
+        if (!checkCancelled()) {
+            console.log("WebM Export cancelled");
+            break;
         }
 
-        drawFrame(
-            ctx, canvas.width, canvas.height, elapsedTime,
-            assets, endingVideoElement, totalScenesDuration,
-            subtitleLayouts, showSubtitles
-        );
+        const time = i * frameDuration;
+        if (i % 30 === 0) onProgress(`Rendering video (${Math.round((i / totalFrames) * 100)}%)...`);
 
-        onProgress(`Rendering (${Math.round((elapsedTime / totalDuration) * 100)}%)...`);
-        requestAnimationFrame(drawLoop);
-    };
+        await seekVideoElementsToTime(time, assets, endingVideoElement, totalScenesDuration);
 
-    drawLoop();
-    await finished;
+        try {
+            drawFrame(ctx, canvas.width, canvas.height, time, assets, endingVideoElement, totalScenesDuration, subtitleLayouts, showSubtitles);
+        } catch (drawErr) {
+            console.error(`Error drawing frame ${i}`, drawErr);
+        }
+
+        const frame = new VideoFrame(canvas, {
+            timestamp: time * 1_000_000 // microseconds
+        });
+
+        // Keyframe every 2 seconds (assuming 60fps)
+        const keyFrame = i % (fps * 2) === 0;
+        videoEncoder.encode(frame, { keyFrame });
+        frame.close();
+
+        // Prevent memory overload by checking queue
+        if (videoEncoder.encodeQueueSize > 5) {
+            await new Promise(r => setTimeout(r, 10)); // Tiny yield
+        }
+    }
 
     if (checkCancelled()) {
-        return new Blob(chunks, { type: 'video/webm' });
+        await videoEncoder.flush();
+        muxer.finalize();
+        const { buffer } = muxer.target;
+        return new Blob([buffer], { type: 'video/webm' });
     } else {
         return null;
     }
