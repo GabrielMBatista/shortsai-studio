@@ -149,6 +149,8 @@ export interface Scene {
     position?: 'top' | 'center' | 'bottom';
     size?: 'small' | 'medium' | 'large';
   }; // Config de estilo do texto
+
+  effectConfig?: import('../utils/video-effects/canvasEffects').EffectConfig;
 }
 
 export type TTSProvider = 'gemini' | 'elevenlabs' | 'groq';

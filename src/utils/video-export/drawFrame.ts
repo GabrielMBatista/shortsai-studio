@@ -1,5 +1,6 @@
 import { SUBTITLE_STYLES } from '../../utils/styleConstants';
 import { SubtitleLayout } from '../../utils/videoUtils';
+import { applyVignette, applyGrain, applyScanlines, applyFlash, applyShake, applyGlitch } from '../video-effects/canvasEffects';
 
 export const drawFrame = (
     ctx: CanvasRenderingContext2D,
@@ -100,6 +101,12 @@ export const drawFrame = (
         asset.video.pause();
     }
 
+    // --- APPLY SHAKE (Transform Context) ---
+    if (asset.effectConfig?.shake) {
+        ctx.save();
+        applyShake(ctx, asset.effectConfig.shake.intensity);
+    }
+
     if (hasVideo) {
         const vw = asset.video.videoWidth;
         const vh = asset.video.videoHeight;
@@ -198,6 +205,30 @@ export const drawFrame = (
             const pvY = (h - pvH) / 2;
 
             ctx.drawImage(pv, pvX, pvY, pvW, pvH);
+            ctx.restore();
+        }
+    }
+
+    // --- RESTORE SHAKE ---
+    if (asset.effectConfig?.shake) {
+        ctx.restore();
+    }
+
+    // --- VISUAL EFFECTS OVERLAYS ---
+    if (asset.effectConfig) {
+        const { vignette, grain, scanlines, sepia, glitch, flash } = asset.effectConfig;
+
+        if (flash) applyFlash(ctx, w, h, flash.duration); // Using duration as opacity/intensity here or needs mapping? Wait.
+        if (glitch) applyGlitch(ctx, w, h, glitch.intensity, glitch.seed);
+        if (vignette) applyVignette(ctx, w, h, vignette.strength);
+        if (grain) applyGrain(ctx, w, h, grain.intensity);
+        if (scanlines) applyScanlines(ctx, w, h, scanlines.intensity, scanlines.spacing);
+
+        if (sepia && sepia.intensity > 0) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'color';
+            ctx.fillStyle = `rgba(162, 118, 76, ${sepia.intensity})`;
+            ctx.fillRect(0, 0, w, h);
             ctx.restore();
         }
     }

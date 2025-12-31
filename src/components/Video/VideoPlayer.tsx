@@ -10,6 +10,7 @@ import { SafeVideo } from '../Common/SafeVideo';
 import { ScheduleUploadModal } from './ScheduleUploadModal';
 import { CinematicTextOverlay } from './CinematicTextOverlay';
 import { ParticleOverlay } from './ParticleOverlay';
+import { VideoEffectsOverlay } from './VideoEffectsOverlay';
 
 interface VideoPlayerProps {
   scenes: Scene[];
@@ -430,6 +431,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             show={isPlaying}
           />
         )}
+
+        {/* Video Effects (Vignette, Grain, etc) */}
+        <VideoEffectsOverlay
+          config={activeScene.effectConfig}
+          isPlaying={isPlaying}
+        />
 
         {/* Subtitles */}
         {showSubtitles && activeScene.narration && (

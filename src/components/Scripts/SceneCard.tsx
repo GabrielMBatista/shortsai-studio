@@ -17,6 +17,7 @@ import { apiFetch } from '../../services/api';
 import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { CinematicTextEditor } from '../Common/CinematicTextEditor';
 import { AudioEffectsEditor } from '../Common/AudioEffectsEditor';
+import { VideoEffectsEditor } from '../Common/VideoEffectsEditor';
 
 interface SceneCardProps {
     scene: Scene;
@@ -778,6 +779,11 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                                 sceneIndex={sceneIndex}
                                 sceneDuration={scene.durationSeconds || 5}
                                 audioEffects={scene.audioEffects as any}
+                                onUpdate={(updates) => onUpdateScene(sceneIndex, updates)}
+                            />
+                            <VideoEffectsEditor
+                                sceneIndex={sceneIndex}
+                                effectConfig={scene.effectConfig}
                                 onUpdate={(updates) => onUpdateScene(sceneIndex, updates)}
                             />
                         </div>

@@ -49,6 +49,7 @@ export interface Scene {
   audioUrl?: string; // Blob URL for WAV
   audioStatus: 'pending' | 'loading' | 'completed' | 'error';
   videoStatus: 'pending' | 'loading' | 'completed' | 'error';
+  effectConfig?: import('../utils/video-effects/canvasEffects').EffectConfig;
 }
 
 export type TTSProvider = 'gemini' | 'elevenlabs';
