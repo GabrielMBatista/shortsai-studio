@@ -387,10 +387,11 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
             });
 
             if (data && (data.success || data.id)) {
-                // Determine updates based on the ASSET type, not the current scene type
-                const isVideo = asset.type === 'VIDEO';
-                const isImage = asset.type === 'IMAGE';
-                const isAudio = asset.type === 'AUDIO';
+                // Determine updates based on the ASSET type, checked robustly
+                const assetType = (asset.type || '').toUpperCase();
+                const isVideo = assetType === 'VIDEO';
+                const isImage = assetType === 'IMAGE';
+                const isAudio = assetType === 'AUDIO';
 
                 const updates: Partial<Scene> = {};
 
@@ -482,6 +483,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
 
                     {showVideo && hasVideo ? (
                         <SafeVideo
+                            key={mediaData.videoUrl || scene.videoUrl}
                             src={mediaData.videoUrl || scene.videoUrl || ''}
                             poster={mediaData.imageUrl || scene.imageUrl || undefined}
                             className="w-full h-full object-cover"

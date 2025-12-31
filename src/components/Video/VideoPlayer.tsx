@@ -206,6 +206,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   }, [activeTour]);
 
   const [volume, setVolume] = useState(0.8);
+  const [musicVolume, setMusicVolume] = useState(0.12); // Default bg music volume
 
   // Hook for Download Logic
   const {
@@ -215,7 +216,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     downloadProgress,
     downloadError,
     eta
-  } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, endingVideoFile, showSubtitles, fps: exportFps, resolution: exportResolution });
+  } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, endingVideoFile, showSubtitles, fps: exportFps, resolution: exportResolution, bgMusicVolume: musicVolume });
 
 
   // Reset state when scenes change
@@ -235,12 +236,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   // Set music volume
   useEffect(() => {
     if (musicRef.current) {
-      musicRef.current.volume = 0.3;
+      musicRef.current.volume = musicVolume;
     }
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
-  }, [bgMusicUrl, volume]);
+  }, [bgMusicUrl, volume, musicVolume]);
 
   const startPlayback = () => setIsPlaying(true);
   const pausePlayback = () => setIsPlaying(false);
@@ -740,19 +741,42 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
         <div className="w-px h-6 bg-white/10 mx-1"></div>
         <button id="btn-toggle-subs" onClick={() => setShowSubtitles(!showSubtitles)} className={`p-3 rounded-full transition-colors ${showSubtitles ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>{showSubtitles ? <Captions className="w-5 h-5" /> : <CaptionsOff className="w-5 h-5" />}</button>
 
-        <div className="flex items-center gap-2 px-2 group">
-          <button onClick={() => setVolume(volume === 0 ? 0.8 : 0)} className={`p-1 transition-colors rounded-full hover:bg-white/10 ${volume > 0 ? 'text-white' : 'text-slate-600'}`}>
-            {volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-          </button>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.1"
-            value={volume}
-            onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-16 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-          />
+        <div className="flex items-center gap-4 px-2 translate-y-[1px]">
+          {/* Narration Volume */}
+          <div className="flex items-center gap-2 group" title="Narration Volume">
+            <button onClick={() => setVolume(volume === 0 ? 0.8 : 0)} className={`p-1 transition-colors rounded-full hover:bg-white/10 ${volume > 0 ? 'text-white' : 'text-slate-600'}`}>
+              {volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="w-16 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            />
+          </div>
+
+          {/* Music Volume (Only if music exists) */}
+          {bgMusicUrl && (
+            <div className="flex items-center gap-2 group border-l border-white/10 pl-4" title="Music Volume">
+              <button onClick={() => setMusicVolume(musicVolume === 0 ? 0.12 : 0)} className={`p-1 transition-colors rounded-full hover:bg-white/10 ${musicVolume > 0 ? 'text-indigo-300' : 'text-slate-600'}`}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="0.5" // Cap music volume to 50% max usually
+                step="0.01"
+                value={musicVolume}
+                onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+                className="w-16 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-400"
+              />
+            </div>
+          )}
         </div>
       </div>
 

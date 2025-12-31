@@ -14,9 +14,10 @@ interface UseVideoExportProps {
     showSubtitles?: boolean;
     fps?: 30 | 60;
     resolution?: '1080p' | '720p';
+    bgMusicVolume?: number;
 }
 
-export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, showSubtitles = true, fps = 60, resolution = '1080p' }: UseVideoExportProps) => {
+export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, showSubtitles = true, fps = 60, resolution = '1080p', bgMusicVolume }: UseVideoExportProps) => {
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState("");
     const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -133,7 +134,7 @@ export const useVideoExport = ({ scenes, bgMusicUrl, title, endingVideoFile, sho
             const EXTRA_SILENCE = endingVideoDuration === 0 ? 1.0 : 0;
             const totalDuration = totalScenesDuration + endingVideoDuration + EXTRA_SILENCE;
 
-            const renderedAudioBuffer = await mixAudio(assets, bgMusicBuffer, endingAudioBuffer, totalScenesDuration, totalDuration);
+            const renderedAudioBuffer = await mixAudio(assets, bgMusicBuffer, endingAudioBuffer, totalScenesDuration, totalDuration, { volume: bgMusicVolume });
 
             // 5. Export Branching
             let blob: Blob | null = null;

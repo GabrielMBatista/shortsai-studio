@@ -183,13 +183,14 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
     };
 
     const handleSelect = async (asset: AssetMatch) => {
+        if (applying) return; // Prevent double clicks
         setApplying(asset.id);
         try {
             await onSelectAsset(asset);
             onClose();
         } catch (error) {
             console.error('Failed to select asset:', error);
-            throw error;
+            // Don't close on error so user can try again?
         } finally {
             setApplying(null);
         }

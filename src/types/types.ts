@@ -89,6 +89,12 @@ export interface VideoProject {
   includeMusic?: boolean;
   bgMusicPrompt?: string;
   bgMusicUrl?: string;
+  bgMusicVolume?: number;
+  bgMusicConfig?: {
+    volume?: number;
+    loop?: boolean;
+    // Add other config options here as needed
+  };
   bgMusicStatus?: 'pending' | 'loading' | 'completed' | 'error';
 }
 

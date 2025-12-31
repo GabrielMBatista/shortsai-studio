@@ -3,7 +3,8 @@ export const mixAudio = async (
     bgMusicBuffer: AudioBuffer | null,
     endingAudioBuffer: AudioBuffer | null,
     totalScenesDuration: number,
-    totalDuration: number
+    totalDuration: number,
+    bgMusicConfig?: { volume?: number }
 ): Promise<AudioBuffer> => {
     // Create Offline Context
     const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalDuration * 48000), 48000);
@@ -57,14 +58,15 @@ export const mixAudio = async (
         musicSource.loop = true;
 
         const musicGain = offlineCtx.createGain();
-        musicGain.gain.value = 0.12;
+        const musicVolume = bgMusicConfig?.volume ?? 0.12;
+        musicGain.gain.value = musicVolume;
 
         musicSource.connect(musicGain);
         musicGain.connect(masterGain);
 
         musicSource.start(0);
         const musicEnd = totalScenesDuration;
-        musicGain.gain.setValueAtTime(0.12, musicEnd - 1.0);
+        musicGain.gain.setValueAtTime(musicVolume, musicEnd - 1.0);
         musicGain.gain.linearRampToValueAtTime(0, musicEnd);
         musicSource.stop(musicEnd + 0.5);
     }
