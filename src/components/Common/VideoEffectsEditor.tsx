@@ -59,7 +59,7 @@ export const VideoEffectsEditor: React.FC<VideoEffectsEditorProps> = ({
     const activeCount = Object.keys(effectConfig || {}).length;
 
     return (
-        <div className="relative">
+        <div className="relative flex items-center gap-2">
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -76,6 +76,65 @@ export const VideoEffectsEditor: React.FC<VideoEffectsEditorProps> = ({
                         : 'FX'}
                 </span>
             </button>
+
+            {/* Active Effects Badges */}
+            {activeCount > 0 && (
+                <div className="flex -space-x-2 hover:space-x-1 transition-all">
+                    {Object.keys(effectConfig || {}).map((key) => {
+                        let icon = <Sparkles className="w-3 h-3" />;
+                        let colorClass = "bg-slate-700 border-slate-600";
+                        let label = key;
+
+                        switch (key) {
+                            case 'vignette':
+                                icon = <div className="w-2.5 h-2.5 rounded-full bg-indigo-400" />;
+                                colorClass = "bg-indigo-900/50 border-indigo-500/50";
+                                label = "Vignette";
+                                break;
+                            case 'grain':
+                                icon = <div className="w-2.5 h-2.5 rounded-full bg-amber-400 opacity-50 border border-amber-200" />;
+                                colorClass = "bg-amber-900/50 border-amber-500/50";
+                                label = "Film Grain";
+                                break;
+                            case 'scanlines':
+                                icon = <MonitorPlay className="w-3 h-3 text-teal-400" />;
+                                colorClass = "bg-teal-900/50 border-teal-500/50";
+                                label = "Scanlines";
+                                break;
+                            case 'sepia':
+                                icon = <div className="w-2.5 h-2.5 rounded-full bg-orange-400" />;
+                                colorClass = "bg-orange-900/50 border-orange-500/50";
+                                label = "Sepia";
+                                break;
+                            case 'shake':
+                                icon = <Activity className="w-3 h-3 text-red-400" />;
+                                colorClass = "bg-red-900/50 border-red-500/50";
+                                label = "Camera Shake";
+                                break;
+                            case 'glitch':
+                                icon = <Zap className="w-3 h-3 text-cyan-400" />;
+                                colorClass = "bg-cyan-900/50 border-cyan-500/50";
+                                label = "Glitch";
+                                break;
+                            case 'flash':
+                                icon = <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />;
+                                colorClass = "bg-slate-700 border-white/50";
+                                label = "Flash";
+                                break;
+                        }
+
+                        return (
+                            <div key={key}
+                                className={`w-6 h-6 rounded-full border flex items-center justify-center shadow-sm relative z-0 hover:z-10 hover:scale-110 transition-all cursor-help ${colorClass}`}
+                                title={label}
+                            >
+                                {icon}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
 
             {/* Editor Modal */}
             {isOpen && (

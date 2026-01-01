@@ -18,6 +18,7 @@ import { useAssetUpload } from '../../hooks/useAssetUpload';
 import { CinematicTextEditor } from '../Common/CinematicTextEditor';
 import { AudioEffectsEditor } from '../Common/AudioEffectsEditor';
 import { VideoEffectsEditor } from '../Common/VideoEffectsEditor';
+import { VideoEffectsOverlay } from '../Video/VideoEffectsOverlay';
 
 interface SceneCardProps {
     scene: Scene;
@@ -548,8 +549,14 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                         <div className="absolute inset-0 flex items-center justify-center text-slate-700 bg-slate-900"><ImageIcon className="w-16 h-16 opacity-10" /></div>
                     )}
 
+                    {/* EFFECTS OVERLAY (Real-time Preview) */}
+                    <VideoEffectsOverlay
+                        config={scene.effectConfig}
+                        isPlaying={true}
+                    />
+
                     {/* Top Left: Drag & Scene Info */}
-                    <div className="absolute top-2 left-2 flex gap-2 items-center z-10">
+                    <div className="absolute top-2 left-2 flex gap-2 items-center z-30">
                         {dragHandleProps && (
                             <div {...dragHandleProps} className="bg-black/60 hover:bg-slate-700 backdrop-blur p-1 rounded-md text-slate-400 hover:text-white cursor-grab active:cursor-grabbing border border-white/10 shadow-sm transition-colors">
                                 <GripVertical className="w-4 h-4" />
@@ -561,7 +568,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     </div>
 
                     {/* Top Right: Delete */}
-                    <div className="absolute top-2 right-2 z-10">
+                    <div className="absolute top-2 right-2 z-30">
                         <button
                             onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => { e.stopPropagation(); onRemoveScene(sceneIndex); }}
@@ -573,7 +580,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     </div>
 
                     {/* Bottom Left: Media Toggles */}
-                    <div className="absolute bottom-2 left-2 flex gap-2 items-center z-10">
+                    <div className="absolute bottom-2 left-2 flex gap-2 items-center z-30">
                         {canToggle && (
                             <button
                                 onClick={(e) => {
@@ -596,9 +603,10 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, sceneIndex, onRegenerateIm
                     </div>
 
                     {/* Bottom Right: Controls & Duration */}
-                    <div className="absolute bottom-2 right-2 flex gap-2 items-center z-10">
+                    <div className="absolute bottom-2 right-2 flex gap-2 items-center z-30">
                         {/* Character Picker Trigger */}
                         <div className="relative">
+
                             <button
                                 onClick={(e) => { e.stopPropagation(); setIsPickerOpen(!isPickerOpen); }}
                                 className={`bg-black/60 hover:bg-indigo-600 backdrop-blur p-1.5 rounded-md text-white transition-all border border-white/10 shadow-sm ${isPickerOpen ? 'bg-indigo-600 border-indigo-500 ring-2 ring-indigo-400/50' : 'cursor-pointer hover:scale-105'}`}

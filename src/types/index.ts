@@ -48,7 +48,7 @@ export type WorkflowAction =
   | 'skip_scene';
 
 // Feature Flags
-export const IS_SUNO_ENABLED = Boolean(process.env.ENABLE_SUNO);
+export const IS_SUNO_ENABLED = true; // Enabled by default as per user request
 
 
 // Force Demo Login if explicitly set
