@@ -38,12 +38,40 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
     const [filteredAssets, setFilteredAssets] = useState<AssetMatch[]>([]);
     const [loading, setLoading] = useState(false);
     const [applying, setApplying] = useState<string | null>(null);
+    const [isCataloging, setIsCataloging] = useState(false);
+    const [catalogResult, setCatalogResult] = useState<any>(null);
     const [totalStats, setTotalStats] = useState({ images: 0, videos: 0 });
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [filterTypes, setFilterTypes] = useState<('VIDEO' | 'IMAGE')[]>(
         assetType === 'AUDIO' ? ['VIDEO', 'IMAGE'] : [assetType]
     );
+
+    // Catalog existing assets
+    const handleCatalog = async () => {
+        if (isCataloging) return;
+        setIsCataloging(true);
+        setCatalogResult(null);
+
+        try {
+            const response = await apiFetch('/assets/catalog', {
+                method: 'POST'
+            });
+
+            if (response?.success) {
+                setCatalogResult(response.data);
+                // Refresh assets after cataloging
+                fetchAssets();
+            } else {
+                alert('Erro ao catalogar assets: ' + (response?.error || 'Desconhecido'));
+            }
+        } catch (error: any) {
+            console.error('Failed to catalog assets:', error);
+            alert('Erro ao catalogar assets: ' + error.message);
+        } finally {
+            setIsCataloging(false);
+        }
+    };
 
     // Debounce search query
     useEffect(() => {
@@ -202,27 +230,63 @@ export const AssetLibraryModal: React.FC<AssetLibraryModalProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl shadow-indigo-500/10">
                 {/* Header */}
-                <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
-                    <div>
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            <span className="p-1.5 bg-indigo-500/20 rounded-lg text-indigo-400">
-                                🔍
-                            </span>
-                            {t('asset_library.title', 'Biblioteca de Ativos')}
-                            <span className="ml-2 text-sm font-normal text-zinc-400">
-                                ({totalStats.images} imagens • {totalStats.videos} vídeos)
-                            </span>
-                        </h2>
-                        <p className="text-zinc-400 text-sm mt-1">
-                            {t('asset_library.subtitle', 'Reutilize conteúdos similares e economize créditos')}
-                        </p>
+                <div className="p-6 border-b border-zinc-800 bg-zinc-900/50">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <span className="p-1.5 bg-indigo-500/20 rounded-lg text-indigo-400">
+                                    🔍
+                                </span>
+                                {t('asset_library.title', 'Biblioteca de Ativos')}
+                                <span className="ml-2 text-sm font-normal text-zinc-400">
+                                    ({totalStats.images} imagens • {totalStats.videos} vídeos)
+                                </span>
+                            </h2>
+                            <p className="text-zinc-400 text-sm mt-1">
+                                {t('asset_library.subtitle', 'Reutilize conteúdos similares e economize créditos')}
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {/* Catalog Button */}
+                            <button
+                                onClick={handleCatalog}
+                                disabled={isCataloging}
+                                className="px-3 py-1.5 text-xs font-medium bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            >
+                                {isCataloging ? (
+                                    <>
+                                        <span className="animate-spin">⏳</span>
+                                        Catalogando...
+                                    </>
+                                ) : (
+                                    <>
+                                        📦 Catalogar Assets Antigos
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={onClose}
+                                className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-white"
-                    >
-                        ✕
-                    </button>
+
+                    {/* Catalog Result Notification */}
+                    {catalogResult && (
+                        <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                            <p className="text-green-400 text-sm font-medium">
+                                ✅ Catalogação concluída com sucesso!
+                            </p>
+                            <p className="text-green-300/70 text-xs mt-1">
+                                {catalogResult.catalogedImages} imagens • {catalogResult.catalogedVideos} vídeos • {catalogResult.catalogedAudios} áudios
+                                {' '}({catalogResult.total} total)
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Search Bar & Filters */}

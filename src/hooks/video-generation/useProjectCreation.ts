@@ -321,42 +321,76 @@ export const useProjectCreation = (
             // Check if parsing result is a pre-generated script
             // Use backend normalization to handle ANY persona format variation
             try {
-                console.log("Attempting to normalize JSON using backend normalizer...");
+                console.log("[DEBUG] Attempting to normalize JSON using backend normalizer...");
+                console.log("[DEBUG] Parsed JSON keys:", Object.keys(parsed));
 
-                const normalizeResponse = await fetch('/api/scripts/normalize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        scriptJson: parsed,
-                        fallbackTopic: topic
-                    })
-                });
+                // CRITICAL: Check if already normalized by frontend
+                if (parsed._isNormalized && parsed.scenes && Array.isArray(parsed.scenes)) {
+                    console.log("✅ [DEBUG] JSON already normalized by frontend, using directly");
+                    isPreGenerated = true;
+                    scenes = parsed.scenes;
 
-                if (normalizeResponse.ok) {
-                    const { success, normalized } = await normalizeResponse.json();
+                    metadata = {
+                        title: parsed.title || parsed.videoTitle || "Untitled Project",
+                        description: parsed.description || parsed.videoDescription || "",
+                        shortsHashtags: parsed.shortsHashtags || [],
+                        tiktokText: parsed.tiktokText || "",
+                        tiktokHashtags: parsed.tiktokHashtags || [],
+                        fullMetadata: parsed.metadata || parsed
+                    };
 
-                    if (success && normalized && normalized.scenes && normalized.scenes.length > 0) {
-                        console.log(`✅ Backend normalized successfully: ${normalized.scenes.length} scenes detected`);
-                        isPreGenerated = true;
-                        scenes = normalized.scenes;
-
-                        metadata = {
-                            title: normalized.videoTitle || "Untitled Project",
-                            description: normalized.videoDescription || "",
-                            shortsHashtags: normalized.shortsHashtags || [],
-                            tiktokText: normalized.tiktokText || "",
-                            tiktokHashtags: normalized.tiktokHashtags || [],
-                            fullMetadata: normalized.metadata
-                        };
-
-                        // Keep original JSON in topic - don't overwrite with just the title
-                    }
+                    console.log("[DEBUG] Using pre-normalized metadata:", metadata);
                 } else {
-                    console.warn("Backend normalization failed, will proceed with AI generation");
-                }
+                    // Not pre-normalized, call backend
+
+                    const normalizeResponse = await fetch('/api/scripts/normalize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            scriptJson: parsed,
+                            fallbackTopic: topic
+                        })
+                    });
+
+                    console.log("[DEBUG] Normalize response status:", normalizeResponse.status, normalizeResponse.ok);
+
+                    if (normalizeResponse.ok) {
+                        const responseData = await normalizeResponse.json();
+                        console.log("[DEBUG] Normalize response data:", JSON.stringify(responseData, null, 2));
+
+                        const { success, normalized } = responseData;
+
+                        if (success && normalized && normalized.scenes && normalized.scenes.length > 0) {
+                            console.log(`✅ [DEBUG] Backend normalized successfully: ${normalized.scenes.length} scenes detected`);
+                            console.log(`[DEBUG] Normalized videoTitle:`, normalized.videoTitle);
+                            console.log(`[DEBUG] Normalized videoDescription:`, normalized.videoDescription);
+                            console.log(`[DEBUG] Normalized metadata:`, normalized.metadata);
+
+                            isPreGenerated = true;
+                            scenes = normalized.scenes;
+
+                            metadata = {
+                                title: normalized.videoTitle || "Untitled Project",
+                                description: normalized.videoDescription || "",
+                                shortsHashtags: normalized.shortsHashtags || [],
+                                tiktokText: normalized.tiktokText || "",
+                                tiktokHashtags: normalized.tiktokHashtags || [],
+                                fullMetadata: normalized.metadata
+                            };
+
+                            console.log("[DEBUG] Final metadata object:", metadata);
+                            // Keep original JSON in topic - don't overwrite with just the title
+                        } else {
+                            console.warn("[DEBUG] Normalization returned invalid data:", { success, hasNormalized: !!normalized, hasScenes: normalized?.scenes?.length });
+                        }
+                    } else {
+                        const errorText = await normalizeResponse.text();
+                        console.warn("[DEBUG] Backend normalization HTTP error:", normalizeResponse.status, errorText);
+                    }
+                } // end of else block for _isNormalized check
             } catch (normErr) {
-                console.warn("Failed to normalize with backend:", normErr);
+                console.error("[DEBUG] Failed to normalize with backend:", normErr);
                 // Fall through to AI generation
             }
         } catch (e) {

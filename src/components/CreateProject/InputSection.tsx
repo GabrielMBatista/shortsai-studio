@@ -254,6 +254,7 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
                 }
             }
 
+
             if (json) {
                 try {
                     // Use apiFetch for consistency and to avoid double /api
@@ -267,11 +268,20 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
 
                     if (data && data.success && data.normalized && data.normalized.scenes && data.normalized.scenes.length > 0) {
                         console.log(`✅ Backend detected valid script: ${data.normalized.scenes.length} scenes`);
-                        setBulkProjects([data.normalized]);
+
+                        // CRITICAL: Mark as already normalized to prevent re-normalization
+                        const normalizedProject = {
+                            ...data.normalized,
+                            _isNormalized: true,  // Flag to skip re-normalization
+                            title: data.normalized.videoTitle,  // Preserve title
+                            description: data.normalized.videoDescription  // Preserve description
+                        };
+
+                        setBulkProjects([normalizedProject]);
                         showToast(t('input.json_detected', { count: 1 }), 'success');
 
                         // Auto-duration logic
-                        handleAutoDuration(data.normalized);
+                        handleAutoDuration(normalizedProject);
                         return;
                     }
                 } catch (normErr) {

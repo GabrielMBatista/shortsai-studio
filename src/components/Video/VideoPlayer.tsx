@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Scene } from '../../types';
-import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer, Clock, UploadCloud } from 'lucide-react';
+import { Play, Pause, SkipBack, X, Download, VolumeX, Volume2, Loader2, Captions, CaptionsOff, AlertTriangle, Timer, Clock, UploadCloud, Music } from 'lucide-react';
 import { useVideoExport } from '../../hooks/useVideoExport';
 import SubtitleOverlay from './SubtitleOverlay';
 import { useTranslation } from 'react-i18next';
@@ -181,6 +181,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [includeEndingVideo, setIncludeEndingVideo] = useState(false);
   const [endingVideoFile, setEndingVideoFile] = useState<File | null>(null);
+  const [customMusicFile, setCustomMusicFile] = useState<File | null>(null);
+  const [customMusicUrl, setCustomMusicUrl] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<'mp4' | 'webm'>('mp4');
   const [exportResolution, setExportResolution] = useState<'1080p' | '720p'>('1080p');
   const [exportFps, setExportFps] = useState<30 | 60>(60);
@@ -209,6 +211,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
   const [volume, setVolume] = useState(0.8);
   const [musicVolume, setMusicVolume] = useState(0.12); // Default bg music volume
 
+  // Handle custom music file upload
+  useEffect(() => {
+    if (customMusicFile) {
+      const url = URL.createObjectURL(customMusicFile);
+      setCustomMusicUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setCustomMusicUrl(null);
+    }
+  }, [customMusicFile]);
+
+  // Use custom music if uploaded, otherwise use project's bg music
+  const effectiveBgMusicUrl = customMusicUrl || bgMusicUrl;
+
   // Hook for Download Logic
   const {
     startExport,
@@ -217,7 +233,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
     downloadProgress,
     downloadError,
     eta
-  } = useVideoExport({ scenes: validScenes, bgMusicUrl, title, endingVideoFile, showSubtitles, fps: exportFps, resolution: exportResolution, bgMusicVolume: musicVolume });
+  } = useVideoExport({ scenes: validScenes, bgMusicUrl: effectiveBgMusicUrl, title, endingVideoFile, showSubtitles, fps: exportFps, resolution: exportResolution, bgMusicVolume: musicVolume });
 
 
   // Reset state when scenes change
@@ -416,10 +432,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
             }}
           />
         )}
-        {bgMusicUrl && (
+        {effectiveBgMusicUrl && (
           <audio
             ref={musicRef}
-            src={bgMusicUrl}
+            src={effectiveBgMusicUrl}
             loop
           />
         )}
@@ -479,7 +495,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           <>
             {/* Dark Overlay with Export Form */}
             <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center text-white p-6 animate-fade-in-up">
-              <div className="flex flex-col items-center text-center relative">
+              <div className="flex flex-col items-center text-center relative w-full">
                 <button
                   onClick={() => setShowMobileTips(true)}
                   className="xl:hidden absolute -top-12 -right-4 p-3 bg-indigo-500 hover:bg-indigo-600 rounded-full transition-all shadow-[0_0_15px_rgba(99,102,241,0.6)] animate-pulse z-50"
@@ -611,7 +627,47 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
                   )}
                 </div>
 
-                <div className="flex gap-3 w-full max-w-sm">
+                {/* Custom Background Music Upload */}
+                <div id="video-export-custom-music" className="w-full max-w-sm mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                      <Music className="w-4 h-4 text-indigo-400" />
+                      {t('video_player.custom_music', 'Custom Background Music')}
+                    </label>
+                  </div>
+
+                  <div className="relative group">
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => setCustomMusicFile(e.target.files?.[0] || null)}
+                      className="block w-full text-xs text-slate-400
+                                    file:mr-3 file:py-2 file:px-3
+                                    file:rounded-lg file:border-0
+                                    file:text-xs file:font-semibold
+                                    file:bg-indigo-500/10 file:text-indigo-400
+                                    hover:file:bg-indigo-500/20
+                                    cursor-pointer border border-slate-700 rounded-lg bg-slate-800/50 p-1"
+                    />
+                    {customMusicFile && (
+                      <button
+                        onClick={() => setCustomMusicFile(null)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-red-400 bg-slate-900 rounded-full"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-2 text-left leading-relaxed">
+                    {customMusicFile
+                      ? `✓ ${customMusicFile.name} (será aplicada em loop)`
+                      : t('video_player.custom_music_hint', 'Upload an audio file to use as background music (loops automatically)')}
+                  </p>
+                </div>
+
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 w-full max-w-sm mt-4">
                   <button
                     onClick={() => setShowExportOptions(false)}
                     className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-semibold transition-colors text-sm"
@@ -766,7 +822,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ scenes, onClose, bgMusicUrl, 
           </div>
 
           {/* Music Volume (Only if music exists) */}
-          {bgMusicUrl && (
+          {effectiveBgMusicUrl && (
             <div className="flex items-center gap-2 group border-l border-white/10 pl-4" title="Music Volume">
               <button onClick={() => setMusicVolume(musicVolume === 0 ? 0.12 : 0)} className={`p-1 transition-colors rounded-full hover:bg-white/10 ${musicVolume > 0 ? 'text-indigo-300' : 'text-slate-600'}`}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
