@@ -331,8 +331,8 @@ export const useProjectCreation = (
                     scenes = parsed.scenes;
 
                     metadata = {
-                        title: parsed.title || parsed.videoTitle || "Untitled Project",
-                        description: parsed.description || parsed.videoDescription || "",
+                        title: parsed.title || parsed.videoTitle || (parsed.meta && parsed.meta.titulo_otimizado) || "Untitled Project",
+                        description: parsed.description || parsed.videoDescription || (parsed.meta && parsed.meta.mensagem_nuclear) || "",
                         shortsHashtags: parsed.shortsHashtags || [],
                         tiktokText: parsed.tiktokText || "",
                         tiktokHashtags: parsed.tiktokHashtags || [],
@@ -343,12 +343,22 @@ export const useProjectCreation = (
                 } else {
                     // Not pre-normalized, call backend
 
+                    // Defensive: ensure we're sending an object, not a string
+                    let scriptJsonToSend = parsed;
+                    if (typeof scriptJsonToSend === 'string') {
+                        try {
+                            scriptJsonToSend = JSON.parse(scriptJsonToSend);
+                        } catch (e) {
+                            console.error('[useProjectCreation] Failed to parse scriptJson string:', e);
+                        }
+                    }
+
                     const normalizeResponse = await fetch('/api/scripts/normalize', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
                         body: JSON.stringify({
-                            scriptJson: parsed,
+                            scriptJson: scriptJsonToSend,
                             fallbackTopic: topic
                         })
                     });
@@ -371,8 +381,8 @@ export const useProjectCreation = (
                             scenes = normalized.scenes;
 
                             metadata = {
-                                title: normalized.videoTitle || "Untitled Project",
-                                description: normalized.videoDescription || "",
+                                title: normalized.videoTitle || (normalized.metadata && normalized.metadata.titulo_otimizado) || "Untitled Project",
+                                description: normalized.videoDescription || (normalized.metadata && normalized.metadata.mensagem_nuclear) || "",
                                 shortsHashtags: normalized.shortsHashtags || [],
                                 tiktokText: normalized.tiktokText || "",
                                 tiktokHashtags: normalized.tiktokHashtags || [],

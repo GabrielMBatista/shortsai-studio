@@ -227,8 +227,17 @@ export const exportProjectContext = async (folderId?: string | null, tag?: strin
     if (tag) params.append('tag', tag);
     params.append('limit', limit.toString());
 
-    // We fetch directly to get the blob/json
     const res = await fetch(`${API_BASE_URL}/projects/export-context?${params.toString()}`);
     if (!res.ok) throw new Error("Export failed");
     return await res.json();
+};
+
+export const deleteAllArchivedProjects = async () => {
+    try {
+        await apiFetch(`/projects?is_archived=true`, { method: 'DELETE' });
+        return true;
+    } catch (e) {
+        console.error("Failed to delete archived projects", e);
+        return false;
+    }
 };

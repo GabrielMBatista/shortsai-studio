@@ -29,7 +29,7 @@ const findTitleDeep = (obj: any, depth: number = 0): string | null => {
 
     // 1. Exact Match Priority Keys (The "Good" Keys)
     const priorityKeys = [
-        'titulo', 'tittle', 'title',
+        'titulo_otimizado', 'titulo', 'tittle', 'title',
         'projectTitle', 'videoTitle', 'scriptTitle', 'headline',
         'id_da_semana', 'tema_dia', 'cronograma', 'weekId',
         'name', 'topic', 'subject'
@@ -45,7 +45,7 @@ const findTitleDeep = (obj: any, depth: number = 0): string | null => {
     // Only at top levels to avoid grabbing random nested noise
     if (depth < 2) {
         for (const key in obj) {
-            const lowerKey = key.toLowerCase();
+            const lowerKey = key.toLowerCase();''
             if ((lowerKey.includes('title') || lowerKey.includes('título') || lowerKey.includes('name')) &&
                 typeof obj[key] === 'string' && isValidTitle(obj[key])) {
                 return obj[key];
@@ -141,7 +141,7 @@ export const extractProjectDescription = (rawDesc: string | null | undefined, fa
             const json = JSON.parse(trimmed);
 
             // 1. Explicit Description Key
-            const found = findValueDeep(json, ['description', 'generatedDescription', 'desc', 'generated_description', 'resumo', 'summary', 'overview', 'caption']);
+            const found = findValueDeep(json, ['description', 'generatedDescription', 'desc', 'generated_description', 'resumo', 'summary', 'overview', 'caption', 'mensagem_nuclear', 'tema_espiritual']);
             if (found && typeof found === 'string' && found.length > 5) return found;
 
             // 2. Aggressive Synthesis

@@ -9,7 +9,7 @@ import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSe
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import ProjectCard from '../Project/ProjectCard';
 import ProjectCardSkeleton from '../Project/ProjectCardSkeleton';
-import { exportProjectContext, patchProjectMetadata, getFolders, createFolder, updateFolder, deleteFolder } from '../../services/.';
+import { exportProjectContext, patchProjectMetadata, getFolders, createFolder, updateFolder, deleteFolder, deleteAllArchivedProjects } from '../../services/.';
 import Pagination from '../Common/Pagination';
 import { extractProjectTitle } from '../../utils/projectUtils';
 
@@ -249,6 +249,22 @@ const Dashboard: React.FC<DashboardProps> = ({
                 delete next[projectId];
                 return next;
             });
+            if (showToast) showToast(t('common.error'), 'error');
+        }
+    };
+
+    const handleClearArchive = async () => {
+        if (!window.confirm("Are you sure you want to delete ALL archived projects?\n\nThis will remove the projects from the database but keep the generated assets (images, audio, etc). This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            await deleteAllArchivedProjects();
+            if (showToast) showToast("All archived projects deleted successfully", 'success');
+            onRefreshProjects();
+            handleRefreshFolders();
+        } catch (e) {
+            console.error(e);
             if (showToast) showToast(t('common.error'), 'error');
         }
     };
@@ -531,6 +547,18 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <Archive className="w-4 h-4" />
                                 {showArchived ? t('dashboard.showing_archived') : t('dashboard.show_archived')}
                             </button>
+
+                            {/* Clear Archive Button */}
+                            {showArchived && (
+                                <button
+                                    onClick={handleClearArchive}
+                                    className="flex items-center gap-2 px-3 py-1 rounded text-sm transition-colors bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 border border-red-500/20 ml-2"
+                                    title={t('dashboard.clear_archive', 'Clear Archive')}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('dashboard.clear_archive', 'Clear Archive')}
+                                </button>
+                            )}
 
                             <div className="ml-auto text-sm text-slate-500">
                                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-indigo-500" /> : t('dashboard.projects_count_plural', { count: filteredProjects.length })}

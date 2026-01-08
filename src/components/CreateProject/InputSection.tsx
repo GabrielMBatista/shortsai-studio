@@ -243,7 +243,8 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
                 error = "Incomplete JSON: Missing closing brace '}'";
             }
 
-            if ((!json || (!json.scenes && !Array.isArray(json) && !json.cronograma)) && firstBracket !== -1 && lastBracket > firstBracket) {
+
+            if ((!json || (!json.scenes && !Array.isArray(json) && !json.cronograma && !json.id_do_roteiro)) && firstBracket !== -1 && lastBracket > firstBracket) {
                 const substring = trimmed.substring(firstBracket, lastBracket + 1);
                 const arrayJson = tryParse(substring);
                 if (Array.isArray(arrayJson)) {
@@ -257,6 +258,8 @@ const InputSection: React.FC<InputSectionProps> = ({ user, onGenerate, isLoading
 
             if (json) {
                 try {
+                    console.log('[InputSection] Sending to /scripts/normalize:', JSON.stringify(json).substring(0, 300));
+
                     // Use apiFetch for consistency and to avoid double /api
                     const data = await apiFetch('/scripts/normalize', {
                         method: 'POST',
