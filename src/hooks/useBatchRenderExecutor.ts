@@ -3,6 +3,7 @@ import { BatchRenderQueue, BatchRenderJob } from '../types/batch-render';
 import { useBackendRender } from './useBackendRender';
 import { VideoProject } from '../types';
 import { getProject } from '../services/.';
+import { apiFetch } from '../services/api';
 
 interface UseBatchRenderExecutorProps {
     queue: BatchRenderQueue;
@@ -48,15 +49,14 @@ export function useBatchRenderExecutor({
                 const formData = new FormData();
                 formData.append('file', currentJob.config.bgMusicFile!);
 
-                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/upload`, {
+                const response = await apiFetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
 
-                if (!response.ok) throw new Error('Failed to upload music file');
+                if (!response.url) throw new Error('Failed to get upload URL');
 
-                const data = await response.json();
-                setBgMusicUrl(data.url);
+                setBgMusicUrl(response.url);
             } catch (error) {
                 console.error('[Batch Render] Failed to upload music:', error);
                 // Continua sem música se falhar
