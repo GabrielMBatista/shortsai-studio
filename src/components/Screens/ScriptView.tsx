@@ -275,7 +275,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
     const [selectedProvider, setSelectedProvider] = useState<TTSProvider>(projectProvider);
     const [selectedVoice, setSelectedVoice] = useState(projectVoice);
     const [selectedLanguage, setSelectedLanguage] = useState(projectLanguage);
-    const [selectedVideoModel, setSelectedVideoModel] = useState(projectVideoModel || 'veo-2.0-generate-001');
+    const [selectedVideoModel, setSelectedVideoModel] = useState(projectVideoModel || 'veo-3.0-fast-generate-001');
     const [selectedAudioModel, setSelectedAudioModel] = useState(projectAudioModel || 'eleven_turbo_v2_5');
     const [selectedAssetReuseStrategy, setSelectedAssetReuseStrategy] = useState<'auto_reuse' | 'no_reuse'>(projectAssetReuseStrategy || 'no_reuse');
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -435,7 +435,7 @@ const ScriptView: React.FC<ScriptViewProps> = ({
         selectedVoice !== projectVoice ||
         selectedProvider !== projectProvider ||
         selectedLanguage !== projectLanguage ||
-        selectedVideoModel !== (projectVideoModel || 'veo-2.0-generate-001') ||
+        selectedVideoModel !== (projectVideoModel || 'veo-3.0-fast-generate-001') ||
         (selectedProvider === 'elevenlabs' && selectedAudioModel !== (projectAudioModel || 'eleven_flash_v2_5'));
 
     return (
