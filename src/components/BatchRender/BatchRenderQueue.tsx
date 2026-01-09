@@ -157,8 +157,8 @@ const BatchRenderQueue: React.FC<BatchRenderQueueProps> = ({
                             <div
                                 key={job.id}
                                 className={`rounded-xl p-4 border transition-all ${isActive
-                                        ? 'bg-indigo-500/10 border-indigo-500/50 shadow-lg shadow-indigo-500/10'
-                                        : 'bg-slate-800 border-slate-700'
+                                    ? 'bg-indigo-500/10 border-indigo-500/50 shadow-lg shadow-indigo-500/10'
+                                    : 'bg-slate-800 border-slate-700'
                                     }`}
                             >
                                 <div className="flex items-start gap-3">
@@ -214,14 +214,13 @@ const BatchRenderQueue: React.FC<BatchRenderQueueProps> = ({
                                     </div>
 
                                     {/* Remove Button */}
-                                    {job.status !== 'rendering' && (
-                                        <button
-                                            onClick={() => onRemoveJob(job.id)}
-                                            className="p-1.5 rounded-lg hover:bg-slate-700 transition-colors group"
-                                        >
-                                            <Trash2 className="w-4 h-4 text-slate-500 group-hover:text-red-400" />
-                                        </button>
-                                    )}
+                                    <button
+                                        onClick={() => onRemoveJob(job.id)}
+                                        className="p-1.5 rounded-lg hover:bg-slate-700 transition-colors group"
+                                        title={t('common.remove')}
+                                    >
+                                        <Trash2 className={`w-4 h-4 ${job.status === 'rendering' ? 'text-indigo-400 group-hover:text-red-400' : 'text-slate-500 group-hover:text-red-400'}`} />
+                                    </button>
                                 </div>
                             </div>
                         );
