@@ -15,6 +15,7 @@ interface FolderListProps {
     onUpdateFolder: (id: string, name?: string, parentId?: string | null, channelId?: string | null) => Promise<void>;
     onDeleteFolder: (id: string) => Promise<void>;
     onLinkToChannel?: (folder: FolderType) => void;
+    onBatchRender?: (folderId: string | null) => void;
     isCollapsed: boolean;
     onToggleCollapse: () => void;
     className?: string;
@@ -32,6 +33,7 @@ const FolderList: React.FC<FolderListProps> = ({
     onUpdateFolder,
     onDeleteFolder,
     onLinkToChannel,
+    onBatchRender,
     isCollapsed,
     onToggleCollapse,
     className,
@@ -183,6 +185,7 @@ const FolderList: React.FC<FolderListProps> = ({
                                     if (!isExpanded) toggleFolder(folder.id);
                                 }}
                                 onLinkToChannel={onLinkToChannel}
+                                onBatchRender={onBatchRender}
                                 setMenuOpenId={setMenuOpenId}
                                 updatingFolderId={updatingFolderId}
                                 getInitials={getInitials}
@@ -378,6 +381,7 @@ const DraggableDroppableFolder: React.FC<{
     onDelete: () => void,
     onAddSubfolder: () => void,
     onLinkToChannel?: (folder: FolderType) => void,
+    onBatchRender?: (folderId: string | null) => void,
     setMenuOpenId: (id: string | null) => void,
     updatingFolderId: string | null,
     getInitials: (n: string) => string,
@@ -385,7 +389,7 @@ const DraggableDroppableFolder: React.FC<{
 }> = ({
     folder, isSelected, isCollapsed, depth, isExpanded, hasChildren, onToggle, onSelect,
     isEditing, editName, onEditNameChange, onEditSubmit, onEditBlur,
-    menuOpenId, onMenuToggle, onRename, onDelete, onAddSubfolder, onLinkToChannel, setMenuOpenId,
+    menuOpenId, onMenuToggle, onRename, onDelete, onAddSubfolder, onLinkToChannel, onBatchRender, setMenuOpenId,
     updatingFolderId, getInitials, t
 }) => {
         // Make it droppable (to receive files OR other folders)
@@ -516,6 +520,19 @@ const DraggableDroppableFolder: React.FC<{
                                                     className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white border-t border-slate-700/50"
                                                 >
                                                     <Youtube className="w-3 h-3" /> Link to Channel
+                                                </button>
+                                            )}
+
+                                            {onBatchRender && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMenuOpenId(null);
+                                                        onBatchRender(folder.id);
+                                                    }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white border-t border-slate-700/50"
+                                                >
+                                                    <Video className="w-3 h-3" /> {t('batch_render.menu_title')}
                                                 </button>
                                             )}
 

@@ -12,6 +12,11 @@ import ProjectCardSkeleton from '../Project/ProjectCardSkeleton';
 import { exportProjectContext, patchProjectMetadata, getFolders, createFolder, updateFolder, deleteFolder, deleteAllArchivedProjects } from '../../services/.';
 import Pagination from '../Common/Pagination';
 import { extractProjectTitle } from '../../utils/projectUtils';
+import BatchRenderModal from '../BatchRender/BatchRenderModal';
+import BatchRenderQueue from '../BatchRender/BatchRenderQueue';
+import { useBatchRender } from '../../hooks/useBatchRender';
+import { useBatchRenderExecutor } from '../../hooks/useBatchRenderExecutor';
+import { BatchRenderConfig } from '../../types/batch-render';
 
 interface DashboardProps {
     user: User;
@@ -74,6 +79,35 @@ const Dashboard: React.FC<DashboardProps> = ({
     const { channels } = useChannels();
     const [linkFolderModalOpen, setLinkFolderModalOpen] = useState(false);
     const [folderLinkTarget, setFolderLinkTarget] = useState<FolderType | null>(null);
+
+    // Batch Render State
+    const [batchRenderModalOpen, setBatchRenderModalOpen] = useState(false);
+    const [batchRenderFolderId, setBatchRenderFolderId] = useState<string | null>(null);
+    const [showBatchQueue, setShowBatchQueue] = useState(false);
+
+    // Batch Render Hook
+    const batchRender = useBatchRender({
+        onJobComplete: (job) => {
+            if (showToast) showToast(`"${job.projectTitle}" renderizado com sucesso!`, 'success');
+        },
+        onJobError: (job, error) => {
+            if (showToast) showToast(`Erro ao renderizar "${job.projectTitle}": ${error}`, 'error');
+        },
+        onQueueComplete: () => {
+            if (showToast) showToast('Todos os vídeos foram renderizados!', 'success');
+        }
+    });
+
+    // Batch Render Executor (processa fila automaticamente)
+    useBatchRenderExecutor({
+        queue: batchRender.queue,
+        currentJob: batchRender.currentJob,
+        projects,
+        markJobAsRendering: batchRender.markJobAsRendering,
+        updateJobProgress: batchRender.updateJobProgress,
+        completeJob: batchRender.completeJob,
+        failJob: batchRender.failJob
+    });
 
 
     const handleCreateFolder = async (name: string, parentId?: string) => {
@@ -329,6 +363,19 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
     };
 
+    const handleBatchRender = (folderId: string | null) => {
+        setBatchRenderFolderId(folderId);
+        setBatchRenderModalOpen(true);
+    };
+
+    const handleBatchRenderSubmit = (selectedProjects: VideoProject[], config: BatchRenderConfig) => {
+        const added = batchRender.addJobs(selectedProjects, config);
+        setShowBatchQueue(true);
+        if (showToast) showToast(`${added} projetos adicionados à fila de render`, 'success');
+        // Auto-start queue
+        setTimeout(() => batchRender.start(), 500);
+    };
+
     const handleRequestPermanentDelete = (projectId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
@@ -409,6 +456,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     onUpdateFolder={handleUpdateFolder}
                     onDeleteFolder={handleDeleteFolder}
                     onLinkToChannel={handleLinkToChannel}
+                    onBatchRender={handleBatchRender}
                     isCollapsed={isSidebarCollapsed}
                     onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                     isLoading={isLoadingFolders}
@@ -697,6 +745,31 @@ const Dashboard: React.FC<DashboardProps> = ({
                     currentChannelId={folderLinkTarget.channel_id}
                     channels={channels}
                     onLink={handleLinkChannelSubmit}
+                />
+            )}
+
+            {/* Batch Render Modal */}
+            {batchRenderModalOpen && (
+                <BatchRenderModal
+                    folderId={batchRenderFolderId}
+                    projects={projects}
+                    onClose={() => setBatchRenderModalOpen(false)}
+                    onSubmit={handleBatchRenderSubmit}
+                />
+            )}
+
+            {/* Batch Render Queue */}
+            {showBatchQueue && batchRender.queue.jobs.length > 0 && (
+                <BatchRenderQueue
+                    queue={batchRender.queue}
+                    currentJob={batchRender.currentJob}
+                    onStart={batchRender.start}
+                    onPause={batchRender.pause}
+                    onResume={batchRender.resume}
+                    onStop={batchRender.stop}
+                    onRemoveJob={batchRender.removeJob}
+                    onClearCompleted={batchRender.clearCompleted}
+                    onClose={() => setShowBatchQueue(false)}
                 />
             )}
         </DndContext>
