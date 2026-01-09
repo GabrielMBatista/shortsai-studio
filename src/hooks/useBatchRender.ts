@@ -76,25 +76,36 @@ export function useBatchRender({ onJobComplete, onJobError, onQueueComplete }: U
             const jobIndex = prev.jobs.findIndex(j => j.id === jobId);
             if (jobIndex === -1) return prev;
 
-            // Não pode remover job em andamento
-            if (prev.currentJobIndex === jobIndex && prev.jobs[jobIndex].status === 'rendering') {
-                return prev;
-            }
-
+            const isCurrentJob = prev.currentJobIndex === jobIndex;
             const newJobs = prev.jobs.filter(j => j.id !== jobId);
             let newCurrentIndex = prev.currentJobIndex;
+            let newIsActive = prev.isActive;
 
             // Ajusta índice se necessário
             if (jobIndex < prev.currentJobIndex) {
                 newCurrentIndex--;
-            } else if (jobIndex === prev.currentJobIndex) {
-                newCurrentIndex = -1;
+            } else if (isCurrentJob) {
+                // Se removeu o job atual (travado), para a fila por segurança
+                // e reseta o executor (ao definir isActive false)
+                newIsActive = false;
+
+                // Se ainda existirem jobs, mantém o índice para o usuário dar play no próximo
+                // Se não existirem mais, reseta para -1
+                if (newJobs.length === 0) {
+                    newCurrentIndex = -1;
+                } else if (newCurrentIndex >= newJobs.length) {
+                    // Se era o último, volta para o anterior ou -1
+                    newCurrentIndex = newJobs.length - 1;
+                }
             }
 
             return {
                 ...prev,
                 jobs: newJobs,
                 currentJobIndex: newCurrentIndex,
+                isActive: newIsActive,
+                // Se removeu o job "travado", garante que isPaused resete também
+                isPaused: isCurrentJob ? false : prev.isPaused
             };
         });
     }, []);
