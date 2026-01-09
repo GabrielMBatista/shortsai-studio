@@ -526,7 +526,7 @@
         "resolution": "Resolution",
         "format": "Video Format",
         "audio_settings": "Audio Settings",
-        "bg_music_url": "Background Music URL",
+        "bg_music_file": "Background Music File",
         "optional": "optional",
         "bg_music_volume": "Music Volume",
         "other_settings": "Other Settings",

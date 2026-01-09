@@ -8,7 +8,7 @@ export interface BatchRenderConfig {
     resolution: '1080p' | '720p';
     format: 'mp4' | 'webm';
     showSubtitles: boolean;
-    bgMusicUrl?: string;
+    bgMusicFile?: File | null;
     bgMusicVolume?: number;
     endingVideoFile?: File | null;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BatchRenderQueue, BatchRenderJob } from '../types/batch-render';
 import { useBackendRender } from './useBackendRender';
 import { VideoProject } from '../types';
@@ -29,17 +29,49 @@ export function useBatchRenderExecutor({
 }: UseBatchRenderExecutorProps) {
     const activeJobRef = useRef<string | null>(null);
     const renderInProgressRef = useRef(false);
+    const [bgMusicUrl, setBgMusicUrl] = useState<string | undefined>();
 
     // Busca o projeto completo para o job atual
     const currentProject = currentJob
         ? projects.find(p => p.id === currentJob.projectId)
         : null;
 
+    // Upload da música de fundo se houver arquivo
+    useEffect(() => {
+        if (!currentJob?.config.bgMusicFile) {
+            setBgMusicUrl(undefined);
+            return;
+        }
+
+        const uploadMusic = async () => {
+            try {
+                const formData = new FormData();
+                formData.append('file', currentJob.config.bgMusicFile!);
+
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Failed to upload music file');
+
+                const data = await response.json();
+                setBgMusicUrl(data.url);
+            } catch (error) {
+                console.error('[Batch Render] Failed to upload music:', error);
+                // Continua sem música se falhar
+                setBgMusicUrl(undefined);
+            }
+        };
+
+        uploadMusic();
+    }, [currentJob?.config.bgMusicFile]);
+
     // Hook de render backend para o projeto atual
     const backendRender = useBackendRender({
         projectId: currentJob?.projectId || '',
         scenes: currentProject?.scenes || [],
-        bgMusicUrl: currentJob?.config.bgMusicUrl,
+        bgMusicUrl,
         endingVideoFile: currentJob?.config.endingVideoFile || null,
         title: currentJob?.projectTitle
     });

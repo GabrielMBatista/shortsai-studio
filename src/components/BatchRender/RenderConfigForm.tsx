@@ -63,8 +63,8 @@ const RenderConfigForm: React.FC<RenderConfigFormProps> = ({
                                         key={fps}
                                         onClick={() => handleChange('fps', fps as 30 | 60)}
                                         className={`px-4 py-2 rounded-lg font-medium transition-all ${config.fps === fps
-                                                ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                            ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                                             }`}
                                     >
                                         {fps} FPS
@@ -84,8 +84,8 @@ const RenderConfigForm: React.FC<RenderConfigFormProps> = ({
                                         key={res}
                                         onClick={() => handleChange('resolution', res as '720p' | '1080p')}
                                         className={`px-4 py-2 rounded-lg font-medium transition-all ${config.resolution === res
-                                                ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                            ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                                             }`}
                                     >
                                         {res}
@@ -105,8 +105,8 @@ const RenderConfigForm: React.FC<RenderConfigFormProps> = ({
                                         key={format}
                                         onClick={() => handleChange('format', format as 'mp4' | 'webm')}
                                         className={`px-4 py-2 rounded-lg font-medium uppercase transition-all ${config.format === format
-                                                ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                            ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                                             }`}
                                     >
                                         {format}
@@ -125,23 +125,27 @@ const RenderConfigForm: React.FC<RenderConfigFormProps> = ({
                     </div>
 
                     <div className="space-y-4">
-                        {/* URL da Música */}
+                        {/* Upload de Música */}
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-2">
-                                {t('batch_render.bg_music_url')}
+                                {t('batch_render.bg_music_file')}
                                 <span className="text-slate-500 ml-1">({t('batch_render.optional')})</span>
                             </label>
                             <input
-                                type="text"
-                                value={config.bgMusicUrl || ''}
-                                onChange={(e) => handleChange('bgMusicUrl', e.target.value || undefined)}
-                                placeholder="https://..."
-                                className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                type="file"
+                                accept="audio/mp3,audio/wav,audio/mpeg,.mp3,.wav"
+                                onChange={(e) => handleChange('bgMusicFile', e.target.files?.[0] || null)}
+                                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-600 cursor-pointer"
                             />
+                            {config.bgMusicFile && (
+                                <p className="text-xs text-slate-500 mt-1">
+                                    📁 {config.bgMusicFile.name} ({(config.bgMusicFile.size / 1024 / 1024).toFixed(2)} MB)
+                                </p>
+                            )}
                         </div>
 
                         {/* Volume da Música */}
-                        {config.bgMusicUrl && (
+                        {config.bgMusicFile && (
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-2">
                                     {t('batch_render.bg_music_volume')} ({config.bgMusicVolume || 50}%)

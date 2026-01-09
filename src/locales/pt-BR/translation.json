@@ -529,7 +529,7 @@
         "resolution": "Resolução",
         "format": "Formato de Vídeo",
         "audio_settings": "Configurações de Áudio",
-        "bg_music_url": "URL da Música de Fundo",
+        "bg_music_file": "Arquivo de Música de Fundo",
         "optional": "opcional",
         "bg_music_volume": "Volume da Música",
         "other_settings": "Outras Configurações",
