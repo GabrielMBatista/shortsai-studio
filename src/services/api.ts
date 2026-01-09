@@ -6,7 +6,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
         ...(options.headers as Record<string, string>),
     };
 
-    if (options.body && !headers['Content-Type']) {
+    if (options.body && !headers['Content-Type'] && !(options.body instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
     }
 
